@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SAMonitor.Data;
+using System.ComponentModel;
 
 namespace SAMonitor.Controllers
 {
@@ -7,11 +8,6 @@ namespace SAMonitor.Controllers
     [Route("api")]
     public class ServerController : ControllerBase
     {
-        private static readonly string[] BoolValues = new[]
-        {
-            "Disabled", "Enabled"
-        };
-
         private readonly ILogger<ServerController> _logger;
 
         public ServerController(ILogger<ServerController> logger)
@@ -42,14 +38,13 @@ namespace SAMonitor.Controllers
         }
 
         [HttpGet("GetServerPlayers")]
-        public dynamic GetServerPlayers(string ip_addr)
+        public async Task<List<Player>?> GetServerPlayers(string ip_addr)
         {
             var result = ServerManager.ServerByIP(ip_addr);
 
-            if (result is null)
-                return new Server(ip_addr);
+            if (result is null) return null;
 
-            return result.Players;
+            return await result.GetPlayers();
         }
 
         [HttpGet("GetTotalPlayers")]
@@ -79,6 +74,26 @@ namespace SAMonitor.Controllers
         public async Task<bool> AddServer(string ip_addr)
         {
             return (await ServerManager.AddServer(ip_addr));
+        }
+
+        [HttpPost("AddServerBulk")]
+        public async Task<string> AddServerBulk(string ip_addrs)
+        {
+            string[] addrs = ip_addrs.Split(';');
+
+            var servers = ServerManager.GetServers();
+
+            int added = 0;
+            int failed = 0;
+
+            foreach (var addr in addrs)
+            {
+                if (servers.Any(x => x.IpAddr == addr)) continue;
+                if (await ServerManager.AddServer(addr)) added++;
+                else failed++;
+            }
+
+            return $"done. added {added} servers, {failed} could not be queried.";
         }
     }
 }

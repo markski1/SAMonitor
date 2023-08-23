@@ -1,6 +1,7 @@
 using Dapper;
 using MySql.Data.MySqlClient;
-using System;
+using SAMPQuery;
+using System.Timers;
 
 namespace SAMonitor.Data
 {
@@ -12,7 +13,7 @@ namespace SAMonitor.Data
         {
             var conn = new MySqlConnection(MySQL.ConnectionString);
 
-            var sql = @"SELECT ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website FROM servers";
+            var sql = @"SELECT ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, language, sampcac, sponsor FROM servers";
 
             servers = (await conn.QueryAsync<Server>(sql)).ToList();
         }
@@ -27,17 +28,35 @@ namespace SAMonitor.Data
             }
 
             servers.Add(newServer);
+
+            Console.WriteLine($"Added server {ipAddr}");
+
             var conn = new MySqlConnection(MySQL.ConnectionString);
 
-            var sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website)
-                            VALUES(@IpAddr, @Name, @LastUpdated, @AllowsDL, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website)";
+            var sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, language, sampcac)
+                        VALUES(@IpAddr, @Name, @LastUpdated, @AllowsDL, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Language, @SampCac)";
 
             try
             {
-                return (await conn.ExecuteAsync(sql, new { newServer.IpAddr, newServer.Name, newServer.LastUpdated, newServer.AllowsDL, newServer.LagComp, newServer.MapName, newServer.GameMode, newServer.PlayersOnline, newServer.MaxPlayers, newServer.Website })) > 0;
+                return (await conn.ExecuteAsync(sql, new
+                {
+                    newServer.IpAddr,
+                    newServer.Name,
+                    newServer.LastUpdated,
+                    newServer.AllowsDL,
+                    newServer.LagComp,
+                    newServer.MapName,
+                    newServer.GameMode,
+                    newServer.PlayersOnline,
+                    newServer.MaxPlayers,
+                    newServer.Website,
+                    newServer.Language,
+                    newServer.SampCac
+                })) > 0;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Failed to add {ipAddr} to the database: {ex}");
                 return false;
             }
         }
@@ -93,8 +112,11 @@ namespace SAMonitor.Data
 
     public class Server
     {
+        private readonly System.Timers.Timer QueryTimer = new();
+
         public bool Success { get; set; }
         public DateTime LastUpdated { get; set; }
+        public DateTime WorldTime { get; set; }
         public int PlayersOnline { get; set; }
         public int MaxPlayers { get; set; }
         public bool AllowsDL { get; set; }
@@ -104,10 +126,13 @@ namespace SAMonitor.Data
         public string IpAddr { get; set; }
         public string MapName { get; set; }
         public string Website { get; set; }
-        public List<Player> Players { get; set; }
+        public string Language { get; set; }
+        public string SampCac { get; set; }
+        private List<Player> Players { get; set; }
+        public int Sponsor { get; set; }
 
         // Database fetch constructor
-        public Server(string ip_addr, string name, DateTime last_updated, int allows_dl, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website)
+        public Server(string ip_addr, string name, DateTime last_updated, int allows_dl, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string language, string sampcac, int sponsor)
         {
             Name = name;
             LastUpdated = last_updated;
@@ -119,8 +144,14 @@ namespace SAMonitor.Data
             GameMode = gamemode;
             IpAddr = ip_addr;
             Website = website;
+            SampCac = sampcac;
+            Language = language;
             Players = new();
+            WorldTime = DateTime.MinValue;
+            Sponsor = sponsor;
             Success = true;
+
+            CreateTimer();
         }
 
         // Add constructor
@@ -136,44 +167,133 @@ namespace SAMonitor.Data
             MapName = "Unknown";
             GameMode = "Unknown";
             Website = "Unknown";
+            Language = "Unknown";
+            SampCac = "Unknown";
+            WorldTime = DateTime.MinValue;
             Players = new();
             Success = false;
+
+            CreateTimer();
+        }
+
+        private void CreateTimer()
+        {
+            Random rand = new();
+            QueryTimer.Elapsed += TimedQuery;
+            QueryTimer.AutoReset = true;
+            // Update every anywhere from 10 to 20 minutes
+            // Just to avoid doing all requests at once.
+            // Sponsor servers update every 5 minutes, always.
+            if (Sponsor > 0) QueryTimer.Interval = 300000;
+            else QueryTimer.Interval = 600000 + rand.Next(600000);
+            QueryTimer.Enabled = true;
+        }
+
+        private void TimedQuery(object? sender, ElapsedEventArgs e)
+        {
+            _ = Query(true);
         }
 
         public async Task<bool> Query(bool doUpdate = true)
         {
-            // TODO: Server query logic
+            var server = new SampQuery(IpAddr);
+
+            ServerInfo serverInfo;
+            ServerRules serverRules;
+
+            try
+            {
+                serverInfo = server.GetServerInfo();
+                serverRules = server.GetServerRules();
+
+                if (serverInfo is null || serverRules is null || serverInfo.HostName is null)
+                {
+                    Console.WriteLine($"Failed to query {IpAddr}");
+                    return false;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+            Name = serverInfo.HostName;
+            PlayersOnline = serverInfo.Players;
+            MaxPlayers = serverInfo.MaxPlayers;
+            GameMode = serverInfo.GameMode;
+            Language = serverInfo.Language ?? "Unknown";
+            MapName = serverRules.MapName ?? "Unknown";
+            SampCac = serverRules.SAMPCAC_Version ?? "Not required";
+            LagComp = serverRules.Lagcomp;
+            Website = serverRules.Weburl.ToString() ?? "Unknown";
+            WorldTime = serverRules.WorldTime;
+            LastUpdated = DateTime.Now;
+
+            bool success = true;
 
             if (doUpdate)
             {
                 var conn = new MySqlConnection(MySQL.ConnectionString);
 
                 var sql = @"UPDATE servers
-                            SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, allows_dl=@AllowsDL, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website
-                            WHERE ip_addr = @IpÁddr";
+                            SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, allows_dl=@AllowsDL, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, language=@Language, sampcac=@SampCac
+                            WHERE ip_addr = @IpAddr";
 
                 try
                 {
-                    return (await conn.ExecuteAsync(sql, new { IpAddr, Name, LastUpdated, AllowsDL, LagComp, MapName, GameMode, PlayersOnline, MaxPlayers, Website })) > 0;
+                    success = (await conn.ExecuteAsync(sql, new { IpAddr, Name, LastUpdated, AllowsDL, LagComp, MapName, GameMode, PlayersOnline, MaxPlayers, Website, Language, SampCac })) > 0;
                 }
                 catch
                 {
-                    return false;
+                    success = false;
                 }
             }
-            return false;
+
+            IEnumerable<ServerPlayer> serverPlayers;
+
+            try
+            {
+                serverPlayers = server.GetServerPlayers();
+
+                if (serverPlayers is not null)
+                {
+                    Players.Clear();
+                    foreach (var player in serverPlayers)
+                    {
+                        Players.Add(new Player(player));
+                    }
+                }
+            }
+            catch
+            {
+                Console.WriteLine($"Failed to query players for {IpAddr}");
+            }            
+
+            return success;
+        }
+
+        public async Task<List<Player>> GetPlayers()
+        {
+            if (LastUpdated < DateTime.Now - TimeSpan.FromHours(1))
+            {
+                await Query();
+            }
+
+            return Players;
         }
     }
     public class Player
     {
         public int Id { get; set; }
+        public int Ping { get; set; }
         public string Name { get; set; }
         public int Score { get; set; }
-        public Player(int id, string name, int score)
+        public Player(ServerPlayer player)
         {
-            Id = id;
-            Name = name;
-            Score = score;
+            Id = player.PlayerId;
+            Ping = player.PlayerPing;
+            Name = player.PlayerName;
+            Score = player.PlayerScore;
         }
     }
 }
