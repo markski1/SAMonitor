@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using MySqlX.XDevAPI.Common;
 using SAMonitor.Data;
-using System.Net;
 
 namespace SAMonitor.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api")]
     public class ServerController : ControllerBase
     {
         private static readonly string[] BoolValues = new[]
@@ -21,8 +19,8 @@ namespace SAMonitor.Controllers
             _logger = logger;
         }
 
-        [HttpGet(Name = "GetServer")]
-        public dynamic GetServers(string ipAddr)
+        [HttpGet("GetServer")]
+        public dynamic GetServer(string ipAddr)
         {
             var result = ServerManager.ServerByIP(ipAddr);
 
@@ -32,33 +30,44 @@ namespace SAMonitor.Controllers
             return result;
         }
 
-        [HttpGet(Name = "GetAllServers")]
-        public dynamic Get()
+        [HttpGet("GetAllServers")]
+        public IEnumerable<Server> GetAllServers()
         {
             return ServerManager.servers;
         }
 
-        [HttpGet(Name = "GetServerPlayers")]
-        public dynamic Get(string ipAddr)
+        [HttpGet("GetServerPlayers")]
+        public dynamic GetServerPlayers(string ipAddr)
         {
             var result = ServerManager.ServerByIP(ipAddr);
 
             if (result is null)
                 return new ErrorMessage("Server not found.");
 
-            return result.players;
+            return result.Players;
         }
 
-        [HttpGet(Name = "GetTotalPlayers")]
-        public dynamic GetTotalPlayers()
+        [HttpGet("GetTotalPlayers")]
+        public int GetTotalPlayers()
         {
-            return ServerManager.servers.Sum(x => x.playersOnline);
+            return ServerManager.servers.Sum(x => x.PlayersOnline);
         }
 
-        [HttpGet(Name = "GetServerCount")]
-        public dynamic GetServerCount()
+        [HttpGet("GetAmountServers")]
+        public int GetAmountServers()
         {
             return ServerManager.servers.Count;
+        }
+
+        [HttpGet("GetMasterlist")]
+        public string GetMasterlist()
+        {
+            string list = "";
+            foreach (var server in ServerManager.servers)
+            {
+                list += $"{server.IpAddr}\n";
+            }
+            return list;
         }
     }
 }

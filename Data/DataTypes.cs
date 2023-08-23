@@ -1,20 +1,29 @@
-using System.Net;
-using System.Runtime.CompilerServices;
+using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace SAMonitor.Data
 {
     public static class ServerManager
     {
-        public static List<ServerInfo> servers = new();
+        public static List<Server> servers = new();
 
-        public static void LoadServers()
+        public static async void LoadServers()
         {
-            // TODO: Load the servers from the database.
+            var conn = new MySqlConnection(MySQL.ConnectionString);
+
+            var sql = @"SELECT ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website FROM servers";
+
+            servers = (await conn.QueryAsync<Server>(sql)).ToList();
         }
 
-        public static ServerInfo? ServerByIP(string ip)
+        public static void AddServer()
         {
-            var result = servers.Where(x => x.ipAddr == ip).ToList().FirstOrDefault();
+            // TODO
+        }
+
+        public static Server? ServerByIP(string ip)
+        {
+            var result = servers.Where(x => x.IpAddr == ip).ToList().FirstOrDefault();
 
             if (result is null) {
                 return null;
@@ -23,64 +32,66 @@ namespace SAMonitor.Data
             return result;
         }
 
-        public static List<ServerInfo> ServersByName(string name)
+        public static List<Server> ServersByName(string name)
         {
-            var results = servers.Where(x => x.name.Contains(name)).ToList();
+            var results = servers.Where(x => x.Name.Contains(name)).ToList();
 
             if (results is null)
             {
-                return new List<ServerInfo>();
+                return new List<Server>();
             }
 
             return results;
         }
     }
 
-    public class ServerInfo
+    public class Server
     {
-        public DateTime lastUpdated { get; set; }
-        public int playersOnline { get; set; }
-        public int maxPlayers { get; set; }
-        public bool allowsDL { get; set; }
-        public bool lagComp { get; set; }
-        public string name { get; set; }
-        public string gameMode { get; set; }
-        public string ipAddr { get; set; }
-        public string mapName { get; set; }
-        public List<Player> players { get; set; }
+        public DateTime LastUpdated { get; set; }
+        public int PlayersOnline { get; set; }
+        public int MaxPlayers { get; set; }
+        public bool AllowsDL { get; set; }
+        public bool LagComp { get; set; }
+        public string Name { get; set; }
+        public string GameMode { get; set; }
+        public string IpAddr { get; set; }
+        public string MapName { get; set; }
+        public string Website { get; set; }
+        public List<Player> Players { get; set; }
 
-        public ServerInfo(DateTime lastUpdated, int playersOnline, int maxPlayers, bool allowsDL, bool lagComp, string name, string gameMode, string ipAddr, string mapName, List<Player> players)
+        public Server(string ip_addr, string name, DateTime last_updated, int allows_dl, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website)
         {
-            this.lastUpdated = lastUpdated;
-            this.playersOnline = playersOnline;
-            this.maxPlayers = maxPlayers;
-            this.allowsDL = allowsDL;
-            this.lagComp = lagComp;
-            this.name = name;
-            this.gameMode = gameMode;
-            this.ipAddr = ipAddr;
-            this.mapName = mapName;
-            this.players = players;
+            Name = name;
+            LastUpdated = last_updated;
+            PlayersOnline = players_online;
+            MaxPlayers = max_players;
+            AllowsDL = (allows_dl == 1);
+            LagComp = (lag_comp == 1);
+            MapName = map_name;
+            GameMode = gamemode;
+            IpAddr = ip_addr;
+            Website = website;
+            Players = new();
         }
     }
 
     public class Player
     {
-        public int id { get; set; }
-        public string name { get; set; }
-        public int score { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int Score { get; set; }
 
         public Player(int id, string name, int score)
         {
-            this.id = id;
-            this.name = name;
-            this.score = score;
+            Id = id;
+            Name = name;
+            Score = score;
         }
     }
 
     public class ErrorMessage
     {
-        string Message { get; set; }
+        public string Message { get; set; }
 
         public ErrorMessage(string message)
         {

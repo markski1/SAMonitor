@@ -1,3 +1,9 @@
+using SAMonitor.Data;
+
+MySQL.MySQLSetup();
+
+ServerManager.LoadServers();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

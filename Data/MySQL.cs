@@ -6,11 +6,11 @@ namespace SAMonitor.Data
     public static class MySQL
     {
         public static string? ConnectionString = null;
-        public static void MySQLSetup(string connectionString)
+        public static void MySQLSetup()
         {
             MySqlConnectionStringBuilder builder = new();
 
-            dynamic? data = JsonConvert.DeserializeObject(File.ReadAllText($"mysql.txt"));
+            dynamic? data = JsonConvert.DeserializeObject(File.ReadAllText($"/keys/mysql.txt"));
 
             if (data is null)
                 return;
