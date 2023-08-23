@@ -19,13 +19,18 @@ namespace SAMonitor.Controllers
             _logger = logger;
         }
 
-        [HttpGet("GetServer")]
-        public dynamic GetServer(string ipAddr)
+        [HttpGet("GetServerByIP")]
+        public Server? GetServerByIP(string ip_addr)
         {
-            var result = ServerManager.ServerByIP(ipAddr);
+            var result = ServerManager.ServerByIP(ip_addr);
 
-            if (result is null)
-                return new ErrorMessage("Server not found.");
+            return result;
+        }
+
+        [HttpGet("GetServersByName")]
+        public List<Server>? GetServersByName(string name)
+        {
+            var result = ServerManager.ServersByName(name);
 
             return result;
         }
@@ -33,16 +38,16 @@ namespace SAMonitor.Controllers
         [HttpGet("GetAllServers")]
         public IEnumerable<Server> GetAllServers()
         {
-            return ServerManager.servers;
+            return ServerManager.GetServers();
         }
 
         [HttpGet("GetServerPlayers")]
-        public dynamic GetServerPlayers(string ipAddr)
+        public dynamic GetServerPlayers(string ip_addr)
         {
-            var result = ServerManager.ServerByIP(ipAddr);
+            var result = ServerManager.ServerByIP(ip_addr);
 
             if (result is null)
-                return new ErrorMessage("Server not found.");
+                return new Server(ip_addr);
 
             return result.Players;
         }
@@ -50,24 +55,30 @@ namespace SAMonitor.Controllers
         [HttpGet("GetTotalPlayers")]
         public int GetTotalPlayers()
         {
-            return ServerManager.servers.Sum(x => x.PlayersOnline);
+            return ServerManager.TotalPlayers();
         }
 
         [HttpGet("GetAmountServers")]
         public int GetAmountServers()
         {
-            return ServerManager.servers.Count;
+            return ServerManager.ServerCount();
         }
 
         [HttpGet("GetMasterlist")]
         public string GetMasterlist()
         {
             string list = "";
-            foreach (var server in ServerManager.servers)
+            foreach (var server in ServerManager.GetServers())
             {
                 list += $"{server.IpAddr}\n";
             }
             return list;
+        }
+
+        [HttpGet("AddServer")]
+        public async Task<bool> AddServer(string ip_addr)
+        {
+            return (await ServerManager.AddServer(ip_addr));
         }
     }
 }

@@ -5,22 +5,31 @@ namespace SAMonitor.Data
 {
     public static class MySQL
     {
-        public static string? ConnectionString = null;
-        public static void MySQLSetup()
+        public static string? ConnectionString { get; set; }
+        public static bool MySQLSetup()
         {
             MySqlConnectionStringBuilder builder = new();
 
-            dynamic? data = JsonConvert.DeserializeObject(File.ReadAllText($"/keys/mysql.txt"));
+            try
+            {
+                dynamic? data = JsonConvert.DeserializeObject(File.ReadAllText($"/keys/mysql.txt"));
 
-            if (data is null)
-                return;
+                if (data is null)
+                    return false;
 
-            builder.Server = data.Server;
-            builder.UserID = data.UserID;
-            builder.Password = data.Password;
-            builder.Database = data.Database;
+                builder.Server = data.Server;
+                builder.UserID = data.UserID;
+                builder.Password = data.Password;
+                builder.Database = data.Database;
 
-            ConnectionString = builder.ToString();
+                ConnectionString = builder.ToString();
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

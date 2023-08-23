@@ -1,11 +1,12 @@
 using Dapper;
 using MySql.Data.MySqlClient;
+using System;
 
 namespace SAMonitor.Data
 {
     public static class ServerManager
     {
-        public static List<Server> servers = new();
+        private static List<Server> servers = new();
 
         public static async void LoadServers()
         {
@@ -16,20 +17,50 @@ namespace SAMonitor.Data
             servers = (await conn.QueryAsync<Server>(sql)).ToList();
         }
 
-        public static void AddServer()
+        public static async Task<bool> AddServer(string ipAddr)
         {
-            // TODO
+            var newServer = new Server(ipAddr);
+
+            if (!await newServer.Query(false))
+            {
+                return false;
+            }
+
+            servers.Add(newServer);
+            var conn = new MySqlConnection(MySQL.ConnectionString);
+
+            var sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website)
+                            VALUES(@IpAddr, @Name, @LastUpdated, @AllowsDL, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website)";
+
+            try
+            {
+                return (await conn.ExecuteAsync(sql, new { newServer.IpAddr, newServer.Name, newServer.LastUpdated, newServer.AllowsDL, newServer.LagComp, newServer.MapName, newServer.GameMode, newServer.PlayersOnline, newServer.MaxPlayers, newServer.Website })) > 0;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static Server? ServerByIP(string ip)
         {
-            var result = servers.Where(x => x.IpAddr == ip).ToList().FirstOrDefault();
+            var result = servers.Where(x => x.IpAddr.Contains(ip)).ToList();
 
-            if (result is null) {
+            if (result.Count < 1) {
                 return null;
             }
 
-            return result;
+            if (result.Count > 0)
+            {
+                var newFind = result.Where(x => x.IpAddr.Contains("7777")).ToList();
+
+                if (newFind.Count > 0)
+                {
+                    return newFind.FirstOrDefault();
+                }
+            }
+
+            return result.FirstOrDefault();
         }
 
         public static List<Server> ServersByName(string name)
@@ -43,10 +74,26 @@ namespace SAMonitor.Data
 
             return results;
         }
+
+        public static int TotalPlayers()
+        {
+            return servers.Sum(x => x.PlayersOnline);
+        }
+
+        public static int ServerCount()
+        {
+            return servers.Count;
+        }
+
+        internal static IEnumerable<Server> GetServers()
+        {
+            return servers;
+        }
     }
 
     public class Server
     {
+        public bool Success { get; set; }
         public DateTime LastUpdated { get; set; }
         public int PlayersOnline { get; set; }
         public int MaxPlayers { get; set; }
@@ -59,6 +106,7 @@ namespace SAMonitor.Data
         public string Website { get; set; }
         public List<Player> Players { get; set; }
 
+        // Database fetch constructor
         public Server(string ip_addr, string name, DateTime last_updated, int allows_dl, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website)
         {
             Name = name;
@@ -72,30 +120,60 @@ namespace SAMonitor.Data
             IpAddr = ip_addr;
             Website = website;
             Players = new();
+            Success = true;
+        }
+
+        // Add constructor
+        public Server(string ip_addr)
+        {
+            IpAddr = ip_addr;
+            Name = "Unknown";
+            LastUpdated = DateTime.Now;
+            PlayersOnline = 0;
+            MaxPlayers = 0;
+            AllowsDL = false;
+            LagComp = false;
+            MapName = "Unknown";
+            GameMode = "Unknown";
+            Website = "Unknown";
+            Players = new();
+            Success = false;
+        }
+
+        public async Task<bool> Query(bool doUpdate = true)
+        {
+            // TODO: Server query logic
+
+            if (doUpdate)
+            {
+                var conn = new MySqlConnection(MySQL.ConnectionString);
+
+                var sql = @"UPDATE servers
+                            SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, allows_dl=@AllowsDL, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website
+                            WHERE ip_addr = @IpÁddr";
+
+                try
+                {
+                    return (await conn.ExecuteAsync(sql, new { IpAddr, Name, LastUpdated, AllowsDL, LagComp, MapName, GameMode, PlayersOnline, MaxPlayers, Website })) > 0;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            return false;
         }
     }
-
     public class Player
     {
         public int Id { get; set; }
         public string Name { get; set; }
         public int Score { get; set; }
-
         public Player(int id, string name, int score)
         {
             Id = id;
             Name = name;
             Score = score;
-        }
-    }
-
-    public class ErrorMessage
-    {
-        public string Message { get; set; }
-
-        public ErrorMessage(string message)
-        {
-            Message = message;
         }
     }
 }
