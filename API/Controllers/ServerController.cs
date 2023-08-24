@@ -23,18 +23,84 @@ namespace SAMonitor.Controllers
             return result;
         }
 
-        [HttpGet("GetServersByName")]
-        public List<Server>? GetServersByName(string name)
-        {
-            var result = ServerManager.ServersByName(name);
-
-            return result;
-        }
-
         [HttpGet("GetAllServers")]
         public IEnumerable<Server> GetAllServers()
         {
             return ServerManager.GetServers();
+        }
+
+        [HttpGet("GetFilteredServers")]
+        public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int paging_size = 0, int page = 0)
+        {
+            var servers = ServerManager.GetServers();
+
+            // unless specified, don't show empty servers.
+            if (show_empty == 0)
+            {
+                servers = servers.Where(x => x.PlayersOnline > 0);
+            }
+
+            if (name != "unspecified")
+            {
+                servers = servers.Where(x => x.Name.ToLower().Contains(name.ToLower()));
+            }
+
+            if (gamemode != "unspecified")
+            {
+                servers = servers.Where(x => x.GameMode.ToLower().Contains(gamemode.ToLower()));
+            }
+
+            // after ordering we exclusively manage lists
+            // as lists guarantee order and generic enumerables do not.
+
+            List<Server> orderedServers;
+
+            // if specified, order
+            if (order != "none")
+            {
+                // by player count
+                if (order == "players")
+                {
+                    orderedServers = servers.OrderByDescending(x => x.PlayersOnline).ToList();
+                }
+                // by player count over max player ratio.
+                else
+                {
+                    // show_empty=0 guarantees PlayersOnline will never be zero.
+                    // otherwise we have to separate them
+                    if (show_empty == 0)
+                    {
+                        orderedServers = servers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
+                    }
+                    else
+                    {
+                        var emptyServers = servers.Where(x => x.PlayersOnline == 0);
+                        var populatedServers = servers.Where(x => x.PlayersOnline > 0);
+
+                        orderedServers = populatedServers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
+                        orderedServers.AddRange(emptyServers);
+                    }
+                }
+            }
+            else
+            {
+                orderedServers = servers.ToList();
+            }
+
+            // If we're paging, return a "page".
+            if (paging_size > 0)
+            {
+                try
+                {
+                    return orderedServers.Skip(paging_size * page).Take(paging_size).ToList();
+                }
+                catch
+                {
+                    // nothing, just return the full list. this just protects from malicious pagingSize or page values.
+                }
+            }
+
+            return orderedServers;
         }
 
         [HttpGet("GetServerPlayers")]

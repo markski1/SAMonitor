@@ -10,8 +10,8 @@ Providing: A server browser, a public API and a Masterlist alternative.
 - [Masterlist](#masterlist)
 - [GET Endpoints](#get-endpoints)
 - - [GetAllServers](#getallservers)
+- - [GetFilteredServers](#getfilteredservers)
 - - [GetServerByIP](#getserverbyip)
-- - [GetServersByName](#getserversbyname)
 - - [GetServerPlayers](#getserverplayers)
 - - [GetTotalPlayers](#gettotalplayers)
 - [Data schemas](#data-schemas)
@@ -45,6 +45,34 @@ Return a JSON collection with the latest information of every server SAMonitor t
 
 Try it: http://sam.markski.ar:42069/api/GetAllServers
 
+### GetFilteredServers
+
+The most complex endpoint of all, but certainly worth it: Returns the list of servers, but with specified filtering.
+
+By default, it'll omit severs with 0 players.
+
+Parameters, all of which are optional: 
+```
+  show_empty:
+   - Possible values: 0 or 1. If unspecified, 0.
+
+  order:
+   - Possible values: "none", "player", "ratio". If unspecified, "none".
+
+  name, gamemode:
+   - Possible values: Any specified text. This is basically a search.
+  
+  paging_size:
+   - Provide any number greater than 0 to do paging.
+     If specified, only this amount of entries will be returned.
+
+  page:
+   - Provide any number greater or equal than 0.
+     Specifies the page, to be used along with paging_size.
+```
+
+Try it: http://sam.markski.ar:42069/api/GetFilteredServers?name=Roleplay&order=player
+
 ### GetServerByIP
 
 Provided an IP address (optionaly with a specified port), returns information about it.
@@ -52,12 +80,6 @@ Provided an IP address (optionaly with a specified port), returns information ab
 If no port is provided and several servers are under that IP, the one at 7777 will be chosen.
 
 Try it: http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=151.80.19.151:7777
-
-### GetServersByName
-
-Provided a text, return a list of the servers which include that text in their name. Basically search.
-
-Try it: http://sam.markski.ar:42069/api/GetServersByName?name=Roleplay
 
 ### GetServerPlayers
 
