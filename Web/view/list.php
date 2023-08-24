@@ -12,7 +12,7 @@
         $filters .= "no_empty";
     }
 
-    $order = $_GET['order'] ?? "player";
+    $order = $_GET['order'] ?? "ratio";
 
     $filters .= "&order=".$order;
 
@@ -21,14 +21,14 @@
     $filters .= "&paging_size=20";
 
     if (isset($_GET['name']) && strlen($_GET['name']) > 0) {
-        $filters .= "&name=".$_GET['name'];
+        $filters .= "&name=".urlencode($_GET['name']);
     }
 
     if (isset($_GET['gamemode']) && strlen($_GET['gamemode']) > 0) {
-        $filters .= "&gamemode=".$_GET['gamemode'];
+        $filters .= "&gamemode=".urlencode($_GET['gamemode']);
     }
 
-    $servers = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetFilteredServers" . htmlentities($filters) . "&page=".$page), true);
+    $servers = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetFilteredServers" . $filters . "&page=".$page), true);
 
     if (count($servers) == 0) {
         exit("No results.");
@@ -43,7 +43,7 @@
     }
 
     echo '
-        <div hx-target="this">
+        <div hx-target="this" style="margin: 3rem">
             <center><button hx-trigger="click" hx-get="./view/list.php'.$filters.'&page='.($page + 1).'" hx-swap="outerHTML">Load more</button></center>
         </div>
     ';

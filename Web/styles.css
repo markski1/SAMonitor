@@ -1,9 +1,9 @@
 :root {
-    --background: #050c1a;
-    --text: #fbfcfe;
-    --primary: #4e81df;
-    --secondary: #08142b;
-    --accent: #2865d7;
+    --background: #090f10;
+    --text: #e8f0f2;
+    --primary: #a4c2cb;
+    --secondary: #1c2c31;
+    --accent: #6d9dab;
 }
 
 body {
@@ -22,6 +22,7 @@ header {
 main {
     margin-top: 2rem;
     width: 100%;
+    max-width: 60rem;
     display: flex;
     flex-direction: row-reverse;
     justify-content: center;
@@ -70,7 +71,7 @@ a {
 		flex-direction: column;
 		justify-content: right;
 		text-align: right;
-        margin-top: 3rem;
+        margin-top: 2rem;
 	}
 
     .separator {
@@ -90,16 +91,18 @@ a {
     main {
         justify-self: left;
         justify-content: left;
-		margin: 5rem 0 0;
+		margin: 3rem 0 0;
 	}
 }
 
-@media (max-width: 1150px) {
+@media (max-width: 1250px) {
     .server, .filterBox {
         width: 90%;
         min-width: 0;
         position: relative;
-        margin: auto;
+    }
+    .filterBox{
+        margin-left: 1rem;
     }
 }
 
@@ -136,10 +139,11 @@ fieldset {
     max-width: 32rem;
     background-color: var(--secondary);
     margin: auto;
-    margin-bottom: .75rem;
+    margin-bottom: 1.25rem;
     padding: .66rem;
     border: 1px solid var(--accent);
     border-radius: 12px;
+    box-shadow: #6d9dab99 3px 3px, #6d9dab77 6px 6px, #6d9dab55 9px 9px, #6d9dab33 12px 12px, #6d9dab11 15px 15px;
 }
 
 .server div {
@@ -147,17 +151,25 @@ fieldset {
 }
 
 .filterBox {
-    margin: auto;
     max-width: 32rem;
     min-width: 20rem;
     margin: 0;
     margin-bottom: 1rem;
     background-color: #101010;
+    border: 1px solid #202020;
     padding: .66rem;
     border-radius: 12px;
-    border: 1px solid #202020;
     max-height: 22rem;
     position: sticky;
+}
+
+.innerContent {
+    background-color: #101010;
+    border: 1px solid #202020;
+    border-radius: 6px;
+    padding: .8rem;
+    width: 95%;
+    margin-top: 1rem;
 }
 
 button {
@@ -167,7 +179,6 @@ button {
     margin-right: 1.5rem;
     background-color: var(--accent);
     border: 2px solid var(--accent);
-    color: white;
 }
 
 button.connectButton {
@@ -180,5 +191,5 @@ button:hover {
 }
 
 button:active {
-    background-color: black;
+    background-color: white;
 }

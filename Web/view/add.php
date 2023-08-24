@@ -1,11 +1,20 @@
-<p>To add a server to SAMonitor, simply enter it's IP address below.</p>
+<?php ?>
+<div>
+    <p>SAMonitor is an open server list, and as such, anyone can add a server.</p>
 
-<form hx-target="this" hx-post="./action/add.php">
-    IP Address:<br />
-    <input type="text" name="ip_addr" style="width: 20rem" placeholder="address:port format please."/> <input type="submit" value="Add server" />
-</form>
-
-<p>MUST be an IPv4 address (NOT a domain), and must specify port.</p>
-<p>If you change your IP in the future just submit it again, old ones are removed automatically.</p>
-<p>We will fetch all information off it automatically.</p>
-<p>Please note API endpoints such as full player list may not work immediatly.</p>
+    <div class="innerContent">
+        <p>If you're blocking the range containing sam.markski.ar (45.153.48.229), this won't work.</p>
+        <fieldset>
+            <legend>Add server</legend>
+            <form hx-target="#result" hx-post="./action/add.php">
+                IP Address:<br />
+                <input required type="text" name="ip_addr" style="width: 20rem" placeholder="address:port format please."/> <input type="submit" value="Add server" />
+                <div id="result" style="margin-top: 1rem"><p>Waiting...</p></div>
+            </form>
+        </fieldset>
+        <p>MUST be an IPv4 address (NOT a domain), and must specify port.</p>
+        <p>If you change your IP in the future just submit it again, old ones are removed automatically.</p>
+        <p>We will fetch all information off it automatically.</p>
+        <p>Please note API endpoints such as full player list may not work immediatly.</p>
+    </div>
+</div>

@@ -57,7 +57,7 @@ Parameters, all of which are optional:
    - Possible values: 0 or 1. If unspecified, 0.
 
   order:
-   - Possible values: "none", "player", "ratio". If unspecified, "none".
+   - Possible values: "none", "players", "ratio". If unspecified, "none".
 
   name, gamemode:
    - Possible values: Any specified text. This is basically a search.
@@ -136,10 +136,3 @@ The API ***should*** never return any null values. Either '0' or "Unknown" would
 ## Add your server
 
 You may add your server through the option at the SAMonitor website.
-
-However, there is also an API endpoint for this:
-
-### AddServer
-Provided an IP address (with port!), adds the server to SAMonitor, if queriable. Otherwise fails. Should return a boolean indicating success or lack thereof.
-
-Usage: `http://sam.markski.ar:42069/api/AddServer?ip_addr=<ip-address:port>`

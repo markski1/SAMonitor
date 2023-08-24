@@ -1,12 +1,6 @@
 <?php
 
 function DrawServer($server, $num, $details = false) {
-    if ($server['website'] != "Unknown") {
-        $website = 'Website: <a href="'.$server['website'].'">'.$server['website'].'</a>';
-    }
-    else {
-        $website = "No website specified.";
-    }
 ?>
     <h2><?=$server['name']?></h2>
     <div>
@@ -68,7 +62,7 @@ function DrawServerDetailed($server, $num) {
                 </fieldset>
                 <fieldset>
                     <legend>Player list</legend>
-                    <iframe style="width: 93%; height: 5rem; border: 0" src="view/playerlist.php?ip_addr=<?=$server['ipAddr']?>">
+                    <iframe style="width: 93%; height: 5rem; border: 0" src="view/playerlist.php?ip_addr=<?=$server['ipAddr']?>&players=<?=$server['playersOnline']?>">
                     </iframe>
                 </fieldset>
             </fieldset>
@@ -89,9 +83,7 @@ if (isset($_GET['type'])) {
     //..
 }
 
-function timeSince($time)
-{
-
+function timeSince($time) {
     $time = time() - $time; // to get the time since that moment
     $time = ($time<1)? 1 : $time;
     $tokens = array (
@@ -109,7 +101,6 @@ function timeSince($time)
         $numberOfUnits = floor($time / $unit);
         return $numberOfUnits.' '.$text.(($numberOfUnits>1)?'s':'');
     }
-
 }
 
 ?>
