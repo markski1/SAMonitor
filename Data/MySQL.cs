@@ -1,4 +1,4 @@
-﻿using MySql.Data.MySqlClient;
+﻿using MySqlConnector;
 using Newtonsoft.Json;
 
 namespace SAMonitor.Data

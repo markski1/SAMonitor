@@ -1,5 +1,5 @@
 using Dapper;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using SAMPQuery;
 using System.Timers;
 
