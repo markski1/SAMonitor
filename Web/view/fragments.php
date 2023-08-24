@@ -1,6 +1,6 @@
 <?php
 
-function DrawServer($server, $num) {
+function DrawServer($server, $num, $details = false) {
     if ($server['website'] != "Unknown") {
         $website = 'Website: <a href="'.$server['website'].'">'.$server['website'].'</a>';
     }
@@ -10,55 +10,72 @@ function DrawServer($server, $num) {
 ?>
     <h2><?=$server['name']?></h2>
     <div>
-        <ul>
-            <li><b>Players</b>: <?=$server['playersOnline']?>/<?=$server['maxPlayers']?></li>
-            <li><b>Gamemode</b>: <?=$server['gameMode']?></li>
-            <li><b>Language</b>: <?=$server['language']?></li>
-        </ul>
+        <fieldset>
+            <legend style="font-size: 1.5rem; font-weight: 400"><?=$server['gameMode']?></legend>
+            <span style="font-weight: 400; font-size: 1.2rem" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></span><br />
+            
+            <p style="margin: .33rem 0">
+                <b><?=$server['playersOnline']?>/<?=$server['maxPlayers']?></b> players / Language: <?=$server['language']?>
+            </p>
+        </fieldset>
     </div>
-    <span>IP: <span id="ipAddr<?=$num?>"><?=$server['ipAddr']?></span>
-    <div>
+    <div style="text-align: right">
         <a href="" hx-get="view/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>"><button>More details</button></a> <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
     </div>
-    <small>
-        <div style="text-align: right">
-            <?=$website?>
-        </div>
-    </small>
 <?php
 }
 
 function DrawServerDetailed($server, $num) {
     if ($server['website'] != "Unknown") {
-        $website = 'Website: <a href="'.$server['website'].'">'.$server['website'].'</a>';
+        $website = '<a href="'.$server['website'].'">'.$server['website'].'</a>';
     }
     else {
         $website = "No website specified.";
     }
 
     $lagcomp = $server['lagComp'] == 1 ? "Enabled" : "Disabled";
+    $last_updated = strtotime($server['lastUpdated']);
 
     ?>
         <h2><?=$server['name']?></h2>
-        <ul>
-            <li><b>Players</b>: <?=$server['playersOnline']?>/<?=$server['maxPlayers']?></li>
-            <li><b>Gamemode</b>: <?=$server['gameMode']?></li>
-            <li><b>Language</b>: <?=$server['language']?></li>
-            <li><b>Map</b>: <?=$server['mapName']?></li>
-            <li><b>World time</b>: <?=$server['worldTime']?></li>
-            <li><b>Lag</b> compensation: <?=$lagcomp?></li> 
-            <li><b>SAMPCAC</b>: <?=$server['sampCac']?></li> 
-        </ul>
-        <span>IP: <span id="ipAddr<?=$num?>"><?=$server['ipAddr']?></span>
         <div>
-            <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+            <fieldset>
+                <legend style="font-size: 1.5rem; font-weight: 400"><?=$server['gameMode']?></legend>
+                <span style="font-weight: 400; font-size: 1.2rem" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></span><br />
+                
+                <p style="margin: .33rem 0">
+                    <b><?=$server['playersOnline']?>/<?=$server['maxPlayers']?></b> players / Language: <?=$server['language']?>
+                </p>
+                <fieldset>
+                    <legend>Details</legend>
+                    <table style="width: 100%; font-weight: 400; text-align: left">
+                        <tr>
+                            <th><b>Map</b></th><th><?=$server['mapName']?></th>
+                        </tr>
+                        <tr>
+                            <th><b>Lag compensation</b></th><th><?=$lagcomp?></th>
+                        </tr> 
+                        <tr>
+                            <th><b>SAMPCAC</b></th><th><?=$server['sampCac']?></th>
+                        </tr>
+                        <tr>
+                            <th><b>Website</b></th><th><?=$website?></th>
+                        </tr>
+                        <tr>
+                            <th><b>Last updated</b></th><th><?=timeSince($last_updated)?> ago</th>
+                        </tr>
+                    </table>
+                </fieldset>
+                <fieldset>
+                    <legend>Player list</legend>
+                    <iframe style="width: 93%; height: 5rem; border: 0" src="view/playerlist.php?ip_addr=<?=$server['ipAddr']?>">
+                    </iframe>
+                </fieldset>
+            </fieldset>
         </div>
-        <small>
-            <div style="text-align: right">
-                <?=$website?><br />
-                <b>Last updated:</b> <?=$server['lastUpdated']?>
-            </div>
-        </small>
+        <div style="text-align: right">
+        <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+        </div>
     <?php
     }
 
@@ -70,6 +87,29 @@ if (isset($_GET['type'])) {
     }
 
     //..
+}
+
+function timeSince($time)
+{
+
+    $time = time() - $time; // to get the time since that moment
+    $time = ($time<1)? 1 : $time;
+    $tokens = array (
+        31536000 => 'year',
+        2592000 => 'month',
+        604800 => 'week',
+        86400 => 'day',
+        3600 => 'hour',
+        60 => 'minute',
+        1 => 'second'
+    );
+
+    foreach ($tokens as $unit => $text) {
+        if ($time < $unit) continue;
+        $numberOfUnits = floor($time / $unit);
+        return $numberOfUnits.' '.$text.(($numberOfUnits>1)?'s':'');
+    }
+
 }
 
 ?>
