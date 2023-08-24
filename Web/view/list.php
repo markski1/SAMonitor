@@ -28,9 +28,11 @@
         $filters .= "&gamemode=".$_GET['gamemode'];
     }
 
-    $servers = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetFilteredServers" . $filters . "&page=".$page), true);
+    $servers = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetFilteredServers" . htmlentities($filters) . "&page=".$page), true);
 
-    echo "";
+    if (count($servers) == 0) {
+        exit("No results.");
+    }
 
     $num = 0;
     foreach ($servers as $server) {

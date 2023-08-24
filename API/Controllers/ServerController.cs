@@ -134,6 +134,14 @@ namespace SAMonitor.Controllers
         [HttpGet("AddServer")]
         public async Task<bool> AddServer(string ip_addr)
         {
+            // ensure this is an IPv4 address
+            var items = ip_addr.Split('.');
+            if (items.Length != 4) return false;
+            items = ip_addr.Split(':');
+            if (items.Length != 2) return false;
+            if (ip_addr.Any(x => char.IsLetter(x))) return false;
+
+
             return (await ServerManager.AddServer(ip_addr));
         }
 
