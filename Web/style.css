@@ -11,7 +11,7 @@ body {
     Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
     background-color: var(--background);
     color: var(--text);
-    font-size: 1.1rem;
+    font-size: 16px;
 }
 
 header {
@@ -21,7 +21,13 @@ header {
 
 main {
     margin-top: 2rem;
-    max-width: 50rem;
+    width: 100%;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+    justify-self: center;
+    flex-wrap: wrap;
+    gap: 2rem;
 }
 
 main :first-child {
@@ -41,7 +47,10 @@ header a {
     font-size: 1.2rem;
     text-decoration-line: none;
     margin-top: 1rem;
-    margin-left: 1.2rem;
+}
+
+header .separators {
+    display: inline;
 }
 
 a {
@@ -51,9 +60,8 @@ a {
 @media (min-width: 900px) {
     body {
 		display: grid;
-		grid-template-columns: auto auto;
-		gap: 1rem;
-		justify-items: left;
+		grid-template-columns: 15rem auto;
+        gap: 2rem;
 	}
 
     header, header div {
@@ -65,10 +73,14 @@ a {
         margin-top: 3rem;
 	}
 
+    .separator {
+        display: none;
+    }
+
     header {
         width: 12rem;
         margin: 0 2rem;
-		justify-self: right;
+		justify-self: left;
     }
 
     header a {
@@ -76,9 +88,19 @@ a {
     }
 
     main {
-		margin: 5rem 0 20rem;
-		margin-right: 6rem
+        justify-self: left;
+        justify-content: left;
+		margin: 5rem 0 0;
 	}
+}
+
+@media (max-width: 1150px) {
+    .server, .filterBox {
+        width: 90%;
+        min-width: 0;
+        position: relative;
+        margin: auto;
+    }
 }
 
 a:hover {
@@ -91,13 +113,32 @@ input {
     margin: .25rem;
 }
 
+ul {
+    margin: 0.25rem;
+}
+
+h2 {
+    margin: 0;
+    font-weight: 400;
+    font-size: 1.5rem;
+}
+
+fieldset {
+    border: 1px solid var(--primary);
+}
+
+.pageContent {
+    width: 100%;
+    max-width: 35rem;
+}
+
 .server {
-    font-size: 1.05rem;
+    max-width: 32rem;
     background-color: var(--secondary);
-    margin: 1rem;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    border: 2px solid var(--accent);
+    margin: auto;
+    margin-bottom: .75rem;
+    padding: .66rem;
+    border: 1px solid var(--accent);
     border-radius: 12px;
 }
 
@@ -105,8 +146,22 @@ input {
     margin-top: 1rem;
 }
 
+.filterBox {
+    margin: auto;
+    max-width: 32rem;
+    min-width: 20rem;
+    margin: 0;
+    margin-bottom: 1rem;
+    background-color: #101010;
+    padding: .66rem;
+    border-radius: 12px;
+    border: 1px solid #202020;
+    max-height: 22rem;
+    position: sticky;
+}
+
 button {
-    padding: 1rem;
+    padding: .6rem 1.2rem;
     border: 1px solid black;
     border-radius: 8px;
     margin-right: 1.5rem;
