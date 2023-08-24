@@ -62,12 +62,7 @@ namespace SAMonitor.Controllers
         [HttpGet("GetMasterlist")]
         public string GetMasterlist()
         {
-            string list = "";
-            foreach (var server in ServerManager.GetServers())
-            {
-                list += $"{server.IpAddr}\n";
-            }
-            return list;
+            return ServerManager.GetMasterlist();
         }
 
         [HttpGet("AddServer")]

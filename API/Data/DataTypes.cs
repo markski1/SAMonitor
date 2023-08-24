@@ -9,6 +9,10 @@ namespace SAMonitor.Data
     {
         private static List<Server> servers = new();
 
+        private static List<Server> currentServers = new();
+
+        private static string MasterList = "";
+
         public static async void LoadServers()
         {
             var conn = new MySqlConnection(MySQL.ConnectionString);
@@ -16,6 +20,12 @@ namespace SAMonitor.Data
             var sql = @"SELECT ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, language, sampcac, sponsor FROM servers";
 
             servers = (await conn.QueryAsync<Server>(sql)).ToList();
+
+            currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(24)).ToList();
+
+            UpdateMasterlist();
+
+            CreateTimer();
         }
 
         public static async Task<bool> AddServer(string ipAddr)
@@ -27,7 +37,7 @@ namespace SAMonitor.Data
                 return false;
             }
 
-            servers.Add(newServer);
+            bool success;
 
             Console.WriteLine($"Added server {ipAddr}");
 
@@ -38,7 +48,7 @@ namespace SAMonitor.Data
 
             try
             {
-                return (await conn.ExecuteAsync(sql, new
+                success = (await conn.ExecuteAsync(sql, new
                 {
                     newServer.IpAddr,
                     newServer.Name,
@@ -57,8 +67,16 @@ namespace SAMonitor.Data
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to add {ipAddr} to the database: {ex}");
-                return false;
+                success = false;
             }
+
+            if (success)
+            {
+                servers.Add(newServer);
+                currentServers.Add(newServer);
+            }
+
+            return success;
         }
 
         public static Server? ServerByIP(string ip)
@@ -96,17 +114,48 @@ namespace SAMonitor.Data
 
         public static int TotalPlayers()
         {
-            return servers.Sum(x => x.PlayersOnline);
+            return currentServers.Sum(x => x.PlayersOnline);
         }
 
         public static int ServerCount()
         {
-            return servers.Count;
+            return currentServers.Count;
         }
 
-        internal static IEnumerable<Server> GetServers()
+        public static IEnumerable<Server> GetServers()
         {
-            return servers;
+            return currentServers;
+        }
+
+        public static string GetMasterlist()
+        {
+            return MasterList;
+        }
+
+        private static readonly System.Timers.Timer CurrentCheckTimer = new();
+
+        private static void CreateTimer()
+        {
+            Random rand = new();
+            CurrentCheckTimer.Elapsed += CurrentServersCheck;
+            CurrentCheckTimer.AutoReset = true;
+            CurrentCheckTimer.Interval = 3600000;
+            CurrentCheckTimer.Enabled = true;
+        }
+
+        private static void CurrentServersCheck(object? sender, ElapsedEventArgs e)
+        {
+            currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(24)).ToList();
+            UpdateMasterlist();
+        }
+
+        private static void UpdateMasterlist()
+        {
+            MasterList = "";
+            foreach (var server in currentServers)
+            {
+                MasterList += $"{server.IpAddr}\n";
+            }
         }
     }
 
@@ -274,7 +323,7 @@ namespace SAMonitor.Data
 
         public async Task<List<Player>> GetPlayers()
         {
-            if (LastUpdated < DateTime.Now - TimeSpan.FromHours(1))
+            if (LastUpdated < (DateTime.Now - TimeSpan.FromMinutes(20)))
             {
                 await Query();
             }
