@@ -1,35 +1,49 @@
 # SAMonitor
 
-SAMonitor is a free and open source service, tracking hundreds of SA-MP and open.mp servers.
+This is the monorepo for SAMonitor, a free and open source service, tracking hundreds of SA-MP and open.mp servers.
 
-For now, we mainly provide an API and a Masterlist replacement.
-
-A server browser will be released soon.
+Providing: A server browser, a public API and a Masterlist alternative.
 
 ## Contents
 
+- [Server browser](#server-browser)
 - [Masterlist](#masterlist)
 - [GET Endpoints](#get-endpoints)
+- - [GetAllServers](#getallservers)
+- - [GetServerByIP](#getserverbyip)
+- - [GetServersByName](#getserversbyname)
+- - [GetServerPlayers](#getserverplayers)
+- - [GetTotalPlayers](#gettotalplayers)
 - [Data schemas](#data-schemas)
 - [Add your server](#add-your-server)
 
+## Server browser
+
+The server browser is available at https://sam.markski.ar
+
+It is still at a very early stage. Eventually it'll have filtering among other features.
+
+It consumes the public API endpoints listed below.
+
+It is written in HTMX and PHP, which provides a very lightweight website where logic largely runs on the server side. Ideal for the types of computers and phones to be expected in regions where San Andreas remains popular.
+
 ## Masterlist
 
-We offer a masterlist replacement, at http://gateway.markski.ar:42069/api/GetMasterlist
+We offer a masterlist alternative, at http://sam.markski.ar:42069/api/GetMasterlist
 
 It is a relatively high-quality masterlist, since rather than functioning as a hastily-updated text file or database, it only provides servers which are actively running.
 Servers which failed to be online in the last ~24 hours are not included in this list (but are re-added when they return).
 
 ## GET Endpoints
 
-All of these endpoints are located at `http://gateway.markski.ar:42069/api/`.
+All of these endpoints are located at `http://sam.markski.ar:42069/api/`.
 The endpoint is currently `http` only. It might support `https` in the future, but honestly, given the sensitivity (or lack thereof) of this data, I see no benefits to using it here.
 
 ### GetAllServers
 
 Return a JSON collection with the latest information of every server SAMonitor tracks.
 
-Try it: http://gateway.markski.ar:42069/api/GetAllServers
+Try it: http://sam.markski.ar:42069/api/GetAllServers
 
 ### GetServerByIP
 
@@ -37,35 +51,35 @@ Provided an IP address (optionaly with a specified port), returns information ab
 
 If no port is provided and several servers are under that IP, the one at 7777 will be chosen.
 
-Try it: http://gateway.markski.ar:42069/api/GetServerByIP?ip_addr=151.80.19.151:7777
+Try it: http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=151.80.19.151:7777
 
 ### GetServersByName
 
 Provided a text, return a list of the servers which include that text in their name. Basically search.
 
-Try it: http://gateway.markski.ar:42069/api/GetServersByName?name=Roleplay
+Try it: http://sam.markski.ar:42069/api/GetServersByName?name=Roleplay
 
 ### GetServerPlayers
 
 Provided an IP address (optionaly with a specified port), return a list of players.
 
-Try it: http://gateway.markski.ar:42069/api/GetServerPlayers?ip_addr=51.68.204.178:7777
+Try it: http://sam.markski.ar:42069/api/GetServerPlayers?ip_addr=51.68.204.178:7777
 
 ### GetTotalPlayers
 
 Get a simple integer with the sum of players in the tracked servers.
 
-Try it: http://gateway.markski.ar:42069/api/GetTotalPlayers
+Try it: http://sam.markski.ar:42069/api/GetTotalPlayers
 
 ### GetAmountServers
 
 A little pointless for most, but returns the amount of servers SAMonitor is tracking.
 
-Try it: http://gateway.markski.ar:42069/api/GetAmountServers
+Try it: http://sam.markski.ar:42069/api/GetAmountServers
 
 ## Data schemas
 
-There are two schemas: Player and Server. All 'integer' are 32-bit unsigned.
+There are two schemas: Player and Server.
 
 The player schema is used for GetServerPlayers. It is the simplest schema, and will likely never change.
 
@@ -99,11 +113,11 @@ The API ***should*** never return any null values. Either '0' or "Unknown" would
 
 ## Add your server
 
-A proper web interface for doing this will be available when the site launches.
+You may add your server through the option at the SAMonitor website.
 
-However, if you wish to have your server added now, you may do it in the form of the following call:
+However, there is also an API endpoint for this:
 
 ### AddServer
 Provided an IP address (with port!), adds the server to SAMonitor, if queriable. Otherwise fails. Should return a boolean indicating success or lack thereof.
 
-Usage: `http://gateway.markski.ar:42069/api/AddServer?ip_addr=<ip-address:port>`
+Usage: `http://sam.markski.ar:42069/api/AddServer?ip_addr=<ip-address:port>`

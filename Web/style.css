@@ -1,0 +1,129 @@
+:root {
+    --background: #050c1a;
+    --text: #fbfcfe;
+    --primary: #4e81df;
+    --secondary: #08142b;
+    --accent: #2865d7;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
+    Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    font-size: 1.1rem;
+}
+
+header {
+    width: 100%;
+	margin: 0 auto;
+}
+
+main {
+    margin-top: 2rem;
+    max-width: 50rem;
+}
+
+main :first-child {
+    margin-top: 0
+}
+
+header, header div {
+    text-align: center;
+	gap: .5rem
+}
+
+header h1 {
+    font-size: 2rem;
+}
+
+header a {
+    font-size: 1.2rem;
+    text-decoration-line: none;
+    margin-top: 1rem;
+    margin-left: 1.2rem;
+}
+
+a {
+    color: white;
+}
+
+@media (min-width: 900px) {
+    body {
+		display: grid;
+		grid-template-columns: auto auto;
+		gap: 1rem;
+		justify-items: left;
+	}
+
+    header, header div {
+        display: flex;
+        flex-wrap: wrap;
+		flex-direction: column;
+		justify-content: right;
+		text-align: right;
+        margin-top: 3rem;
+	}
+
+    header {
+        width: 12rem;
+        margin: 0 2rem;
+		justify-self: right;
+    }
+
+    header a {
+        margin-top: .33rem;
+    }
+
+    main {
+		margin: 5rem 0 20rem;
+		margin-right: 6rem
+	}
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+input {
+    padding: .5rem;
+    border-radius: 8px;
+    margin: .25rem;
+}
+
+.server {
+    font-size: 1.05rem;
+    background-color: var(--secondary);
+    margin: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+}
+
+.server div {
+    margin-top: 1rem;
+}
+
+button {
+    padding: 1rem;
+    border: 1px solid black;
+    border-radius: 8px;
+    margin-right: 1.5rem;
+    background-color: var(--accent);
+    border: 2px solid var(--accent);
+    color: white;
+}
+
+button.connectButton {
+    background-color: var(--primary);
+    border: 2px solid var(--primary);
+}
+
+button:hover {
+    border: 2px solid white;
+}
+
+button:active {
+    background-color: black;
+}
