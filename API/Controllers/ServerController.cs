@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Mvc;
 using SAMonitor.Data;
 using System.ComponentModel;
@@ -132,15 +133,16 @@ namespace SAMonitor.Controllers
         }
 
         [HttpGet("AddServer")]
-        public async Task<bool> AddServer(string ip_addr)
+        public async Task<string> AddServer(string ip_addr)
         {
             // ensure this is an IPv4 address
             var items = ip_addr.Split('.');
-            if (items.Length != 4) return false;
-            items = ip_addr.Split(':');
-            if (items.Length != 2) return false;
-            if (ip_addr.Any(x => char.IsLetter(x))) return false;
+            if (items.Length != 4 || ip_addr.Any(x => char.IsLetter(x))) return "Not a valid IPv4 address."; ;
 
+            items = ip_addr.Split(':');
+            if (items.Length != 2) return "No port specified.";
+
+            if (ServerManager.GetServers().Any(x => x.IpAddr == ip_addr)) return "Server is already monitored.";
 
             return (await ServerManager.AddServer(ip_addr));
         }
@@ -152,17 +154,13 @@ namespace SAMonitor.Controllers
 
             var servers = ServerManager.GetServers();
 
-            int added = 0;
-            int failed = 0;
-
             foreach (var addr in addrs)
             {
                 if (servers.Any(x => x.IpAddr == addr)) continue;
-                if (await ServerManager.AddServer(addr)) added++;
-                else failed++;
+                await ServerManager.AddServer(addr);
             }
 
-            return $"done. added {added} servers, {failed} could not be queried.";
+            return $"batch processed.";
         }
     }
 }

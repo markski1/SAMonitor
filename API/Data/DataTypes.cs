@@ -2,6 +2,7 @@ using Dapper;
 using MySqlConnector;
 using SAMPQuery;
 using System.Timers;
+using System.Xml.Linq;
 
 namespace SAMonitor.Data
 {
@@ -10,6 +11,8 @@ namespace SAMonitor.Data
         private static List<Server> servers = new();
 
         private static List<Server> currentServers = new();
+
+        private static List<string> blacklist = new();
 
         private static string MasterList = "";
 
@@ -25,16 +28,31 @@ namespace SAMonitor.Data
 
             UpdateMasterlist();
 
+            UpdateBlacklist();
+
             CreateTimer();
         }
 
-        public static async Task<bool> AddServer(string ipAddr)
+        public static async Task<string> AddServer(string ipAddr)
         {
+            if (IsBlacklisted(ipAddr))
+            {
+                return "IP Address is blacklisted.";
+            }
+
             var newServer = new Server(ipAddr);
 
             if (!await newServer.Query(false))
             {
-                return false;
+                return "Server could not be queried.";
+            }
+
+            // check for copies
+            var copies = currentServers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
+
+            if (copies.Any())
+            {
+                return "Server is already monitored. Be advised: Sneaking in repeated IP's for the same server is a motive for blacklisting.";
             }
 
             bool success;
@@ -74,9 +92,24 @@ namespace SAMonitor.Data
             {
                 servers.Add(newServer);
                 currentServers.Add(newServer);
+
+                return "Server added to SAMonitor.";
+            }
+            else
+            {
+                return "Sorry, there was an error adding your server to SAMonitor.";
             }
 
-            return success;
+        }
+
+        private static bool IsBlacklisted(string ipAddr)
+        {
+            foreach (var addr in blacklist)
+            {
+                if (ipAddr.Contains(addr))
+                    return true;
+            }
+            return false;
         }
 
         public static Server? ServerByIP(string ip)
@@ -139,7 +172,7 @@ namespace SAMonitor.Data
             Random rand = new();
             CurrentCheckTimer.Elapsed += CurrentServersCheck;
             CurrentCheckTimer.AutoReset = true;
-            CurrentCheckTimer.Interval = 3600000;
+            CurrentCheckTimer.Interval = 2000000;
             CurrentCheckTimer.Enabled = true;
         }
 
@@ -155,6 +188,29 @@ namespace SAMonitor.Data
             foreach (var server in currentServers)
             {
                 MasterList += $"{server.IpAddr}\n";
+            }
+        }
+
+        private static async void UpdateBlacklist()
+        {
+            var conn = new MySqlConnection(MySQL.ConnectionString);
+
+            var sql = @"SELECT * FROM blacklist";
+
+            blacklist = (await conn.QueryAsync<string>(sql)).ToList();
+
+            // check all servers for blacklists.
+            foreach (var server in currentServers)
+            {
+                foreach (var blocked_addr in blacklist)
+                {
+                    if (server.IpAddr.Contains(blocked_addr))
+                    {
+                        sql = @"DELETE FROM blacklist WHERE ip_addr = @IpAddr";
+                        await conn.ExecuteAsync(sql, new { server.IpAddr });
+                        currentServers.Remove(server);
+                    }
+                }
             }
         }
     }
