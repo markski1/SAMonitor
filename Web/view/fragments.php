@@ -1,7 +1,9 @@
 <?php
 
 function DrawServer($server, $num, $details = false) {
+    $server = array_map('htmlspecialchars', $server);
 ?>
+
     <h2><?=$server['name']?></h2>
     <div>
         <fieldset>
@@ -20,6 +22,8 @@ function DrawServer($server, $num, $details = false) {
 }
 
 function DrawServerDetailed($server, $num) {
+    $server = array_map('htmlspecialchars', $server);
+
     if ($server['website'] != "Unknown") {
         $website = '<a href="'.$server['website'].'">'.$server['website'].'</a>';
     }
@@ -48,12 +52,15 @@ function DrawServerDetailed($server, $num) {
                         </tr>
                         <tr>
                             <th><b>Lag compensation</b></th><th><?=$lagcomp?></th>
-                        </tr> 
+                        </tr>
                         <tr>
-                            <th><b>SAMPCAC</b></th><th><?=$server['sampCac']?></th>
+                            <th><b>Version</b></th><th><?=$server['version']?></th>
                         </tr>
                         <tr>
                             <th><b>Website</b></th><th><?=$website?></th>
+                        </tr>
+                        <tr>
+                            <th><b>SAMPCAC</b></th><th><?=$server['sampCac']?></th>
                         </tr>
                         <tr>
                             <th><b>Last updated</b></th><th><?=timeSince($last_updated)?> ago</th>

@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using MySqlConnector;
 using SAMPQuery;
 using System.Timers;
@@ -20,7 +20,7 @@ namespace SAMonitor.Data
         {
             var conn = new MySqlConnection(MySQL.ConnectionString);
 
-            var sql = @"SELECT ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, language, sampcac, sponsor FROM servers";
+            var sql = @"SELECT ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor FROM servers";
 
             servers = (await conn.QueryAsync<Server>(sql)).ToList();
 
@@ -44,7 +44,7 @@ namespace SAMonitor.Data
 
             if (!await newServer.Query(false))
             {
-                return "Server could not be queried.";
+                return "Server did not respond to query.";
             }
 
             // check for copies
@@ -61,8 +61,8 @@ namespace SAMonitor.Data
 
             var conn = new MySqlConnection(MySQL.ConnectionString);
 
-            var sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, language, sampcac)
-                        VALUES(@IpAddr, @Name, @LastUpdated, @AllowsDL, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Language, @SampCac)";
+            var sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
+                        VALUES(@IpAddr, @Name, @LastUpdated, @AllowsDL, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
 
             try
             {
@@ -231,13 +231,14 @@ namespace SAMonitor.Data
         public string IpAddr { get; set; }
         public string MapName { get; set; }
         public string Website { get; set; }
+        public string Version { get; set; }
         public string Language { get; set; }
         public string SampCac { get; set; }
         private List<Player> Players { get; set; }
         public int Sponsor { get; set; }
 
         // Database fetch constructor
-        public Server(string ip_addr, string name, DateTime last_updated, int allows_dl, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string language, string sampcac, int sponsor)
+        public Server(string ip_addr, string name, DateTime last_updated, int allows_dl, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, int sponsor)
         {
             Name = name;
             LastUpdated = last_updated;
@@ -249,6 +250,7 @@ namespace SAMonitor.Data
             GameMode = gamemode;
             IpAddr = ip_addr;
             Website = website;
+            Version = version;
             SampCac = sampcac;
             Language = language;
             Players = new();
@@ -269,6 +271,7 @@ namespace SAMonitor.Data
             MaxPlayers = 0;
             AllowsDL = false;
             LagComp = false;
+            Version = "Unknown";
             MapName = "Unknown";
             GameMode = "Unknown";
             Website = "Unknown";
@@ -308,8 +311,8 @@ namespace SAMonitor.Data
 
             try
             {
-                serverInfo = server.GetServerInfo();
-                serverRules = server.GetServerRules();
+                serverInfo = await server.GetServerInfoAsync();
+                serverRules = await server.GetServerRulesAsync();
 
                 if (serverInfo is null || serverRules is null || serverInfo.HostName is null)
                 {
@@ -317,8 +320,9 @@ namespace SAMonitor.Data
                     return false;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error querying {IpAddr}: {ex}");
                 return false;
             }
 
@@ -327,12 +331,22 @@ namespace SAMonitor.Data
             MaxPlayers = serverInfo.MaxPlayers;
             GameMode = serverInfo.GameMode;
             Language = serverInfo.Language ?? "Unknown";
+            Version = serverRules.Version ?? "Unknown"; ;
             MapName = serverRules.MapName ?? "Unknown";
             SampCac = serverRules.SAMPCAC_Version ?? "Not required";
             LagComp = serverRules.Lagcomp;
             Website = serverRules.Weburl.ToString() ?? "Unknown";
             WorldTime = serverRules.WorldTime;
             LastUpdated = DateTime.Now;
+
+            // This is not a standard latin 'c', this is cyrillic character 'с', which SA-MP servers commonly return in place of the spanish ñ, for some reason.
+            // So, if the server doesn't seem russian, we replace that character for a proper ñ.
+            // It's dirty but I can't think of a less disruptive way to address this issue.
+            if (Language.ToLower().Contains("ru") == false)
+            {
+                Name = Name.Replace('с', 'ñ');
+                Language = Language.Replace('с', 'ñ');
+            }
 
             bool success = true;
 
@@ -341,12 +355,12 @@ namespace SAMonitor.Data
                 var conn = new MySqlConnection(MySQL.ConnectionString);
 
                 var sql = @"UPDATE servers
-                            SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, allows_dl=@AllowsDL, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, language=@Language, sampcac=@SampCac
+                            SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, allows_dl=@AllowsDL, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
                             WHERE ip_addr = @IpAddr";
 
                 try
                 {
-                    success = (await conn.ExecuteAsync(sql, new { IpAddr, Name, LastUpdated, AllowsDL, LagComp, MapName, GameMode, PlayersOnline, MaxPlayers, Website, Language, SampCac })) > 0;
+                    success = (await conn.ExecuteAsync(sql, new { IpAddr, Name, LastUpdated, AllowsDL, LagComp, MapName, GameMode, PlayersOnline, MaxPlayers, Website, Version, Language, SampCac })) > 0;
                 }
                 catch
                 {
