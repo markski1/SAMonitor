@@ -18,8 +18,9 @@
             <label><input type="radio" name="order" value="players"> Order by players</label><br />
             <label><input type="radio" name="order" checked value="ratio"> Order by players/max ratio</label>
         </fieldset>
-        <div style="margin-top: .5rem">
-            <input type="submit" value="Apply filter" />
+        <div style="margin-top: .5rem; margin-bottom: 0; width: 10rem">
+            <input type="submit" value="Apply filter" hx-indicator="#filter-indicator" />
+            <img style="width: 2rem; vertical-align: middle" src="assets/loading.svg" id="filter-indicator" class="htmx-indicator" />
         </div>
     </form>
 </div>

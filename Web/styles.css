@@ -45,7 +45,7 @@ header h1 {
 }
 
 header a {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     text-decoration-line: none;
     margin-top: 1rem;
 }
@@ -116,6 +116,16 @@ input {
     margin: .25rem;
 }
 
+input[type=checkbox], input[type=radio] {
+    width: 1.75rem;
+    height: 1.25rem;
+    margin-top: 8px;
+}
+
+label {
+    vertical-align: middle;
+}
+
 ul {
     margin: 0.25rem;
 }
@@ -159,7 +169,7 @@ fieldset {
     border: 1px solid #202020;
     padding: .66rem;
     border-radius: 12px;
-    max-height: 22rem;
+    max-height: 23rem;
     position: sticky;
 }
 

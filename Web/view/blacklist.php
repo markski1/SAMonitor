@@ -1,3 +1,4 @@
+<?php ?>
 <div>
     <p>Dishonest activity will result in servers being blacklisted.</p>
 

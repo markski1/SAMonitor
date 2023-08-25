@@ -8,7 +8,7 @@
             <legend>Add server</legend>
             <form hx-target="#result" hx-post="./action/add.php">
                 IP Address:<br />
-                <input required type="text" name="ip_addr" style="width: 20rem" placeholder="address:port format please."/> <input type="submit" value="Add server" />
+                <input required type="text" name="ip_addr" style="width: 20rem" placeholder="address:port format please."/> <input type="submit" value="Add server" hx-indicator="#add-indicator" /> <img style="width: 2rem; vertical-align: middle" src="assets/loading.svg" id="add-indicator" class="htmx-indicator" />
                 <div id="result" style="margin-top: 1rem"><p>Waiting...</p></div>
             </form>
         </fieldset>

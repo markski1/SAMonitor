@@ -1,3 +1,4 @@
+<?php ?>
 <div>
     <p>SAMonitor is a SA-MP and open.mp server monitor. It tracks activity of them and is a good replacement of standard listings.</p>
 

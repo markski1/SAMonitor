@@ -14,7 +14,7 @@ function DrawServer($server, $num, $details = false) {
         </fieldset>
     </div>
     <div style="text-align: right">
-        <a href="" hx-get="view/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>"><button>More details</button></a> <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+        <button hx-get="view/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>">More details</button> <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
     </div>
 <?php
 }
@@ -36,7 +36,7 @@ function DrawServerDetailed($server, $num) {
             <fieldset>
                 <legend style="font-size: 1.5rem; font-weight: 400"><?=$server['gameMode']?></legend>
                 <span style="font-weight: 400; font-size: 1.2rem" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></span><br />
-                
+
                 <p style="margin: .33rem 0">
                     <b><?=$server['playersOnline']?>/<?=$server['maxPlayers']?></b> players / Language: <?=$server['language']?>
                 </p>
