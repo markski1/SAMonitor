@@ -3,157 +3,169 @@ using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using SAMonitor.Data;
 
-namespace SAMonitor.Controllers
+namespace SAMonitor.Controllers;
+
+[ApiController]
+[Route("api")]
+public class ApiController : ControllerBase
 {
-    [ApiController]
-    [Route("api")]
-    public class ApiController : ControllerBase
+    private readonly ILogger<ApiController> _logger;
+
+    public ApiController(ILogger<ApiController> logger)
     {
-        private readonly ILogger<ApiController> _logger;
+        _logger = logger;
+    }
 
-        public ApiController(ILogger<ApiController> logger)
+    [HttpGet("GetServerByIP")]
+    public Server? GetServerByIP(string ip_addr)
+    {
+        var result = ServerManager.ServerByIP(ip_addr);
+
+        return result;
+    }
+
+    [HttpGet("GetAllServers")]
+    public IEnumerable<Server> GetAllServers()
+    {
+        return ServerManager.GetServers();
+    }
+
+    [HttpGet("GetFilteredServers")]
+    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int paging_size = 0, int page = 0)
+    {
+        var servers = ServerManager.GetServers();
+
+        // unless specified, don't show empty servers.
+        if (show_empty == 0)
         {
-            _logger = logger;
+            servers = servers.Where(x => x.PlayersOnline > 0);
         }
 
-        [HttpGet("GetServerByIP")]
-        public Server? GetServerByIP(string ip_addr)
+        if (name != "unspecified")
         {
-            var result = ServerManager.ServerByIP(ip_addr);
-
-            return result;
+            servers = servers.Where(x => x.Name.ToLower().Contains(name.ToLower()));
         }
 
-        [HttpGet("GetAllServers")]
-        public IEnumerable<Server> GetAllServers()
+        if (gamemode != "unspecified")
         {
-            return ServerManager.GetServers();
+            servers = servers.Where(x => x.GameMode.ToLower().Contains(gamemode.ToLower()));
         }
 
-        [HttpGet("GetFilteredServers")]
-        public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int paging_size = 0, int page = 0)
+        // after ordering we exclusively manage lists
+        // as lists guarantee order and generic enumerables do not.
+
+        List<Server> orderedServers;
+
+        // if specified, order
+        if (order != "none")
         {
-            var servers = ServerManager.GetServers();
-
-            // unless specified, don't show empty servers.
-            if (show_empty == 0)
+            // by player count
+            if (order == "players")
             {
-                servers = servers.Where(x => x.PlayersOnline > 0);
+                orderedServers = servers.OrderByDescending(x => x.PlayersOnline).ToList();
             }
-
-            if (name != "unspecified")
-            {
-                servers = servers.Where(x => x.Name.ToLower().Contains(name.ToLower()));
-            }
-
-            if (gamemode != "unspecified")
-            {
-                servers = servers.Where(x => x.GameMode.ToLower().Contains(gamemode.ToLower()));
-            }
-
-            // after ordering we exclusively manage lists
-            // as lists guarantee order and generic enumerables do not.
-
-            List<Server> orderedServers;
-
-            // if specified, order
-            if (order != "none")
-            {
-                // by player count
-                if (order == "players")
-                {
-                    orderedServers = servers.OrderByDescending(x => x.PlayersOnline).ToList();
-                }
-                // by player count over max player ratio.
-                else
-                {
-                    // show_empty=0 guarantees PlayersOnline will never be zero.
-                    // otherwise we have to separate them
-                    if (show_empty == 0)
-                    {
-                        orderedServers = servers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
-                    }
-                    else
-                    {
-                        var emptyServers = servers.Where(x => x.PlayersOnline == 0);
-                        var populatedServers = servers.Where(x => x.PlayersOnline > 0);
-
-                        orderedServers = populatedServers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
-                        orderedServers.AddRange(emptyServers);
-                    }
-                }
-            }
+            // by player count over max player ratio.
             else
             {
-                orderedServers = servers.ToList();
-            }
+                // show_empty=0 guarantees PlayersOnline will never be zero.
+                // otherwise we have to separate them
+                if (show_empty == 0)
+                {
+                    orderedServers = servers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
+                }
+                else
+                {
+                    var emptyServers = servers.Where(x => x.PlayersOnline == 0);
+                    var populatedServers = servers.Where(x => x.PlayersOnline > 0);
 
-            // If we're paging, return a "page".
-            if (paging_size > 0)
+                    orderedServers = populatedServers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
+                    orderedServers.AddRange(emptyServers);
+                }
+            }
+        }
+        else
+        {
+            orderedServers = servers.ToList();
+        }
+
+        // If we're paging, return a "page".
+        if (paging_size > 0)
+        {
+            try
             {
-                try
-                {
-                    return orderedServers.Skip(paging_size * page).Take(paging_size).ToList();
-                }
-                catch
-                {
-                    // nothing, just return the full list. this just protects from malicious pagingSize or page values.
-                }
+                return orderedServers.Skip(paging_size * page).Take(paging_size).ToList();
             }
-
-            return orderedServers;
+            catch
+            {
+                // nothing, just return the full list. this just protects from malicious pagingSize or page values.
+            }
         }
 
-        [HttpGet("GetServerPlayers")]
-        public async Task<List<Player>?> GetServerPlayers(string ip_addr)
-        {
-            var result = ServerManager.ServerByIP(ip_addr);
+        return orderedServers;
+    }
 
-            if (result is null) return null;
+    [HttpGet("GetServerPlayers")]
+    public async Task<List<Player>?> GetServerPlayers(string ip_addr)
+    {
+        var result = ServerManager.ServerByIP(ip_addr);
 
-            return await result.GetPlayers();
-        }
+        if (result is null) return null;
 
-        [HttpGet("GetTotalPlayers")]
-        public int GetTotalPlayers()
-        {
-            return ServerManager.TotalPlayers();
-        }
+        return await result.GetPlayers();
+    }
 
-        [HttpGet("GetAmountServers")]
-        public int GetAmountServers(int includeDead = 0)
-        {
-            return ServerManager.ServerCount(includeDead);
-        }
+    [HttpGet("GetTotalPlayers")]
+    public int GetTotalPlayers()
+    {
+        return ServerManager.TotalPlayers();
+    }
 
-        [HttpGet("GetMasterlist")]
-        public string GetMasterlist()
-        {
-            return ServerManager.GetMasterlist();
-        }
+    [HttpGet("GetAmountServers")]
+    public int GetAmountServers(int includeDead = 0)
+    {
+        return ServerManager.ServerCount(includeDead);
+    }
 
-        [HttpGet("AddServer")]
-        public async Task<string> AddServer(string ip_addr)
-        {
-            // ensure this is an IPv4 address
-            var items = ip_addr.Split('.');
-            if (items.Length != 4 || ip_addr.Any(x => char.IsLetter(x))) return "Not a valid IPv4 address."; ;
+    [HttpGet("GetMasterlist")]
+    public string GetMasterlist()
+    {
+        return ServerManager.GetMasterlist();
+    }
 
-            items = ip_addr.Split(':');
-            if (items.Length != 2) return "No port specified.";
+    [HttpGet("AddServer")]
+    public async Task<string> AddServer(string ip_addr)
+    {
+        // ensure this is an IPv4 address
+        var items = ip_addr.Split('.');
+        if (items.Length != 4 || ip_addr.Any(x => char.IsLetter(x))) return "Not a valid IPv4 address."; ;
 
-            return (await ServerManager.AddServer(ip_addr));
-        }
+        items = ip_addr.Split(':');
+        if (items.Length != 2) return "No port specified.";
 
-        [HttpGet("GetGlobalMetrics")]
-        public async Task<List<Metrics>> GetGlobalMetrics(int hours = 6)
-        {
-            DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
+        return (await ServerManager.AddServer(ip_addr));
+    }
 
-            var conn = new MySqlConnection(MySQL.ConnectionString);
-            var sql = @"SELECT players, servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
+    [HttpGet("GetGlobalMetrics")]
+    public async Task<List<GlobalMetrics>> GetGlobalMetrics(int hours = 6)
+    {
+        DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
-            return (await conn.QueryAsync<Metrics>(sql, new { RequestTime })).ToList();
-        }
+        var conn = new MySqlConnection(MySQL.ConnectionString);
+        var sql = @"SELECT players, servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
+
+        return (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime })).ToList();
+}
+
+    [HttpGet("GetServerMetrics")]
+    public async Task<dynamic> GetServerMetrics(string ip_addr = "none", int hours = 6)
+    {
+        DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
+
+        int Id = ServerManager.GetServerIDFromIP(ip_addr);
+
+        var conn = new MySqlConnection(MySQL.ConnectionString);
+        var sql = @"SELECT players, time FROM metrics_server WHERE time > @RequestTime AND server_id = @Id ORDER BY time DESC";
+
+        return (await conn.QueryAsync<ServerMetrics>(sql, new { RequestTime, Id })).ToList();
     }
 }
