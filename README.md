@@ -14,6 +14,7 @@ Providing: A server browser, a public API and a Masterlist alternative.
 - - [GetServerByIP](#getserverbyip)
 - - [GetServerPlayers](#getserverplayers)
 - - [GetTotalPlayers](#gettotalplayers)
+- - [GetMetrics](#getmetrics)
 - [Data schemas](#data-schemas)
 - [Add your server](#add-your-server)
 
@@ -98,6 +99,14 @@ Try it: http://sam.markski.ar:42069/api/GetTotalPlayers
 A little pointless for most, but returns the amount of servers SAMonitor is tracking.
 
 Try it: http://sam.markski.ar:42069/api/GetAmountServers
+
+### GetGlobalMetrics
+
+Providing an amount of hours, get metrics for global count of players and servers for several times.
+
+If no hour is provided, defaults to 6.
+
+Try it: http://sam.markski.ar:42069/api/GetGlobalMetrics?hours=6
 
 ## Data schemas
 
