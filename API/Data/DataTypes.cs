@@ -1,220 +1,10 @@
 ﻿using Dapper;
-using MySqlConnector;
 using SAMPQuery;
 using System.Timers;
-using System.Xml.Linq;
+using MySqlConnector;
 
 namespace SAMonitor.Data
 {
-    public static class ServerManager
-    {
-        private static List<Server> servers = new();
-
-        private static List<Server> currentServers = new();
-
-        private static List<string> blacklist = new();
-
-        private static string MasterList = "";
-
-        public static async void LoadServers()
-        {
-            var conn = new MySqlConnection(MySQL.ConnectionString);
-
-            var sql = @"SELECT ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor FROM servers";
-
-            servers = (await conn.QueryAsync<Server>(sql)).ToList();
-
-            currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(24)).ToList();
-
-            UpdateMasterlist();
-
-            UpdateBlacklist();
-
-            CreateTimer();
-        }
-
-        public static async Task<string> AddServer(string ipAddr)
-        {
-            if (IsBlacklisted(ipAddr))
-            {
-                return "IP Address is blacklisted.";
-            }
-
-            var newServer = new Server(ipAddr);
-
-            if (!await newServer.Query(false))
-            {
-                return "Server did not respond to query.";
-            }
-
-            // check for copies
-            var copies = currentServers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
-
-            if (copies.Any())
-            {
-                return "Server is already monitored. Be advised: Sneaking in repeated IP's for the same server is a motive for blacklisting.";
-            }
-
-            bool success;
-
-            Console.WriteLine($"Added server {ipAddr}");
-
-            var conn = new MySqlConnection(MySQL.ConnectionString);
-
-            var sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
-                        VALUES(@IpAddr, @Name, @LastUpdated, @AllowsDL, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
-
-            try
-            {
-                success = (await conn.ExecuteAsync(sql, new
-                {
-                    newServer.IpAddr,
-                    newServer.Name,
-                    newServer.LastUpdated,
-                    newServer.AllowsDL,
-                    newServer.LagComp,
-                    newServer.MapName,
-                    newServer.GameMode,
-                    newServer.PlayersOnline,
-                    newServer.MaxPlayers,
-                    newServer.Website,
-                    newServer.Language,
-                    newServer.SampCac
-                })) > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to add {ipAddr} to the database: {ex}");
-                success = false;
-            }
-
-            if (success)
-            {
-                servers.Add(newServer);
-                currentServers.Add(newServer);
-
-                return "Server added to SAMonitor.";
-            }
-            else
-            {
-                return "Sorry, there was an error adding your server to SAMonitor.";
-            }
-
-        }
-
-        private static bool IsBlacklisted(string ipAddr)
-        {
-            foreach (var addr in blacklist)
-            {
-                if (ipAddr.Contains(addr))
-                    return true;
-            }
-            return false;
-        }
-
-        public static Server? ServerByIP(string ip)
-        {
-            var result = servers.Where(x => x.IpAddr.Contains(ip)).ToList();
-
-            if (result.Count < 1) {
-                return null;
-            }
-
-            if (result.Count > 0)
-            {
-                var newFind = result.Where(x => x.IpAddr.Contains("7777")).ToList();
-
-                if (newFind.Count > 0)
-                {
-                    return newFind.FirstOrDefault();
-                }
-            }
-
-            return result.FirstOrDefault();
-        }
-
-        public static List<Server> ServersByName(string name)
-        {
-            var results = servers.Where(x => x.Name.Contains(name)).ToList();
-
-            if (results is null)
-            {
-                return new List<Server>();
-            }
-
-            return results;
-        }
-
-        public static int TotalPlayers()
-        {
-            return currentServers.Sum(x => x.PlayersOnline);
-        }
-
-        public static int ServerCount()
-        {
-            return currentServers.Count;
-        }
-
-        public static IEnumerable<Server> GetServers()
-        {
-            return currentServers;
-        }
-
-        public static string GetMasterlist()
-        {
-            return MasterList;
-        }
-
-        private static readonly System.Timers.Timer CurrentCheckTimer = new();
-
-        private static void CreateTimer()
-        {
-            Random rand = new();
-            CurrentCheckTimer.Elapsed += CurrentServersCheck;
-            CurrentCheckTimer.AutoReset = true;
-            CurrentCheckTimer.Interval = 2000000;
-            CurrentCheckTimer.Enabled = true;
-        }
-
-        private static void CurrentServersCheck(object? sender, ElapsedEventArgs e)
-        {
-            currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(24)).ToList();
-            UpdateMasterlist();
-        }
-
-        private static void UpdateMasterlist()
-        {
-            MasterList = "";
-            foreach (var server in currentServers)
-            {
-                MasterList += $"{server.IpAddr}\n";
-            }
-        }
-
-        private static async void UpdateBlacklist()
-        {
-            var conn = new MySqlConnection(MySQL.ConnectionString);
-
-            var sql = @"SELECT * FROM blacklist";
-
-            blacklist = (await conn.QueryAsync<string>(sql)).ToList();
-
-            // check all servers for blacklists.
-            foreach (var server in currentServers)
-            {
-                foreach (var blocked_addr in blacklist)
-                {
-                    if (server.IpAddr.Contains(blocked_addr))
-                    {
-                        sql = @"DELETE FROM blacklist WHERE ip_addr = @IpAddr";
-                        await conn.ExecuteAsync(sql, new { server.IpAddr });
-                        currentServers.Remove(server);
-                    }
-                }
-            }
-        }
-    }
-
     public class Server
     {
         private readonly System.Timers.Timer QueryTimer = new();
@@ -320,9 +110,8 @@ namespace SAMonitor.Data
                     return false;
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error querying {IpAddr}: {ex}");
                 return false;
             }
 
@@ -339,13 +128,17 @@ namespace SAMonitor.Data
             WorldTime = serverRules.WorldTime;
             LastUpdated = DateTime.Now;
 
-            // This is not a standard latin 'c', this is cyrillic character 'с', which SA-MP servers commonly return in place of the spanish ñ, for some reason.
+            // This is not a standard latin 'c' being replaced, and it's not a standard latin 'py' being checked for.
+            // This is cyrillic character 'с', which SA-MP servers commonly return in place of the spanish ñ, for some reason.
             // So, if the server doesn't seem russian, we replace that character for a proper ñ.
-            // It's dirty but I can't think of a less disruptive way to address this issue.
-            if (Language.ToLower().Contains("ru") == false)
+            // It's dirty, but I can't think of a less disruptive way to address this issue.
+            // "ру" is also cyrillic "ru"
+            if (Language.ToLower().Contains("ru") == false && Language.ToLower().Contains("ру"))
             {
                 Name = Name.Replace('с', 'ñ');
                 Language = Language.Replace('с', 'ñ');
+                GameMode = GameMode.Replace('с', 'ñ');
+                MapName = MapName.Replace('с', 'ñ');
             }
 
             bool success = true;
@@ -413,6 +206,19 @@ namespace SAMonitor.Data
             Ping = player.PlayerPing;
             Name = player.PlayerName;
             Score = player.PlayerScore;
+        }
+    }
+    public class Metrics
+    {
+        public int Players { get; set; }
+        public int Servers { get; set; }
+        public DateTime Time { get; set; }
+
+        public Metrics(int players, int servers, DateTime time)
+        {
+            Players = players;
+            Servers = servers;
+            Time = time;
         }
     }
 }

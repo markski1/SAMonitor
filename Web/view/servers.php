@@ -3,7 +3,7 @@
     $total_players = file_get_contents("http://sam.markski.ar:42069/api/GetTotalPlayers");
 ?>
 <div class="filterBox">
-    <p>Tracking <?=$total_players?> players across <?=$total_servers?> servers.</p>
+    <p>Tracking <?=$total_servers?> servers, with <?=$total_players?> players total.</p>
     <form hx-get="./view/list.php" hx-target="#server-list">
         <fieldset>
             <legend>Search</legend>

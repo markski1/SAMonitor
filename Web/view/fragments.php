@@ -48,22 +48,22 @@ function DrawServerDetailed($server, $num) {
                     <legend>Details</legend>
                     <table style="width: 100%; font-weight: 400; text-align: left">
                         <tr>
-                            <th><b>Map</b></th><th><?=$server['mapName']?></th>
+                            <td><b>Map</b></td><td><?=$server['mapName']?></td>
                         </tr>
                         <tr>
-                            <th><b>Lag compensation</b></th><th><?=$lagcomp?></th>
+                            <td><b>Lag compensation</b></td><td><?=$lagcomp?></td>
                         </tr>
                         <tr>
-                            <th><b>Version</b></th><th><?=$server['version']?></th>
+                            <td><b>Version</b></td><td><?=$server['version']?></td>
                         </tr>
                         <tr>
-                            <th><b>Website</b></th><th><?=$website?></th>
+                            <td><b>Website</b></td><td><?=$website?></td>
                         </tr>
                         <tr>
-                            <th><b>SAMPCAC</b></th><th><?=$server['sampCac']?></th>
+                            <td><b>SAMPCAC</b></td><td><?=$server['sampCac']?></td>
                         </tr>
                         <tr>
-                            <th><b>Last updated</b></th><th><?=timeSince($last_updated)?> ago</th>
+                            <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
                         </tr>
                     </table>
                 </fieldset>

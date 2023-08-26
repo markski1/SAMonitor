@@ -23,5 +23,9 @@
             <legend>LS.CITY</legend>
             <p>Blocked for faking player count.<br />Permanently reporting 2000/2000 despite that not being the case.</p>
         </fieldset>
+        <fieldset>
+            <legend>Arizona RP</legend>
+            <p>Blocked for faking player count.<br />Showing numbers much greater on queries than they were in-game.</p>
+        </fieldset>
     </div>
 </div>

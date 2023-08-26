@@ -54,6 +54,10 @@ header .separators {
     display: inline;
 }
 
+tr, td, th {
+    border: 1px solid gray;
+}
+
 a {
     color: white;
 }
@@ -153,7 +157,7 @@ fieldset {
     padding: .66rem;
     border: 1px solid var(--accent);
     border-radius: 12px;
-    box-shadow: #6d9dab99 3px 3px, #6d9dab77 6px 6px, #6d9dab55 9px 9px, #6d9dab33 12px 12px, #6d9dab11 15px 15px;
+    box-shadow: #6d9dab55 4px 4px;
 }
 
 .server div {

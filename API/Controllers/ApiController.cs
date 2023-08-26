@@ -1,17 +1,17 @@
-using Microsoft.AspNetCore.Hosting.Server;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
+using MySqlConnector;
 using SAMonitor.Data;
-using System.ComponentModel;
 
 namespace SAMonitor.Controllers
 {
     [ApiController]
     [Route("api")]
-    public class ServerController : ControllerBase
+    public class ApiController : ControllerBase
     {
-        private readonly ILogger<ServerController> _logger;
+        private readonly ILogger<ApiController> _logger;
 
-        public ServerController(ILogger<ServerController> logger)
+        public ApiController(ILogger<ApiController> logger)
         {
             _logger = logger;
         }
@@ -121,9 +121,9 @@ namespace SAMonitor.Controllers
         }
 
         [HttpGet("GetAmountServers")]
-        public int GetAmountServers()
+        public int GetAmountServers(int includeDead = 0)
         {
-            return ServerManager.ServerCount();
+            return ServerManager.ServerCount(includeDead);
         }
 
         [HttpGet("GetMasterlist")]
@@ -142,8 +142,6 @@ namespace SAMonitor.Controllers
             items = ip_addr.Split(':');
             if (items.Length != 2) return "No port specified.";
 
-            if (ServerManager.GetServers().Any(x => x.IpAddr == ip_addr)) return "Server is already monitored.";
-
             return (await ServerManager.AddServer(ip_addr));
         }
 
@@ -152,15 +150,23 @@ namespace SAMonitor.Controllers
         {
             string[] addrs = ip_addrs.Split(';');
 
-            var servers = ServerManager.GetServers();
-
             foreach (var addr in addrs)
             {
-                if (servers.Any(x => x.IpAddr == addr)) continue;
                 await ServerManager.AddServer(addr);
             }
 
             return $"batch processed.";
+        }
+
+        [HttpGet("GetGlobalMetrics")]
+        public async Task<List<Metrics>> GetGlobalMetrics(int hours = 6)
+        {
+            DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
+
+            var conn = new MySqlConnection(MySQL.ConnectionString);
+            var sql = @"SELECT players, servers, time FROM metrics_global WHERE time > @RequestTime";
+
+            return (await conn.QueryAsync<Metrics>(sql, new { RequestTime })).ToList();
         }
     }
 }
