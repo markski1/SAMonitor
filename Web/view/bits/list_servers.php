@@ -9,15 +9,13 @@
         $filters .= "show_empty=1";
     }
     else {
-        $filters .= "no_empty";
+        $filters .= "no_empty"; // this doesn't do anything, but it avoids having to deal with using ? instead of & elsewhere.
     }
 
     $order = $_GET['order'] ?? "ratio";
-
     $filters .= "&order=".$order;
 
     $page = $_GET['page'] ?? 0;
-
     $filters .= "&paging_size=20";
 
     if (isset($_GET['name']) && strlen($_GET['name']) > 0) {
@@ -42,9 +40,11 @@
         $num++;
     }
 
-    echo '
-        <div hx-target="this" style="margin: 3rem">
-            <center><button hx-trigger="click" hx-get="./view/list.php'.$filters.'&page='.($page + 1).'" hx-swap="outerHTML">Load more</button></center>
-        </div>
-    ';
+    if (Count($servers) == 20) {   
+        echo '
+            <div hx-target="this" style="margin: 3rem">
+                <center><button hx-trigger="click" hx-get="./view/bits/list_servers.php'.$filters.'&page='.($page + 1).'" hx-swap="outerHTML">Load more</button></center>
+            </div>
+        ';
+    }
 ?>

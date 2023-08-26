@@ -4,11 +4,17 @@
 ?>
 <div class="filterBox">
     <p>Tracking <?=$total_servers?> servers, with <?=$total_players?> players total.</p>
-    <form hx-get="./view/list.php" hx-target="#server-list">
+    <form hx-get="./view/bits/list_servers.php" hx-target="#server-list">
         <fieldset>
             <legend>Search</legend>
-            <label>Name: <input type="text" name="name" <?php if (isset($_GET['name'])) echo 'value="{}"'?> /></label><br />
-            <label>Gamemode: <input type="text" name="gamemode" /></label>
+            <table>
+                <tr>
+                    <td>Name:</td><td><input type="text" name="name" <?php if (isset($_GET['name'])) echo 'value="{}"'?> /></td>
+                </tr>
+                <tr>
+                    <td>Gamemode:</td><td><input type="text" name="gamemode" /></td>
+                </td>
+            </table>
         </fieldset>
 
         <fieldset>
@@ -24,7 +30,7 @@
         </div>
     </form>
 </div>
-<div id="server-list" class="pageContent" hx-get="view/list.php" hx-trigger="load">
+<div id="server-list" class="pageContent" hx-get="view/bits/list_servers.php" hx-trigger="load">
     <h1>Loading servers!</h1>
     <p>Please wait. If servers don't load in, SAMonitor might be having issues, please check in later!. Alternatively, if you're using NoScript, you'll need to disable it.</p>
 </div>

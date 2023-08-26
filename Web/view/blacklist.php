@@ -1,5 +1,6 @@
 <?php ?>
 <div>
+    <h2>Blacklist</h2>
     <p>Dishonest activity will result in servers being blacklisted.</p>
 
     <div class="innerContent">

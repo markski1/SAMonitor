@@ -1,23 +1,26 @@
 <?php
 
-function DrawServer($server, $num, $details = false) {
+function DrawServer($server, $num) {
     $server = array_map('htmlspecialchars', $server);
 ?>
 
     <h2><?=$server['name']?></h2>
     <div>
         <fieldset>
-            <legend style="font-size: 1.5rem; font-weight: 400"><?=$server['gameMode']?></legend>
-            <span style="font-weight: 400; font-size: 1.2rem" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></span><br />
-            
-            <p style="margin: .33rem 0">
-                <b><?=$server['playersOnline']?>/<?=$server['maxPlayers']?></b> players / Language: <?=$server['language']?>
+            <legend class="gameMode"><?=$server['gameMode']?></legend>
+            <p class="serverInfo">
+                <b>Players</b>: <?=$server['playersOnline']?> / <?=$server['maxPlayers']?><br />
+                <b>Language</b>: <?=$server['language']?>
             </p>
         </fieldset>
     </div>
-    <div style="text-align: right">
-        <button hx-get="view/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>">More details</button> <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+    <div style="float: left">
+        <p class="ipAddr" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></p>
     </div>
+    <div style="text-align: right; float: right;">
+        <button hx-get="view/bits/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>">More details</button> <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+    </div>
+    <div style="clear: both"></div>
 <?php
 }
 
@@ -38,15 +41,14 @@ function DrawServerDetailed($server, $num) {
         <h2><?=$server['name']?></h2>
         <div>
             <fieldset>
-                <legend style="font-size: 1.5rem; font-weight: 400"><?=$server['gameMode']?></legend>
-                <span style="font-weight: 400; font-size: 1.2rem" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></span><br />
-
-                <p style="margin: .33rem 0">
-                    <b><?=$server['playersOnline']?>/<?=$server['maxPlayers']?></b> players / Language: <?=$server['language']?>
+                <legend class="gameMode"><?=$server['gameMode']?></legend>
+                <p class="serverInfo">
+                    <b>Players</b>: <?=$server['playersOnline']?> / <?=$server['maxPlayers']?><br />
+                    <b>Language</b>: <?=$server['language']?>
                 </p>
                 <fieldset>
                     <legend>Details</legend>
-                    <table style="width: 100%; font-weight: 400; text-align: left">
+                    <table class="serverDetailsTable">
                         <tr>
                             <td><b>Map</b></td><td><?=$server['mapName']?></td>
                         </tr>
@@ -63,20 +65,25 @@ function DrawServerDetailed($server, $num) {
                             <td><b>SAMPCAC</b></td><td><?=$server['sampCac']?></td>
                         </tr>
                         <tr>
-                            <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
+                            <td><b>SAMPCAC</b></td><td><?=$server['sampCac']?></td>
                         </tr>
+                        <tr>
+                            <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
                     </table>
                 </fieldset>
                 <fieldset>
                     <legend>Player list</legend>
-                    <iframe style="width: 93%; height: 5rem; border: 0" src="view/playerlist.php?ip_addr=<?=$server['ipAddr']?>&players=<?=$server['playersOnline']?>">
-                    </iframe>
+                    <iframe style="width: 93%; height: 6rem; border: 0" src="view/bits/playerlist.php?ip_addr=<?=$server['ipAddr']?>&players=<?=$server['playersOnline']?>"></iframe>
                 </fieldset>
             </fieldset>
         </div>
-        <div style="text-align: right">
-        <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+        <div style="float: left">
+            <p class="ipAddr" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></p>
         </div>
+        <div style="text-align: right; float: right;">
+            <button hx-get="view/bits/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>">More details</button> <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+        </div>
+        <div style="clear: both"></div>
     <?php
     }
 
@@ -109,6 +116,4 @@ function timeSince($time) {
         return $numberOfUnits.' '.$text.(($numberOfUnits>1)?'s':'');
     }
 }
-
 ?>
-

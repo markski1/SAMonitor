@@ -1,3 +1,4 @@
+/* Colors */
 :root {
     --background: #090f10;
     --text: #e8f0f2;
@@ -5,6 +6,8 @@
     --secondary: #1c2c31;
     --accent: #6d9dab;
 }
+
+/* Main layout */
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
@@ -54,14 +57,6 @@ header .separators {
     display: inline;
 }
 
-tr, td, th {
-    border: 1px solid gray;
-}
-
-a {
-    color: white;
-}
-
 @media (min-width: 900px) {
     body {
 		display: grid;
@@ -99,15 +94,42 @@ a {
 	}
 }
 
-@media (max-width: 1250px) {
-    .server, .filterBox {
-        width: 90%;
-        min-width: 0;
-        position: relative;
-    }
-    .filterBox{
-        margin-left: 1rem;
-    }
+/* Global elements */
+
+button {
+    padding: .6rem 1.2rem;
+    border: 1px solid black;
+    border-radius: 8px;
+    margin-right: 1.5rem;
+    background-color: var(--accent);
+    border: 2px solid var(--accent);
+}
+
+button.connectButton {
+    background-color: var(--primary);
+    border: 2px solid var(--primary);
+}
+
+button:hover {
+    border: 2px solid white;
+}
+
+button:active {
+    background-color: white;
+}
+
+td, th {
+    border: 1px solid gray;
+}
+
+.serverDetailsTable {
+    width: 100%;
+    font-weight: 400;
+    text-align: left;
+}
+
+a {
+    color: white;
 }
 
 a:hover {
@@ -144,6 +166,8 @@ fieldset {
     border: 1px solid var(--primary);
 }
 
+/* Containers */
+
 .pageContent {
     width: 100%;
     max-width: 35rem;
@@ -177,6 +201,14 @@ fieldset {
     position: sticky;
 }
 
+.filterBox table {
+    width: 100%;
+}
+
+.filterBox td {
+    border: 0;
+}
+
 .innerContent {
     background-color: #101010;
     border: 1px solid #202020;
@@ -186,24 +218,31 @@ fieldset {
     margin-top: 1rem;
 }
 
-button {
-    padding: .6rem 1.2rem;
-    border: 1px solid black;
-    border-radius: 8px;
-    margin-right: 1.5rem;
-    background-color: var(--accent);
-    border: 2px solid var(--accent);
+@media (max-width: 1250px) {
+    .server, .filterBox {
+        width: 90%;
+        min-width: 0;
+        position: relative;
+    }
+    .filterBox{
+        margin-left: 1rem;
+    }
 }
 
-button.connectButton {
-    background-color: var(--primary);
-    border: 2px solid var(--primary);
+/* Text styles */
+
+.ipAddr {
+    font-size: 1.2rem;
+    margin: unset;
+    margin: 0.33rem 0.33rem 0 !important;
 }
 
-button:hover {
-    border: 2px solid white;
+.gameMode {
+    font-size: 1.5rem;
+    font-weight: 400;
 }
 
-button:active {
-    background-color: white;
+.serverInfo {
+    margin: 0.2rem;
+    line-height: 1.5rem;
 }
