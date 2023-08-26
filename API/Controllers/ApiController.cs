@@ -145,26 +145,13 @@ namespace SAMonitor.Controllers
             return (await ServerManager.AddServer(ip_addr));
         }
 
-        [HttpPost("AddServerBulk")]
-        public async Task<string> AddServerBulk(string ip_addrs)
-        {
-            string[] addrs = ip_addrs.Split(';');
-
-            foreach (var addr in addrs)
-            {
-                await ServerManager.AddServer(addr);
-            }
-
-            return $"batch processed.";
-        }
-
         [HttpGet("GetGlobalMetrics")]
         public async Task<List<Metrics>> GetGlobalMetrics(int hours = 6)
         {
             DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
             var conn = new MySqlConnection(MySQL.ConnectionString);
-            var sql = @"SELECT players, servers, time FROM metrics_global WHERE time > @RequestTime";
+            var sql = @"SELECT players, servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
 
             return (await conn.QueryAsync<Metrics>(sql, new { RequestTime })).ToList();
         }

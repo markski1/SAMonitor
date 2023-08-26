@@ -133,7 +133,7 @@ namespace SAMonitor.Data
             // So, if the server doesn't seem russian, we replace that character for a proper ñ.
             // It's dirty, but I can't think of a less disruptive way to address this issue.
             // "ру" is also cyrillic "ru"
-            if (Language.ToLower().Contains("ru") == false && Language.ToLower().Contains("ру"))
+            if (Language.ToLower().Contains("ru") == false && Language.ToLower().Contains("ру") == false)
             {
                 Name = Name.Replace('с', 'ñ');
                 Language = Language.Replace('с', 'ñ');
@@ -170,10 +170,7 @@ namespace SAMonitor.Data
                 if (serverPlayers is not null)
                 {
                     Players.Clear();
-                    foreach (var player in serverPlayers)
-                    {
-                        Players.Add(new Player(player));
-                    }
+                    foreach (var player in serverPlayers) Players.Add(new Player(player));
                 }
             }
             catch
