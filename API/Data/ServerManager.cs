@@ -54,8 +54,6 @@ public static class ServerManager
 
         bool success;
 
-        Console.WriteLine($"Added server {ipAddr}");
-
         var conn = new MySqlConnection(MySQL.ConnectionString);
 
         var sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
@@ -208,15 +206,21 @@ public static class ServerManager
 
     private static async void SaveMetrics()
     {
-        var conn = new MySqlConnection(MySQL.ConnectionString);
+        // don't save metrics unless in production
+        #if !DEBUG
+            var conn = new MySqlConnection(MySQL.ConnectionString);
 
-        var sql = @"INSERT INTO metrics_global (players, servers) VALUES(@_players, @_servers)";
+            var sql = @"INSERT INTO metrics_global (players, servers) VALUES(@_players, @_servers)";
 
-        int _servers = currentServers.Count;
+            int _servers = currentServers.Count;
 
-        int _players = TotalPlayers();
+            int _players = TotalPlayers();
 
-        await conn.ExecuteAsync(sql, new { _players, _servers });
+            await conn.ExecuteAsync(sql, new { _players, _servers });
+        #else
+            // just to make the compiler happy, do an await in debug mode
+            await Task.Delay(1);
+        #endif
     }
 
     private static void UpdateMasterlist()

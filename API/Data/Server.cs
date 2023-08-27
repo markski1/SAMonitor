@@ -177,11 +177,15 @@ public class Server
                 success = false;
             }
 
-            // then add a metric entry.
+            // then add a metric entry. ONLY IF IN PRODUCTION.
 
-            sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
+            #if !DEBUG
 
-            await conn.ExecuteAsync(sql, new { Id, PlayersOnline });
+                sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
+
+                await conn.ExecuteAsync(sql, new { Id, PlayersOnline });
+
+            #endif
         }
 
         IEnumerable<ServerPlayer> serverPlayers;
@@ -198,7 +202,7 @@ public class Server
         }
         catch
         {
-            Console.WriteLine($"Failed to query players for {IpAddr}");
+            // nothing to handle, this happens if server has >100 players and is a SA-MP issue.
         }
 
         return success;

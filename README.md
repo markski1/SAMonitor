@@ -14,7 +14,8 @@ Providing: A server browser, a public API and a Masterlist alternative.
 - - [GetServerByIP](#getserverbyip)
 - - [GetServerPlayers](#getserverplayers)
 - - [GetTotalPlayers](#gettotalplayers)
-- - [GetMetrics](#getmetrics)
+- - [GetGlobalMetrics](#getglobalmetrics)
+- - [GetServerMetrics](#getservermetrics)
 - [Data schemas](#data-schemas)
 - [Add your server](#add-your-server)
 
@@ -102,11 +103,20 @@ Try it: http://sam.markski.ar:42069/api/GetAmountServers
 
 ### GetGlobalMetrics
 
-Providing an amount of hours, get metrics for global count of players and servers for several times.
+Providing an amount of hours, get metrics for global count of players and servers in the last given hours.
 
 If no hour is provided, defaults to 6.
 
 Try it: http://sam.markski.ar:42069/api/GetGlobalMetrics?hours=6
+
+### GetServerMetrics
+
+Providing an IP address and an amount of hours, get metrics for the count of players in the last given hours.
+
+If no hour is provided, defaults to 6.
+
+Try it: http://sam.markski.ar:42069/api/GetServerMetrics?hours=6&ip_addr=51.68.204.178:7777
+
 
 ## Data schemas
 
