@@ -148,7 +148,10 @@ public class Server
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
+            if ((ex.GetType().FullName ?? "noname").Contains("socket")) // I don't care to log network exceptions
+            {
+                System.Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
+            }
         }
 
         

@@ -403,7 +403,19 @@ namespace SAMPQuery
                                 }
                                 val = DateTime.Today.Add(parsedTime);
                             }
-                            else val = Convert.ChangeType(value, property.PropertyType, CultureInfo.InvariantCulture);
+                            else
+                            {
+                                try
+                                {
+                                    val = Convert.ChangeType(value, property.PropertyType, CultureInfo.InvariantCulture);
+                                }
+                                catch
+                                {
+                                    // the value could not be parsed, try to get a default.
+                                    value = "0";
+                                    val = Convert.ChangeType(value, property.PropertyType, CultureInfo.InvariantCulture);
+                                }
+                            }
 
                             property.SetValue(sampServerRulesData, val);
                         }
