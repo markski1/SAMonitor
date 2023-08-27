@@ -12,7 +12,7 @@ public class Player
     {
         Id = player.PlayerId;
         Ping = player.PlayerPing;
-        Name = player.PlayerName;
+        Name = player.PlayerName ?? "Unknown";
         Score = player.PlayerScore;
     }
 }

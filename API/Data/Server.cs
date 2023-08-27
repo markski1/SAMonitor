@@ -2,6 +2,7 @@
 using Dapper;
 using System.Timers;
 using MySqlConnector;
+using SAMonitor.Utils;
 
 namespace SAMonitor.Data;
 
@@ -82,10 +83,10 @@ public class Server
         QueryTimer.Elapsed += TimedQuery;
         QueryTimer.AutoReset = true;
 
-        // while initializing, do the first update at a random amount of time between 0 seconds and 10 minutes.
+        // while initializing, do the first update at a random amount of time between 0 seconds and 20 minutes.
         // this is to avoid all servers doing the query at the same instant.
-        // after 1 call, it'll be set to the standard 15 minutes.
-        QueryTimer.Interval = rand.Next(600000);
+        // after 1 call, it'll be set to the standard 20 minutes.
+        QueryTimer.Interval = rand.Next(1200000);
         QueryTimer.Enabled = true;
     }
 
@@ -120,7 +121,7 @@ public class Server
         Name = serverInfo.HostName;
         PlayersOnline = serverInfo.Players;
         MaxPlayers = serverInfo.MaxPlayers;
-        GameMode = serverInfo.GameMode;
+        GameMode = serverInfo.GameMode ?? "Unknown";
         Language = serverInfo.Language ?? "Unknown";
         LastUpdated = DateTime.Now;
 
@@ -134,7 +135,14 @@ public class Server
                 MapName = serverRules.MapName ?? "Unknown";
                 SampCac = serverRules.SAMPCAC_Version ?? "Not required";
                 LagComp = serverRules.Lagcomp;
-                Website = serverRules.Weburl.ToString() ?? "Unknown";
+                if (serverRules.Weburl is null)
+                {
+                    Website = "Unknown";
+                }
+                else
+                {
+                    Website = serverRules.Weburl.ToString();
+                }
                 WorldTime = serverRules.WorldTime;
             }
         }

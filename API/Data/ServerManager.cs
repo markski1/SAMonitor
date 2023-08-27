@@ -2,6 +2,7 @@
 using Dapper;
 using System.Timers;
 using MySqlConnector;
+using SAMonitor.Utils;
 
 namespace SAMonitor.Data;
 
@@ -169,7 +170,7 @@ public static class ServerManager
     {
         try
         {
-            var server = servers.Where(x => x.IpAddr == ip_addr).Single();
+            var server = servers.Where(x => x.IpAddr.Contains(ip_addr)).Single();
             return server.Id;
         }
         catch

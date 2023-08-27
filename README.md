@@ -21,7 +21,7 @@ Providing: A server browser, a public API and a Masterlist alternative.
 
 ## Server browser
 
-The server browser is available at https://sam.markski.ar
+The server browser is available at https://gateway.markski.ar
 
 It is still at a very early stage. Eventually it'll have filtering among other features.
 
@@ -31,21 +31,21 @@ It is written in HTMX and PHP, which provides a very lightweight website where l
 
 ## Masterlist
 
-We offer a masterlist alternative, at http://sam.markski.ar:42069/api/GetMasterlist
+We offer a masterlist alternative, at http://gateway.markski.ar:42069/api/GetMasterlist
 
 It is a relatively high-quality masterlist, since rather than functioning as a hastily-updated text file or database, it only provides servers which are actively running.
 Servers which failed to be online in the last ~24 hours are not included in this list (but are re-added when they return).
 
 ## GET Endpoints
 
-All of these endpoints are located at `http://sam.markski.ar:42069/api/`.
+All of these endpoints are located at `http://gateway.markski.ar:42069/api/`.
 The endpoint is currently `http` only. It might support `https` in the future, but honestly, given the sensitivity (or lack thereof) of this data, I see no benefits to using it here.
 
 ### GetAllServers
 
 Return a JSON collection with the latest information of every server SAMonitor tracks.
 
-Try it: http://sam.markski.ar:42069/api/GetAllServers
+Try it: http://gateway.markski.ar:42069/api/GetAllServers
 
 ### GetFilteredServers
 
@@ -73,7 +73,7 @@ Parameters, all of which are optional:
      Specifies the page, to be used along with paging_size.
 ```
 
-Try it: http://sam.markski.ar:42069/api/GetFilteredServers?name=Roleplay&order=player
+Try it: http://gateway.markski.ar:42069/api/GetFilteredServers?name=Roleplay&order=player
 
 ### GetServerByIP
 
@@ -81,25 +81,25 @@ Provided an IP address (optionaly with a specified port), returns information ab
 
 If no port is provided and several servers are under that IP, the one at 7777 will be chosen.
 
-Try it: http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=151.80.19.151:7777
+Try it: http://gateway.markski.ar:42069/api/GetServerByIP?ip_addr=151.80.19.151:7777
 
 ### GetServerPlayers
 
 Provided an IP address (optionaly with a specified port), return a list of players.
 
-Try it: http://sam.markski.ar:42069/api/GetServerPlayers?ip_addr=51.68.204.178:7777
+Try it: http://gateway.markski.ar:42069/api/GetServerPlayers?ip_addr=51.68.204.178:7777
 
 ### GetTotalPlayers
 
 Get a simple integer with the sum of players in the tracked servers.
 
-Try it: http://sam.markski.ar:42069/api/GetTotalPlayers
+Try it: http://gateway.markski.ar:42069/api/GetTotalPlayers
 
 ### GetAmountServers
 
 A little pointless for most, but returns the amount of servers SAMonitor is tracking.
 
-Try it: http://sam.markski.ar:42069/api/GetAmountServers
+Try it: http://gateway.markski.ar:42069/api/GetAmountServers
 
 ### GetGlobalMetrics
 
@@ -107,7 +107,7 @@ Providing an amount of hours, get metrics for global count of players and server
 
 If no hour is provided, defaults to 6.
 
-Try it: http://sam.markski.ar:42069/api/GetGlobalMetrics?hours=6
+Try it: http://gateway.markski.ar:42069/api/GetGlobalMetrics?hours=6
 
 ### GetServerMetrics
 
@@ -115,7 +115,7 @@ Providing an IP address and an amount of hours, get metrics for the count of pla
 
 If no hour is provided, defaults to 6.
 
-Try it: http://sam.markski.ar:42069/api/GetServerMetrics?hours=6&ip_addr=51.68.204.178:7777
+Try it: http://gateway.markski.ar:42069/api/GetServerMetrics?hours=6&ip_addr=51.68.204.178:7777
 
 
 ## Data schemas

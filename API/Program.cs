@@ -1,4 +1,5 @@
 using SAMonitor.Data;
+using SAMonitor.Utils;
 
 if (MySQL.MySQLSetup())
 {

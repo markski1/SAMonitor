@@ -1,7 +1,7 @@
 ﻿using MySqlConnector;
 using Newtonsoft.Json;
 
-namespace SAMonitor.Data
+namespace SAMonitor.Utils
 {
     public static class MySQL
     {

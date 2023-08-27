@@ -2,6 +2,7 @@ using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using SAMonitor.Data;
+using SAMonitor.Utils;
 
 namespace SAMonitor.Controllers;
 
@@ -78,7 +79,7 @@ public class ApiController : ControllerBase
                     var emptyServers = servers.Where(x => x.PlayersOnline == 0);
                     var populatedServers = servers.Where(x => x.PlayersOnline > 0);
 
-                    orderedServers = populatedServers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
+                    orderedServers = populatedServers.OrderByDescending(x => (double)x.PlayersOnline / x.MaxPlayers).ToList();
                     orderedServers.AddRange(emptyServers);
                 }
             }
@@ -135,14 +136,12 @@ public class ApiController : ControllerBase
     [HttpGet("AddServer")]
     public async Task<string> AddServer(string ip_addr)
     {
-        // ensure this is an IPv4 address
-        var items = ip_addr.Split('.');
-        if (items.Length != 4 || ip_addr.Any(x => char.IsLetter(x))) return "Not a valid IPv4 address."; ;
-
-        items = ip_addr.Split(':');
-        if (items.Length != 2) return "No port specified.";
-
-        return (await ServerManager.AddServer(ip_addr));
+        ip_addr = ip_addr.Trim();
+        string check = Helpers.ValidateIPv4(ip_addr);
+        if (check == "valid")
+            return (await ServerManager.AddServer(ip_addr));
+        else
+            return check;
     }
 
     [HttpGet("GetGlobalMetrics")]
