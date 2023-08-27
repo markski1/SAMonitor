@@ -4,6 +4,7 @@
     <p>Dishonest activity will result in servers being blacklisted.</p>
 
     <div class="innerContent">
+        <h3>Defining dishonesty</h3>
         <p>While I reserve the right to decide what does and doesn't constitute dishonest activity, here's a few likely examples.</p>
         <ul>
             <li>Faking your player count or other data.</li>
@@ -28,6 +29,15 @@
             <legend>Arizona RP</legend>
             <p>Blocked for faking player count.<br />Showing numbers much greater on queries than they were in-game.</p>
         </fieldset>
+    </div>
+    <div class="innerContent">
+        <h3>IP Blocking regardless of server</h3>
+        <p>
+            If your server is found to register several IP's pointing to the same server, the server itself won't be blocked, but any IP found to be repeated will be blocked.
+        </p>
+        <p>
+            Attempts to bypass the anti-repeat measures, succesful or not, will result in blacklisting.
+        </p>
     </div>
 </div>
 

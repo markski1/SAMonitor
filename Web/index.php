@@ -14,7 +14,13 @@
 
     // if looking at single-server page..
     if ($page == "server") {
-        $loadPage = $loadPage."?ip_addr={$_GET['ip_addr']}";
+        if (!isset($_GET['ip_addr'])) {
+            $ip_addr = "invalid";
+        }
+        else {
+            $ip_addr = trim($_GET['ip_addr']);
+        }
+        $loadPage = $loadPage."?ip_addr={$ip_addr}";
     }
 ?>
 <!DOCTYPE html>

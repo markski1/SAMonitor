@@ -85,27 +85,39 @@
         exit;
     }
 
-    $server = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
-
-    if ($server['website'] != "Unknown") {
-        $website = '<a href="'.$server['website'].'">'.$server['website'].'</a>';
+    if (isset($_GET['ip_addr']) && strlen($_GET['ip_addr']) > 0) {
+        $server = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
     }
-    else {
-        $website = "No website specified.";
-    }
+    
+    if (isset($server)) {
+        if ($server['website'] != "Unknown") {
+            $website = '<a href="'.$server['website'].'">'.$server['website'].'</a>';
+        }
+        else {
+            $website = "No website specified.";
+        }
 
-    $lagcomp = $server['lagComp'] == 1 ? "Enabled" : "Disabled";
-    $last_updated = strtotime($server['lastUpdated']);
+        $lagcomp = $server['lagComp'] == 1 ? "Enabled" : "Disabled";
+        $last_updated = strtotime($server['lastUpdated']);
+    }
 ?>
 
 <div>
     <h2>Server information</h3>
+    <?php
+        if (!isset($server) || $server['name'] == null) {
+            exit("<p>Sorry, there was an error loading this server's information. It may not be in SAMonitor.</p>");
+        }
+    ?>
     <p><?=$server['name']?></p>
     <div class="innerContent">
         <h3>Details</h3>
         <table style="width: 100%">
             <tr>
                 <td><b>Players</b></td><td><?=$server['playersOnline']?> / <?=$server['maxPlayers']?></td>
+            </tr>
+            <tr>
+                <td><b>Gamemode</b></td><td><?=$server['gameMode']?></td>
             </tr>
             <tr>
                 <td><b>Language</b></td><td><?=$server['language']?></td>
@@ -135,6 +147,11 @@
         <div hx-get="./view/server.php?ip_addr=<?=$_GET['ip_addr']?>&load_graph" hx-trigger="load">
             <h3>Loading graph...</h3>
         </div>
+        <p>
+            <small>
+                Times are UTC 0.
+            </small>
+        </p>
     </div>
     <div class="innerContent">
         <h3>Player list</h3>
@@ -147,6 +164,7 @@
 
 <script>
     history.replaceState({}, null, "./?page=server&ip_addr=<?=$_GET['ip_addr']?>");
+    document.title = "SAMonitor - <?=$server['name']?>"
 </script>
 
 

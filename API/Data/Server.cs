@@ -91,7 +91,7 @@ public class Server
 
     private void TimedQuery(object? sender, ElapsedEventArgs e)
     {
-        QueryTimer.Interval = 900000;
+        QueryTimer.Interval = 1200000;
         _ = Query(true);
     }
 
