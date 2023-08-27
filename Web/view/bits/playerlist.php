@@ -1,5 +1,5 @@
 <?php
-    $players = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerPlayers?ip_addr=".$_GET['ip_addr']), true);
+    $players = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerPlayers?ip_addr=".$_GET['ip_addr']), true);
 
     if (count($players) > 0) {
         foreach ($players as $player) {

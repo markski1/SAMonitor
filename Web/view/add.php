@@ -3,7 +3,7 @@
     <h2>Add server</h2>
     <p>SAMonitor is an open server list, and as such, anyone can add a server.</p>
     <div class="innerContent">
-        <p>If you're blocking the range containing sam.markski.ar (45.153.48.229), this won't work.</p>
+        <p>If you're blocking the range containing gateway.markski.ar (45.153.48.229), this won't work.</p>
         <fieldset>
             <legend>Add server</legend>
             <form hx-target="#result" hx-post="./action/add.php">

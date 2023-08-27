@@ -55,6 +55,7 @@
         <main id="main" hx-get="<?=$loadPage?>" hx-trigger="load"></main>
     </body>
 </html>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/htmx.org@1.9.4/dist/htmx.min.js" crossorigin="anonymous"></script>
 
 <script>

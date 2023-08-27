@@ -1,6 +1,6 @@
 <?php
-    $total_servers = file_get_contents("http://sam.markski.ar:42069/api/GetAmountServers");
-    $total_players = file_get_contents("http://sam.markski.ar:42069/api/GetTotalPlayers");
+    $total_servers = file_get_contents("http://gateway.markski.ar:42069/api/GetAmountServers");
+    $total_players = file_get_contents("http://gateway.markski.ar:42069/api/GetTotalPlayers");
 ?>
 <div class="filterBox">
     <p>Tracking <?=$total_servers?> servers, with <?=$total_players?> players total.</p>

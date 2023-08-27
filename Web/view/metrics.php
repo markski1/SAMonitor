@@ -1,5 +1,5 @@
 <?php
-    $metrics = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetGlobalMetrics?hours=24"), true);
+    $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetGlobalMetrics?hours=24"), true);
 
     // if load_table or load_graph parameter is set, only return that.
     // this allows for two things:
@@ -87,8 +87,6 @@
         <p>The same graphs are available in every server's page. Simply click "Show details" and then "All about this server" where desired.</p>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
     history.replaceState({}, null, "./?page=metrics");

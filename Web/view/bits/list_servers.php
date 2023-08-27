@@ -26,7 +26,7 @@
         $filters .= "&gamemode=".urlencode($_GET['gamemode']);
     }
 
-    $servers = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetFilteredServers" . $filters . "&page=".$page), true);
+    $servers = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetFilteredServers" . $filters . "&page=".$page), true);
 
     if (count($servers) == 0) {
         exit("No results.");

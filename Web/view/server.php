@@ -5,7 +5,7 @@
     //     - Making the main page load faster. HTMX calls this page again with this parameter to get the graph without delaying the main page load.
     
     if (isset($_GET['load_graph'])) {
-        $metrics = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerMetrics?hours=24&ip_addr=".urlencode($_GET['ip_addr'])), true);
+        $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours=24&ip_addr=".urlencode($_GET['ip_addr'])), true);
 
         $playerSet = "";
         $timeSet = "";
@@ -86,7 +86,7 @@
     }
 
     if (isset($_GET['ip_addr']) && strlen($_GET['ip_addr']) > 0) {
-        $server = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
+        $server = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
     }
     
     if (isset($server)) {
@@ -160,13 +160,10 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
     history.replaceState({}, null, "./?page=server&ip_addr=<?=$_GET['ip_addr']?>");
     document.title = "SAMonitor - <?=$server['name']?>"
 </script>
-
 
 <?php
     function timeSince($time) {

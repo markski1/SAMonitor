@@ -63,13 +63,13 @@ function DrawServer($server, $num, $details = false) {
 
 if (isset($_GET['type'])) {
     if ($_GET['type'] == 'details') {
-        $server = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
+        $server = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
 
         DrawServer($server, $_GET['number'], true);
     }
 
     if ($_GET['type'] == 'basic') {
-        $server = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
+        $server = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
 
         DrawServer($server, $_GET['number']);
     }
