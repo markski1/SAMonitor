@@ -32,7 +32,7 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetFilteredServers")]
-    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int paging_size = 0, int page = 0)
+    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0)
     {
         var servers = ServerManager.GetServers();
 
@@ -50,6 +50,11 @@ public class ApiController : ControllerBase
         if (gamemode != "unspecified")
         {
             servers = servers.Where(x => x.GameMode.ToLower().Contains(gamemode.ToLower()));
+        }
+
+        if (hide_roleplay != 0)
+        {
+            servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") || !x.GameMode.ToLower().Contains("role"));
         }
 
         // after ordering we exclusively manage lists
@@ -79,7 +84,7 @@ public class ApiController : ControllerBase
                     var emptyServers = servers.Where(x => x.PlayersOnline == 0);
                     var populatedServers = servers.Where(x => x.PlayersOnline > 0);
 
-                    orderedServers = populatedServers.OrderByDescending(x => (double)x.PlayersOnline / x.MaxPlayers).ToList();
+                    orderedServers = populatedServers.OrderByDescending(x => x.PlayersOnline / x.MaxPlayers).ToList();
                     orderedServers.AddRange(emptyServers);
                 }
             }

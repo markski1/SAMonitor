@@ -155,17 +155,14 @@ public class Server
         }
 
         
-        // This is not a standard latin 'c' being replaced, and it's not a standard latin 'py' being checked for.
-        // This is cyrillic character 'с', which SA-MP servers commonly return in place of the spanish ñ, for some reason.
-        // So, if the server doesn't seem russian, we replace that character for a proper ñ.
-        // It's dirty, but I can't think of a less disruptive way to address this issue.
-        // "ру" is also cyrillic "ru"
+        // SAMP encodes certain special latin characters as if they were Cyrillic.
+        // So, if the server doesn't seem russian, we replace certain known ones.
         if (Language.ToLower().Contains("ru") == false && Language.ToLower().Contains("ру") == false)
         {
-            Name = Name.Replace('с', 'ñ');
-            Language = Language.Replace('с', 'ñ');
-            GameMode = GameMode.Replace('с', 'ñ');
-            MapName = MapName.Replace('с', 'ñ');
+            Name = Utils.Helpers.BodgedEncodingFix(Name);
+            Language = Utils.Helpers.BodgedEncodingFix(Language);
+            GameMode = Utils.Helpers.BodgedEncodingFix(GameMode);
+            MapName = Utils.Helpers.BodgedEncodingFix(MapName);
         }
 
         bool success = true;

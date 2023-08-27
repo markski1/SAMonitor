@@ -12,5 +12,14 @@
 
             return "valid";
         }
+
+        public static string BodgedEncodingFix(string text)
+        {
+
+            text = text.Replace('с', 'ñ');
+            text = text.Replace('к', 'ê');
+            text = text.Replace('Ў', '¡');
+            return text;
+        }
     }
 }
