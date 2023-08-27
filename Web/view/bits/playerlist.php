@@ -7,8 +7,8 @@
         }
     }
     else {
-        if ($_GET['players'] == 0) echo "<p>No players in this server.";
-        else echo "<p>Server has over 100 players, couldn't fetch list.</p>";
+        if ($_GET['players'] == 0) echo "<p>No players in this server.</p>";
+        else echo "<p>Could not fetch player list.</p>";
     }
 ?>
 

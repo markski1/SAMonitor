@@ -13,45 +13,47 @@ function DrawServer($server, $num, $details = false) {
     $lagcomp = $server['lagComp'] == 1 ? "Enabled" : "Disabled";
     $last_updated = strtotime($server['lastUpdated']);
 ?>
-    <h2><?=$server['name']?></h2>
-    <div>
-        <fieldset>
-            <legend class="gameMode"><?=$server['gameMode']?></legend>
-            <p class="serverInfo">
-                <b>Players</b>: <?=$server['playersOnline']?> / <?=$server['maxPlayers']?><br />
-                <b>Language</b>: <?=$server['language']?>
-            </p>
+    <h3 style="margin: 0 0 .4rem"><?=$server['name']?></h3>
+    <table style="width: 100%" class="serverInfo">
+        <tr>
+            <td style="width: 50%"><b><?=$server['gameMode']?></b></td><td><b>Language</b>: <?=$server['language']?></td>
+        </tr>
+        <tr>
+            <td><b>Players</b>: <?=$server['playersOnline']?> / <?=$server['maxPlayers']?></td>
+        </tr>
+    </table>
 
-            <?php if ($details) { ?>
-                <h3 style="margin: 1rem .2rem .4rem">Details</h3>
-                <table class="serverDetailsTable">
-                    <tr>
-                        <td><b>Map</b></td><td><?=$server['mapName']?></td>
-                    </tr>
-                    <tr>
-                        <td><b>Lag compensation</b></td><td><?=$lagcomp?></td>
-                    </tr>
-                    <tr>
-                        <td><b>Version</b></td><td><?=$server['version']?></td>
-                    </tr>
-                    <tr>
-                        <td><b>Website</b></td><td><?=$website?></td>
-                    </tr>
-                    <tr>
-                        <td><b>SAMPCAC</b></td><td><?=$server['sampCac']?></td>
-                    </tr>
-                    <tr>
-                        <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
-                    </tr>
-                </table>
-                <button hx-get="view/server.php?&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>" style="width: 100%; margin-top: 1rem;" hx-target="#main">All about this server</button>
-            <?php } ?>
-        </fieldset>
-    </div>
-    <div style="float: left">
+    <?php if ($details) { ?>
+        <div style="margin-bottom: 0.75rem;">
+            <h3 style="margin: 1rem .2rem .4rem">Details</h3>
+            <table class="serverDetailsTable">
+                <tr>
+                    <td><b>Map</b></td><td><?=$server['mapName']?></td>
+                </tr>
+                <tr>
+                    <td><b>Lag compensation</b></td><td><?=$lagcomp?></td>
+                </tr>
+                <tr>
+                    <td><b>Version</b></td><td><?=$server['version']?></td>
+                </tr>
+                <tr>
+                    <td><b>Website</b></td><td><?=$website?></td>
+                </tr>
+                <tr>
+                    <td><b>SAMPCAC</b></td><td><?=$server['sampCac']?></td>
+                </tr>
+                <tr>
+                    <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
+                </tr>
+            </table>
+            <button hx-get="view/server.php?&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>" style="width: 100%; margin-top: 1rem;" hx-target="#main">All about this server</button>
+        </div>
+    <?php } ?>
+
+    <div style="float: left; margin-top: 0">
         <p class="ipAddr" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></p>
     </div>
-    <div style="text-align: right; float: right;">
+    <div style="text-align: right; float: right; margin-top: 0">
         <?php if (!$details) { ?>
             <button hx-get="view/bits/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>">Show details</button>
         <?php } ?>

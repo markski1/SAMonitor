@@ -26,6 +26,12 @@
         <p>Every server is queried every 20 minutes (3 times per hour). It will update it's listing data when this happens, and store the amount of players at that time into the database.</p>
         <p>SAMonitor keeps a constant, real-time count of servers and players online across the globe. These are stored every 30 minutes and visible in the "metrics" page.</p>
     </div>
+    <div class="innerContent">
+        <h3>Third party attributions</h3>
+        <p>HTMX by Carson Gross is used for the website's presentation. <a href="https://htmx.org">htmx.org</a></p>
+        <p>Chart.Js, by multiple people, is used for drawing the website's graphs. <a href="https://www.chartjs.org/">chartjs.org</a></p>
+        <p>SAMPQuery by JustMavi is used for querying on the API. <a href="https://github.com/justmavi/sampquery/">github.com/justmavi/sampquery</a></p>
+    </div>
 </div>
 
 <script>

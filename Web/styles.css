@@ -1,10 +1,21 @@
 /* Colors */
+/*
 :root {
     --background: #090f10;
     --text: #e8f0f2;
     --primary: #a4c2cb;
     --secondary: #1c2c31;
     --accent: #6d9dab;
+}
+*/
+
+:root {
+    --background: #070913;
+    --text: #ffffff;
+    --primary: #a2a8dd;
+    --secondary: #151838;
+    --secondary-darker: #0e1024;
+    --accent: #5762c1;
 }
 
 /* Main layout */
@@ -128,6 +139,13 @@ td, th {
     text-align: left;
 }
 
+.serverDetailsTable td {
+    background-color: var(--background);
+    border: 1px solid var(--primary);
+    margin: 0;
+    padding-left: 5px;
+}
+
 a {
     color: white;
 }
@@ -179,9 +197,9 @@ fieldset {
     margin: auto;
     margin-bottom: 1.25rem;
     padding: .66rem;
-    border: 1px solid var(--accent);
+    border: 0;
     border-radius: 12px;
-    box-shadow: #6d9dab55 4px 4px;
+    box-shadow: #6d9dab55 3px 3px;
 }
 
 .server div {
@@ -193,11 +211,11 @@ fieldset {
     min-width: 20rem;
     margin: 0;
     margin-bottom: 1rem;
-    background-color: #101010;
-    border: 1px solid #202020;
-    padding: .66rem;
+    background-color: var(--secondary-darker);
+    border: 1px solid var(--secondary);
+    padding: .75rem;
     border-radius: 12px;
-    max-height: 23.5rem;
+    max-height: 25.5rem;
     position: sticky;
 }
 
@@ -210,8 +228,8 @@ fieldset {
 }
 
 .innerContent {
-    background-color: #101010;
-    border: 1px solid #202020;
+    background-color: var(--secondary-darker);
+    border: 1px solid var(--secondary);
     border-radius: 6px;
     padding: .8rem;
     width: 95%;
@@ -232,9 +250,10 @@ fieldset {
 /* Text styles */
 
 .ipAddr {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     margin: unset;
-    margin: 0.33rem 0.33rem 0 !important;
+    margin: 0.5rem 0.33rem 0 !important;
+    color: rgb(183, 203, 209);
 }
 
 .gameMode {
@@ -245,4 +264,8 @@ fieldset {
 .serverInfo {
     margin: 0.2rem;
     line-height: 1.5rem;
+}
+
+.serverInfo td {
+    border: 0;
 }

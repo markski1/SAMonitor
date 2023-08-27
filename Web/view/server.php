@@ -112,7 +112,7 @@
     <p><?=$server['name']?></p>
     <div class="innerContent">
         <h3>Details</h3>
-        <table style="width: 100%">
+        <table class="serverDetailsTable">
             <tr>
                 <td><b>Players</b></td><td><?=$server['playersOnline']?> / <?=$server['maxPlayers']?></td>
             </tr>
@@ -139,6 +139,9 @@
             </tr>
             <tr>
                 <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
+            </tr>
+            <tr>
+                <td><b>IP Address:</b></td><td><?=$server['ipAddr']?></td>
             </tr>
         </table>
     </div>

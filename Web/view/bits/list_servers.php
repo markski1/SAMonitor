@@ -12,6 +12,10 @@
         $filters .= "no_empty"; // this doesn't do anything, but it avoids having to deal with using ? instead of & elsewhere.
     }
 
+    if (isset($_GET['hide_roleplay'])) {
+        $filters .= "&hide_roleplay=1";
+    }
+
     $order = $_GET['order'] ?? "ratio";
     $filters .= "&order=".$order;
 

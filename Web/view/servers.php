@@ -20,6 +20,7 @@
         <fieldset>
             <legend>Options</legend>
             <label><input type="checkbox" name="show_empty"> Show empty servers</label><br />
+            <label><input type="checkbox" name="hide_roleplay"> Hide roleplay servers</label><br />
             <label><input type="radio" name="order" value="none"> Don't order</label><br />
             <label><input type="radio" name="order" value="players"> Order by players</label><br />
             <label><input type="radio" name="order" checked value="ratio"> Order by players/max ratio</label>
