@@ -18,3 +18,7 @@
         <p>Please note API endpoints such as full player list may not work immediatly.</p>
     </div>
 </div>
+
+<script>
+    history.replaceState({}, null, "./?page=add");
+</script>

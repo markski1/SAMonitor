@@ -18,7 +18,7 @@ function DrawServer($server, $num) {
         <p class="ipAddr" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></p>
     </div>
     <div style="text-align: right; float: right;">
-        <button hx-get="view/bits/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>">More details</button> <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+        <button hx-get="view/bits/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>">Show details</button> <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
     </div>
     <div style="clear: both"></div>
 <?php
@@ -69,17 +69,14 @@ function DrawServerDetailed($server, $num) {
                         </tr>
                     </table>
                 </fieldset>
-                <fieldset>
-                    <legend>Player list</legend>
-                    <iframe style="width: 93%; height: 6rem; border: 0" src="view/bits/playerlist.php?ip_addr=<?=$server['ipAddr']?>&players=<?=$server['playersOnline']?>"></iframe>
-                </fieldset>
+                <button hx-get="view/server.php?&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>" style="width: 100%; margin-top: 1rem;" hx-target="#main">All about this server</button>
             </fieldset>
         </div>
         <div style="float: left">
             <p class="ipAddr" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></p>
         </div>
         <div style="text-align: right; float: right;">
-            <button hx-get="view/bits/fragments.php?type=basic&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>">Less details</button> <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+             <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
         </div>
         <div style="clear: both"></div>
     <?php
@@ -87,13 +84,13 @@ function DrawServerDetailed($server, $num) {
 
 if (isset($_GET['type'])) {
     if ($_GET['type'] == 'details') {
-        $server = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=".$_GET['ip_addr']), true);
+        $server = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
 
         DrawServerDetailed($server, $_GET['number']);
     }
 
     if ($_GET['type'] == 'basic') {
-        $server = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=".$_GET['ip_addr']), true);
+        $server = json_decode(file_get_contents("http://sam.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
 
         DrawServer($server, $_GET['number']);
     }

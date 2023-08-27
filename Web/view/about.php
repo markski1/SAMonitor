@@ -10,3 +10,7 @@
         <p>If you wish to contact me, please check <a href="https://markski.ar">my personal website</a> for contact methods.</p>
     </div>
 </div>
+
+<script>
+    history.replaceState({}, null, "./?page=about");
+</script>

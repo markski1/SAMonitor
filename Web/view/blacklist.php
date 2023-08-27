@@ -30,3 +30,7 @@
         </fieldset>
     </div>
 </div>
+
+<script>
+    history.replaceState({}, null, "./?page=blacklist");
+</script>

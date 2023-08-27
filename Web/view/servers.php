@@ -34,3 +34,7 @@
     <h1>Loading servers!</h1>
     <p>Please wait. If servers don't load in, SAMonitor might be having issues, please check in later!. Alternatively, if you're using NoScript, you'll need to disable it.</p>
 </div>
+
+<script>
+    history.replaceState({}, null, "./");
+</script>

@@ -1,21 +1,35 @@
 <?php
-    $page = $_GET['page'] ?? "servers";
+    // routing
+    $page = htmlspecialchars($_GET['page'] ?? "servers");
 
-    $page = "view/{$page}.php"
+    // title
+    if ($page == "servers") {
+        $title = "SA-MP and open.mp server monitor";
+    }
+    else {
+        $title = $page;
+    }
+
+    $loadPage = "view/{$page}.php";
+
+    // if looking at single-server page..
+    if ($page == "server") {
+        $loadPage = $loadPage."?ip_addr={$_GET['ip_addr']}";
+    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>SAMonitor - SA-MP and open.mp server monitor</title>
+        <title>SAMonitor - <?=$title?></title>
         
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta charset="utf-8">
         <link rel="stylesheet" type="text/css" href="styles.css">
         
-        <meta name="title" content="SAMonitor">
+        <meta name="title" content="SAMonitor - <?=$title?>">
         <meta name="description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist.">
 
-        <meta name="og:title" content="SAMonitor" />
+        <meta name="og:title" content="SAMonitor - <?=$title?>" />
         <meta property="og:description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist." />
     </head>
     <body>
@@ -32,14 +46,23 @@
                 <a href="?page=blacklist" hx-get="view/blacklist.php" hx-target="#main">blacklist</a>
             </div>
         </header>
-        <main id="main" hx-get="<?=$page?>" hx-trigger="load"></main>
+        <main id="main" hx-get="<?=$loadPage?>" hx-trigger="load"></main>
     </body>
 </html>
 <script src="https://unpkg.com/htmx.org@1.9.4/dist/htmx.min.js" crossorigin="anonymous"></script>
+
 <script>
     function CopyAddress(id) {
         var copyText = document.getElementById(id);
         navigator.clipboard.writeText(copyText.innerText);
         alert("Address copied.");
     }
+</script>
+
+<script>
+    window.onpopstate = function(e){
+        if (e.state) {
+            document.getElementById("main").innerHTML = e.state;
+        }
+    };
 </script>
