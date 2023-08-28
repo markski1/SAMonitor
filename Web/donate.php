@@ -1,4 +1,8 @@
-<?php ?>
+<?php
+    include 'logic/layout.php';
+    PageHeader("donate");
+?>
+
 <div>
     <h2>Donate</h3>
     <p>Information regarding donating to SAMonitor.</p>
@@ -49,6 +53,7 @@
 </div>
 
 <script>
-    history.replaceState({}, null, "./?page=donate");
     document.title = "SAMonitor - donate";    
 </script>
+
+<?php PageBottom() ?>

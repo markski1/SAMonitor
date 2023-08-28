@@ -1,4 +1,8 @@
-<?php ?>
+<?php
+    include 'logic/layout.php';
+    PageHeader("about");
+?>
+
 <div>
     <h2>About</h3>
     <p>SAMonitor is a SA-MP and open.mp server monitor. It tracks activity of them and is a good replacement of standard listings.</p>
@@ -35,6 +39,7 @@
 </div>
 
 <script>
-    history.replaceState({}, null, "./?page=about");
-    document.title = "SAMonitor - about";  
+    document.title = "SAMonitor - about";
 </script>
+
+<?php PageBottom() ?>

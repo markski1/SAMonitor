@@ -1,4 +1,8 @@
-<?php ?>
+<?php
+    include 'logic/layout.php';
+    PageHeader("blacklist");
+?>
+
 <div>
     <h2>Blacklist</h2>
     <p>Dishonest activity will result in servers being blacklisted.</p>
@@ -38,6 +42,7 @@
 </div>
 
 <script>
-    history.replaceState({}, null, "./?page=blacklist");
     document.title = "SAMonitor - blacklist";
 </script>
+
+<?php PageBottom() ?>

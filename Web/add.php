@@ -1,4 +1,8 @@
-<?php ?>
+<?php
+    include 'logic/layout.php';
+    PageHeader("add server");
+?>
+
 <div>
     <h2>Add server</h2>
     <p>SAMonitor is an open server list, and as such, anyone can add a server.</p>
@@ -20,6 +24,7 @@
 </div>
 
 <script>
-    history.replaceState({}, null, "./?page=add");
     document.title = "SAMonitor - add server";  
 </script>
+
+<?php PageBottom() ?>

@@ -1,4 +1,7 @@
 <?php
+    include 'logic/layout.php';
+    PageHeader("server");
+
     $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours=24&ip_addr=".urlencode($_GET['ip_addr'])), true);
 
     $playerSet = "";
@@ -123,7 +126,6 @@
 </div>
 
 <script>
-    history.replaceState({}, null, "./?page=server&ip_addr=<?=$_GET['ip_addr']?>");
     document.title = "SAMonitor - <?=$server['name']?>"
 </script>
 
@@ -152,6 +154,8 @@
 </script>
 
 <?php
+    PageBottom();
+
     function timeSince($time) {
         $time = time() - $time; // to get the time since that moment
         $time = ($time<1)? 1 : $time;

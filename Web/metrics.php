@@ -1,4 +1,7 @@
 <?php
+    include 'logic/layout.php';
+    PageHeader("metrics");
+
     $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetGlobalMetrics?hours=24"), true);
 
     // if load_table or load_graph parameter is set, only return that.
@@ -73,7 +76,7 @@
             <canvas id='globalPlayersChart' style='width: 100%'></canvas>
         </div>
         <div style="margin-top: 1rem" hx-target="this">
-            <input type="button" value="Show dataset as a table" hx-get="./view/metrics.php?load_table"/>
+            <input type="button" value="Show dataset as a table" hx-get="./metrics.php?load_table"/>
         </div>
         <p>The highest player count was <span style='color: green'><?=$highest?></span> at <?=$highest_time?>, and the lowest was <span style='color: red'><?=$lowest?></span> at <?=$lowest_time?></p>
         <p>
@@ -87,11 +90,6 @@
         <p>The same graphs are available in every server's page. Simply click "Show details" and then "All about this server" where desired.</p>
     </div>
 </div>
-
-<script>
-    history.replaceState({}, null, "./?page=metrics");
-    document.title = "SAMonitor - metrics";
-</script>
 
 <script>
     new Chart(document.getElementById('globalPlayersChart'), {
@@ -111,3 +109,9 @@
         }
     });
 </script>
+
+<script>
+    document.title = "SAMonitor - metrics";
+</script>
+
+<?php PageBottom() ?>

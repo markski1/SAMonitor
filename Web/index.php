@@ -1,75 +1,47 @@
 <?php
-    // routing
-    $page = htmlspecialchars($_GET['page'] ?? "servers");
+    include 'logic/layout.php';
+    PageHeader("SA-MP and open.mp server monitor");
 
-    // title
-    if ($page == "servers") {
-        $title = "SA-MP and open.mp server monitor";
-    }
-    else {
-        $title = $page;
-    }
-
-    $loadPage = "view/{$page}.php";
-
-    // if looking at single-server page..
-    if ($page == "server") {
-        if (!isset($_GET['ip_addr'])) {
-            $ip_addr = "invalid";
-        }
-        else {
-            $ip_addr = trim($_GET['ip_addr']);
-        }
-        $loadPage = $loadPage."?ip_addr={$ip_addr}";
-    }
+    $total_servers = file_get_contents("http://gateway.markski.ar:42069/api/GetAmountServers");
+    $total_players = file_get_contents("http://gateway.markski.ar:42069/api/GetTotalPlayers");
 ?>
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <title>SAMonitor - <?=$title?></title>
-        
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta charset="utf-8">
-        <link rel="stylesheet" type="text/css" href="styles.css">
-        
-        <meta name="title" content="SAMonitor - <?=$title?>">
-        <meta name="description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist.">
 
-        <meta name="og:title" content="SAMonitor - <?=$title?>" />
-        <meta property="og:description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist." />
-    </head>
-    <body>
-        <header>
-            <div>
-                <h1>SAMonitor</h1>
-            </div>
-            <div>
-                <a href="?page=servers" hx-get="view/servers.php" hx-target="#main">servers</a> <span class="separator">&nbsp;/&nbsp;</span>
-                <a href="?page=about" hx-get="view/about.php" hx-target="#main">about</a> <span class="separator">&nbsp;/&nbsp;</span>
-                <a href="?page=metrics" hx-get="view/metrics.php" hx-target="#main">metrics</a> <span class="separator">&nbsp;/&nbsp;</span>
-                <a href="?page=add" hx-get="view/add.php" hx-target="#main">add server</a> <span class="separator">&nbsp;/&nbsp;</span>
-                <a href="?page=donate" hx-get="view/donate.php" hx-target="#main">donate</a>  <span class="separator">&nbsp;/&nbsp;</span>
-                <a href="?page=blacklist" hx-get="view/blacklist.php" hx-target="#main">blacklist</a>
-            </div>
-        </header>
-        <main id="main" hx-get="<?=$loadPage?>" hx-trigger="load"></main>
-    </body>
-</html>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/htmx.org@1.9.4/dist/htmx.min.js" crossorigin="anonymous"></script>
+<div class="filterBox">
+    <p>Tracking <?=$total_servers?> servers, with <?=$total_players?> players total.</p>
+    <form hx-get="./view/bits/list_servers.php" hx-target="#server-list">
+        <fieldset>
+            <legend>Search</legend>
+            <table>
+                <tr>
+                    <td>Name:</td><td><input type="text" name="name" <?php if (isset($_GET['name'])) echo 'value="{}"'?> /></td>
+                </tr>
+                <tr>
+                    <td>Gamemode:</td><td><input type="text" name="gamemode" /></td>
+                </td>
+            </table>
+        </fieldset>
 
-<script>
-    function CopyAddress(id) {
-        var copyText = document.getElementById(id);
-        navigator.clipboard.writeText(copyText.innerText);
-        alert("Address copied.");
-    }
-</script>
+        <fieldset>
+            <legend>Options</legend>
+            <label><input type="checkbox" name="show_empty"> Show empty servers</label><br />
+            <label><input type="checkbox" name="hide_roleplay"> Hide roleplay servers</label><br />
+            <label><input type="radio" name="order" value="none"> Don't order</label><br />
+            <label><input type="radio" name="order" value="players"> Order by players</label><br />
+            <label><input type="radio" name="order" checked value="ratio"> Order by players/max ratio</label>
+        </fieldset>
+        <div style="margin-top: .5rem; margin-bottom: 0; width: 10rem">
+            <input type="submit" value="Apply filter" hx-indicator="#filter-indicator" />
+            <img style="width: 2rem; vertical-align: middle" src="assets/loading.svg" id="filter-indicator" class="htmx-indicator" />
+        </div>
+    </form>
+</div>
+<div id="server-list" class="pageContent" hx-get="view/bits/list_servers.php" hx-trigger="load">
+    <h1>Loading servers!</h1>
+    <p>Please wait. If servers don't load in, SAMonitor might be having issues, please check in later!. Alternatively, if you're using NoScript, you'll need to disable it.</p>
+</div>
 
 <script>
-    window.onpopstate = function(e){
-        if (e.state) {
-            document.getElementById("main").innerHTML = e.state;
-        }
-    };
+    document.title = "SAMonitor - SA-MP and open.mp server monitor";
 </script>
+
+<?php PageBottom() ?>
