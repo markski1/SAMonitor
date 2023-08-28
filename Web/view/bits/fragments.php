@@ -1,6 +1,6 @@
 <?php
 
-function DrawServer($server, $num, $details = false) {
+function DrawServer($server, $details = false) {
     $server = array_map('htmlspecialchars', $server);
 
     if ($server['website'] != "Unknown") {
@@ -46,18 +46,18 @@ function DrawServer($server, $num, $details = false) {
                     <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
                 </tr>
             </table>
-            <button hx-get="view/server.php?&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>" style="width: 100%; margin-top: 1rem;" hx-target="#main">All about this server</button>
+            <button hx-get="view/server.php?&ip_addr=<?=$server['ipAddr']?>" style="width: 100%; margin-top: 1rem;" hx-target="#main">All about this server</button>
         </div>
     <?php } ?>
 
     <div style="float: left; margin-top: 0">
-        <p class="ipAddr" id="ipAddr<?=$num?>"><?=$server['ipAddr']?></p>
+        <p class="ipAddr" id="ipAddr<?=$server['id']?>"><?=$server['ipAddr']?></p>
     </div>
     <div style="text-align: right; float: right; margin-top: 0">
         <?php if (!$details) { ?>
-            <button hx-get="view/bits/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>&number=<?=$num?>">Show details</button>
+            <button hx-get="view/bits/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>">Details</button>
         <?php } ?>
-        <button class="connectButton" onclick="CopyAddress('ipAddr<?=$num?>')">Copy IP</button>
+        <button class="connectButton" onclick="CopyAddress('ipAddr<?=$server['id']?>')">Copy IP</button>
     </div>
     <div style="clear: both"></div>
 <?php
@@ -67,13 +67,7 @@ if (isset($_GET['type'])) {
     if ($_GET['type'] == 'details') {
         $server = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
 
-        DrawServer($server, $_GET['number'], true);
-    }
-
-    if ($_GET['type'] == 'basic') {
-        $server = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerByIP?ip_addr=".urlencode($_GET['ip_addr'])), true);
-
-        DrawServer($server, $_GET['number']);
+        DrawServer($server, true);
     }
 
     //..

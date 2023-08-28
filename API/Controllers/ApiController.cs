@@ -54,7 +54,8 @@ public class ApiController : ControllerBase
 
         if (hide_roleplay != 0)
         {
-            servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") || !x.GameMode.ToLower().Contains("role"));
+            servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") && !x.GameMode.ToLower().Contains("role"));
+            servers = servers.Where(x => !x.Name.ToLower().Contains("roleplay") && !x.Name.ToLower().Contains("role play"));
         }
 
         // after ordering we exclusively manage lists

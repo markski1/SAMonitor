@@ -36,12 +36,10 @@
         exit("No results.");
     }
 
-    $num = 0;
     foreach ($servers as $server) {
         echo '<div hx-target="this" class="server">';
-        DrawServer($server, $num);
+        DrawServer($server);
         echo '</div>';
-        $num++;
     }
 
     if (Count($servers) == 20) {   

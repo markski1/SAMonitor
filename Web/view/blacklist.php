@@ -17,7 +17,7 @@
 
     <p>There's no such thing as a permanent block in SAMonitor. No matter the size of the transgression, if you have truly rectified it, you may appeal and be unblocked.</p>
     <p>If you own a blocked server and wish to appeal, contact me.</p>
-    <p>Email: me@markski.ar<br/>Discord: markski.ar</p>
+    <p>Email: me@markski.ar<br/>Discord: markski.ar (yes, that's a username)</p>
 
     <div class="innerContent">
         <h3>List of blocked servers</h3>
@@ -39,4 +39,5 @@
 
 <script>
     history.replaceState({}, null, "./?page=blacklist");
+    document.title = "SAMonitor - blacklist";
 </script>

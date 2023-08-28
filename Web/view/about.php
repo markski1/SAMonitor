@@ -36,4 +36,5 @@
 
 <script>
     history.replaceState({}, null, "./?page=about");
+    document.title = "SAMonitor - about";  
 </script>

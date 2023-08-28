@@ -21,4 +21,5 @@
 
 <script>
     history.replaceState({}, null, "./?page=add");
+    document.title = "SAMonitor - add server";  
 </script>

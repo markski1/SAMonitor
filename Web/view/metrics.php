@@ -90,6 +90,7 @@
 
 <script>
     history.replaceState({}, null, "./?page=metrics");
+    document.title = "SAMonitor - metrics";
 </script>
 
 <script>

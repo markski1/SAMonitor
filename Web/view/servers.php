@@ -38,4 +38,5 @@
 
 <script>
     history.replaceState({}, null, "./");
+    document.title = "SAMonitor - servers";
 </script>

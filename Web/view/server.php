@@ -1,88 +1,42 @@
 <?php
-    // if load_graph parameter is set, only return the metrics graph.
-    // this allows for two things:
-    //     - External embedding of the graph by any 3rd party who wants it.
-    //     - Making the main page load faster. HTMX calls this page again with this parameter to get the graph without delaying the main page load.
-    
-    if (isset($_GET['load_graph'])) {
-        $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours=24&ip_addr=".urlencode($_GET['ip_addr'])), true);
+    $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours=24&ip_addr=".urlencode($_GET['ip_addr'])), true);
 
-        $playerSet = "";
-        $timeSet = "";
-        $first = true;
+    $playerSet = "";
+    $timeSet = "";
+    $first = true;
 
-        // API provides data in descendent order, but we'd want to show t
-        $metrics = array_reverse($metrics);
+    // API provides data in descendent order, but we'd want to show t
+    $metrics = array_reverse($metrics);
 
-        $lowest = 69420;
-        $lowest_time = null;
-        $highest = -1;
-        $highest_time = null;
+    $lowest = 69420;
+    $lowest_time = null;
+    $highest = -1;
+    $highest_time = null;
 
-        $skip = true;
+    $skip = true;
 
-        if (count($metrics) > 3) {
-            foreach ($metrics as $instant) {
-                $humanTime = strtotime($instant['time']);
-                $humanTime = date("H:i", $humanTime);
-    
-                if ($instant['players'] > $highest) {
-                    $highest = $instant['players'];
-                    $highest_time = $humanTime;
-                }
-                if ($instant['players'] < $lowest) {
-                    $lowest = $instant['players'];
-                    $lowest_time = $humanTime;
-                }
-    
-                if ($first) {
-                    $playerSet .= $instant['players'];
-                    $timeSet .= "'".$humanTime."'";
-                    $first = false;
-                } 
-                else {
-                    $playerSet .= ", ".$instant['players'];
-                    $timeSet .= ", '".$humanTime."'";
-                }
-            }
-    
-            echo "
-                <div style='width: 100% !important'>
-                    <canvas id='globalPlayersChart' style='width: 100%'></canvas>
-                </div>
-    
-                <script>
-                    new Chart(document.getElementById('globalPlayersChart'), {
-                        type: 'line',
-                        options: {
-                            responsive: false,
-                            scales: {
-                                y: {
-                                    min: 0
-                                }
-                            }
-                        },
-                        data: {
-                            labels: [{$timeSet}],
-                            datasets: [
-                                {
-                                    label: 'Players online',
-                                    data: [{$playerSet}],
-                                    borderWidth: 1
-                                }
-                            ]
-                        }
-                    });
-                </script>
-            ";
-    
-            echo "
-                    <p>The highest player count was <span style='color: green'>{$highest}</span> at {$highest_time}, and the lowest was <span style='color: red'>{$lowest}</span> at {$lowest_time}</p>
-            ";
-        } else {
-            echo '<p>Not enough data for player-count graph.</p>';
+    foreach ($metrics as $instant) {
+        $humanTime = strtotime($instant['time']);
+        $humanTime = date("H:i", $humanTime);
+
+        if ($instant['players'] > $highest) {
+            $highest = $instant['players'];
+            $highest_time = $humanTime;
         }
-        exit;
+        if ($instant['players'] < $lowest) {
+            $lowest = $instant['players'];
+            $lowest_time = $humanTime;
+        }
+
+        if ($first) {
+            $playerSet .= $instant['players'];
+            $timeSet .= "'".$humanTime."'";
+            $first = false;
+        } 
+        else {
+            $playerSet .= ", ".$instant['players'];
+            $timeSet .= ", '".$humanTime."'";
+        }
     }
 
     if (isset($_GET['ip_addr']) && strlen($_GET['ip_addr']) > 0) {
@@ -147,8 +101,14 @@
     </div>
     <div class="innerContent">
         <h3>Activity graph - Last 24 hours</h3>
-        <div hx-get="./view/server.php?ip_addr=<?=$_GET['ip_addr']?>&load_graph" hx-trigger="load">
-            <h3>Loading graph...</h3>
+        <div style='width: 100% !important'>
+            <?php if (count($metrics) > 2) { ?>
+                <canvas id='globalPlayersChart' style='width: 100%'></canvas>
+                <p>The highest player count was <span style='color: green'><?=$highest?></span> at <?=$highest_time?>, and the lowest was <span style='color: red'><?=$lowest?></span> at <?=$lowest_time?></p>
+
+            <?php } else { ?>
+                <p>Not enough data for the activity graph, please check later.</p>
+            <?php } ?>
         </div>
         <p>
             <small>
@@ -158,7 +118,6 @@
     </div>
     <div class="innerContent">
         <h3>Player list</h3>
-        <p><small>Note: Due to a SA-MP limitation, the player list is only updated when there's less than 100 players.<br />If the server currently has more than 100 players, then this list may be outdated.</small></p>
         <iframe style="width: 100%; height: 15rem; border: 1px solid gray" src="view/bits/playerlist.php?ip_addr=<?=$server['ipAddr']?>&players=<?=$server['playersOnline']?>"></iframe>
     </div>
 </div>
@@ -166,6 +125,30 @@
 <script>
     history.replaceState({}, null, "./?page=server&ip_addr=<?=$_GET['ip_addr']?>");
     document.title = "SAMonitor - <?=$server['name']?>"
+</script>
+
+<script>
+    new Chart(document.getElementById('globalPlayersChart'), {
+        type: 'line',
+        options: {
+            responsive: false,
+            scales: {
+                y: {
+                    min: 0
+                }
+            }
+        },
+        data: {
+            labels: [<?=$timeSet?>],
+            datasets: [
+                {
+                    label: 'Players online',
+                    data: [<?=$playerSet?>],
+                    borderWidth: 1
+                }
+            ]
+        }
+    });
 </script>
 
 <?php

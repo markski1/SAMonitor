@@ -19,6 +19,8 @@
             text = text.Replace('с', 'ñ');
             text = text.Replace('к', 'ê');
             text = text.Replace('Ў', '¡');
+            text = text.Replace('У', 'Ó');
+            text = text.Replace('б', 'á');
             return text;
         }
     }

@@ -48,7 +48,7 @@
                 <a href="?page=about" hx-get="view/about.php" hx-target="#main">about</a> <span class="separator">&nbsp;/&nbsp;</span>
                 <a href="?page=metrics" hx-get="view/metrics.php" hx-target="#main">metrics</a> <span class="separator">&nbsp;/&nbsp;</span>
                 <a href="?page=add" hx-get="view/add.php" hx-target="#main">add server</a> <span class="separator">&nbsp;/&nbsp;</span>
-                <!--<a href="?page=sponsor" hx-get="view/sponsor.php" hx-target="#main">sponsor</a>  <span class="separator">&nbsp;/&nbsp;</span>-->
+                <a href="?page=donate" hx-get="view/donate.php" hx-target="#main">donate</a>  <span class="separator">&nbsp;/&nbsp;</span>
                 <a href="?page=blacklist" hx-get="view/blacklist.php" hx-target="#main">blacklist</a>
             </div>
         </header>
