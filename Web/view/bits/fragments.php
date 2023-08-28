@@ -46,7 +46,9 @@ function DrawServer($server, $details = false) {
                     <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
                 </tr>
             </table>
-            <button hx-get="server.php?&ip_addr=<?=$server['ipAddr']?>" style="width: 100%; margin-top: 1rem;" hx-target="#main" hx-push-url="true">All about this server</button>
+            <a hx-get="server.php?&ip_addr=<?=$server['ipAddr']?>" hx-target="#main" hx-push-url="true">
+                <button style="width: 100%; margin-top: 1rem; font-size: 1.25rem">All about this server</button>
+            </a>
         </div>
     <?php } ?>
 

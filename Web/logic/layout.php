@@ -11,7 +11,7 @@ function PageHeader($title) {
             
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta charset="utf-8">
-            <link rel="stylesheet" type="text/css" href="styles.css">
+            <link rel="stylesheet" type="text/css" href="style.css">
             
             <meta name="title" content="SAMonitor - <?=$title?>">
             <meta name="description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist.">
@@ -28,7 +28,7 @@ function PageHeader($title) {
                     <h1>SAMonitor</h1>
                 </div>
                 <div>
-                    <a href="index.php" hx-get="index.php" hx-push-url="true" hx-target="#main">servers</a> <span class="separator">&nbsp;/&nbsp;</span>
+                    <a href="./" hx-get="./" hx-push-url="true" hx-target="#main">servers</a> <span class="separator">&nbsp;/&nbsp;</span>
                     <a href="about.php" hx-get="about.php" hx-push-url="true" hx-target="#main">about</a> <span class="separator">&nbsp;/&nbsp;</span>
                     <a href="metrics.php" hx-get="metrics.php" hx-push-url="true" hx-target="#main">metrics</a> <span class="separator">&nbsp;/&nbsp;</span>
                     <a href="add.php" hx-get="add.php" hx-push-url="true" hx-target="#main">add server</a> <span class="separator">&nbsp;/&nbsp;</span>

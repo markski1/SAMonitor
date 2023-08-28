@@ -36,7 +36,6 @@ header {
 main {
     margin-top: 2rem;
     width: 100%;
-    max-width: 60rem;
     display: flex;
     flex-direction: row-reverse;
     justify-content: center;
@@ -103,6 +102,10 @@ header .separators {
         justify-content: left;
 		margin: 3rem 0 0;
 	}
+
+    .flexBox {
+        max-width: 35rem !important; 
+    }
 }
 
 /* Global elements */
@@ -111,14 +114,14 @@ button {
     padding: .6rem 1.2rem;
     border: 1px solid black;
     border-radius: 8px;
-    margin-right: 1.5rem;
-    background-color: var(--accent);
-    border: 2px solid var(--accent);
+    margin-right: 1rem;
+    background-color: var(--primary);
+    border: 2px solid var(--primary);
 }
 
 button.connectButton {
-    background-color: var(--primary);
-    border: 2px solid var(--primary);
+    background-color: var(--accent);
+    border: 2px solid var(--accent);
 }
 
 button:hover {
@@ -193,7 +196,6 @@ fieldset {
 }
 
 .server {
-    max-width: 32rem;
     background-color: var(--secondary);
     margin: auto;
     margin-bottom: 1.25rem;
@@ -237,7 +239,14 @@ fieldset {
     margin-top: 1rem;
 }
 
-@media (max-width: 1250px) {
+.flexBox {
+    margin: 0;
+    max-width: 100rem;
+    flex: 1;
+    flex-basis: 48%;
+}
+
+@media (max-width: 1300px) {
     .server, .filterBox {
         width: 90%;
         min-width: 0;

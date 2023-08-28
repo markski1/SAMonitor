@@ -67,61 +67,68 @@
         }
     ?>
     <p><?=$server['name']?></p>
-    <div class="innerContent">
-        <h3>Details</h3>
-        <table class="serverDetailsTable">
-            <tr>
-                <td><b>Players</b></td><td><?=$server['playersOnline']?> / <?=$server['maxPlayers']?></td>
-            </tr>
-            <tr>
-                <td><b>Gamemode</b></td><td><?=$server['gameMode']?></td>
-            </tr>
-            <tr>
-                <td><b>Language</b></td><td><?=$server['language']?></td>
-            </tr>
-            <tr>
-                <td><b>Map</b></td><td><?=$server['mapName']?></td>
-            </tr>
-            <tr>
-                <td><b>Lag compensation</b></td><td><?=$lagcomp?></td>
-            </tr>
-            <tr>
-                <td><b>Version</b></td><td><?=$server['version']?></td>
-            </tr>
-            <tr>
-                <td><b>Website</b></td><td><?=$website?></td>
-            </tr>
-            <tr>
-                <td><b>SAMPCAC</b></td><td><?=$server['sampCac']?></td>
-            </tr>
-            <tr>
-                <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
-            </tr>
-            <tr>
-                <td><b>IP Address:</b></td><td><?=$server['ipAddr']?></td>
-            </tr>
-        </table>
-    </div>
-    <div class="innerContent">
-        <h3>Activity graph - Last 24 hours</h3>
-        <div style='width: 100% !important'>
-            <?php if (count($metrics) > 2) { ?>
-                <canvas id='globalPlayersChart' style='width: 100%'></canvas>
-                <p>The highest player count was <span style='color: green'><?=$highest?></span> at <?=$highest_time?>, and the lowest was <span style='color: red'><?=$lowest?></span> at <?=$lowest_time?></p>
-
-            <?php } else { ?>
-                <p>Not enough data for the activity graph, please check later.</p>
-            <?php } ?>
+    <div style="display: flex; flex-wrap: wrap; justify-content: start; gap: 1.5rem">
+        <div class="innerContent flexBox">
+            <h3>Details</h3>
+            <table class="serverDetailsTable">
+                <tr>
+                    <td><b>Players</b></td><td><?=$server['playersOnline']?> / <?=$server['maxPlayers']?></td>
+                </tr>
+                <tr>
+                    <td><b>Gamemode</b></td><td><?=$server['gameMode']?></td>
+                </tr>
+                <tr>
+                    <td><b>Language</b></td><td><?=$server['language']?></td>
+                </tr>
+                <tr>
+                    <td><b>Map</b></td><td><?=$server['mapName']?></td>
+                </tr>
+                <tr>
+                    <td><b>Lag compensation</b></td><td><?=$lagcomp?></td>
+                </tr>
+                <tr>
+                    <td><b>Version</b></td><td><?=$server['version']?></td>
+                </tr>
+                <tr>
+                    <td><b>Website</b></td><td><?=$website?></td>
+                </tr>
+                <tr>
+                    <td><b>SAMPCAC</b></td><td><?=$server['sampCac']?></td>
+                </tr>
+                <tr>
+                    <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
+                </tr>
+            </table>
+            <div style="margin-top: 2rem">
+                <div style="float: left; margin-top: 0">
+                    <p class="ipAddr" id="ipAddr<?=$server['id']?>"><?=$server['ipAddr']?></p>
+                </div>
+                <div style="text-align: right; float: right; margin-top: 0">
+                    <a href="samp://<?=$server['ipAddr']?>"><button>Connect</button></a><button class="connectButton" onclick="CopyAddress('ipAddr<?=$server['id']?>')">Copy IP</button>
+                </div>
+            </div>
         </div>
-        <p>
-            <small>
-                Times are UTC 0.
-            </small>
-        </p>
-    </div>
-    <div class="innerContent">
-        <h3>Player list</h3>
-        <iframe style="width: 100%; height: 15rem; border: 1px solid gray" src="view/bits/playerlist.php?ip_addr=<?=$server['ipAddr']?>&players=<?=$server['playersOnline']?>"></iframe>
+        <div class="innerContent flexBox">
+            <h3>Activity graph - Last 24 hours</h3>
+            <div style='width: 100% !important'>
+                <?php if (count($metrics) > 2) { ?>
+                    <canvas id='globalPlayersChart' style='width: 100%'></canvas>
+                    <p>The highest player count was <span style='color: green'><?=$highest?></span> at <?=$highest_time?>, and the lowest was <span style='color: red'><?=$lowest?></span> at <?=$lowest_time?></p>
+
+                <?php } else { ?>
+                    <p>Not enough data for the activity graph, please check later.</p>
+                <?php } ?>
+            </div>
+            <p>
+                <small>
+                    Times are UTC 0.
+                </small>
+            </p>
+        </div>
+        <div class="innerContent flexBox">
+            <h3>Player list</h3>
+            <iframe style="width: 100%; height: 15rem; border: 1px solid gray" src="view/bits/playerlist.php?ip_addr=<?=$server['ipAddr']?>&players=<?=$server['playersOnline']?>"></iframe>
+        </div>
     </div>
 </div>
 
