@@ -103,6 +103,12 @@ header .separators {
 		margin: 3rem 0 0;
 	}
 
+    .headerContents {
+        position: fixed;
+        top: -30px;
+        left: 70px;
+    }
+
     .flexBox {
         max-width: 35rem !important; 
     }
@@ -196,8 +202,9 @@ fieldset {
 }
 
 .server {
+    max-width: 34rem;
     background-color: var(--secondary);
-    margin: auto;
+    margin: 0;
     margin-bottom: 1.25rem;
     padding: .66rem;
     border: 0;
@@ -210,7 +217,7 @@ fieldset {
 }
 
 .filterBox {
-    max-width: 32rem;
+    max-width: 34rem;
     min-width: 20rem;
     margin: 0;
     margin-bottom: 1rem;
@@ -219,7 +226,11 @@ fieldset {
     padding: .75rem;
     border-radius: 12px;
     max-height: 25.5rem;
-    position: sticky;
+
+    
+    position: fixed;
+    top: 3.5rem;
+    left: 55rem;
 }
 
 .filterBox table {
@@ -248,12 +259,13 @@ fieldset {
 
 @media (max-width: 1300px) {
     .server, .filterBox {
-        width: 90%;
         min-width: 0;
         position: relative;
     }
     .filterBox{
-        margin-left: 1rem;
+        width: 100%;
+        top: 0;
+        left: 0;
     }
 }
 
