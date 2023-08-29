@@ -393,39 +393,9 @@ namespace SAMPQuery
                         if (property != null)
                         {
                             if (property.PropertyType == typeof(bool)) val = value == "On";
-                            else if (property.PropertyType == typeof(Uri))
-                            {
-                                Uri.TryCreate(value, UriKind.Absolute, out Uri? parsedUri);
-
-                                if (parsedUri is null)
-                                    Uri.TryCreate("http://" + value, UriKind.Absolute, out parsedUri);
-
-                                parsedUri ??= new Uri("http://sa-mp.com/", UriKind.Absolute);
-
-                                val = parsedUri;
-                            }
-                            else if (property.PropertyType == typeof(DateTime))
-                            {
-                                bool success = TimeSpan.TryParse(value, out TimeSpan parsedTime);
-                                if (!success)
-                                {
-                                    parsedTime = TimeSpan.FromHours(0);
-                                }
-                                val = DateTime.Today.Add(parsedTime);
-                            }
-                            else
-                            {
-                                try
-                                {
-                                    val = Convert.ChangeType(value, property.PropertyType, CultureInfo.InvariantCulture);
-                                }
-                                catch
-                                {
-                                    // the value could not be parsed, try to get a default.
-                                    value = "0";
-                                    val = Convert.ChangeType(value, property.PropertyType, CultureInfo.InvariantCulture);
-                                }
-                            }
+                            else if (property.PropertyType == typeof(Uri)) val = Helpers.ParseWeburl(value);
+                            else if (property.PropertyType == typeof(DateTime)) val = Helpers.ParseTime(value);
+                            else val = Helpers.TryParseByte(value, property);
 
                             property.SetValue(sampServerRulesData, val);
                         }
