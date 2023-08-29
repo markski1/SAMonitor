@@ -5,11 +5,11 @@
 
 <div>
     <h2>Blacklist</h2>
-    <p>Dishonest activity will result in servers being blacklisted.</p>
+    <p>Harmful activity will result in servers being blacklisted.</p>
 
     <div class="innerContent">
-        <h3>Defining dishonesty</h3>
-        <p>While I reserve the right to decide what does and doesn't constitute dishonest activity, here's a few likely examples.</p>
+        <h3>Defining harm</h3>
+        <p>While I reserve the right to decide what does and doesn't constitute harmful activity, here's a few likely examples.</p>
         <ul>
             <li>Faking your player count or other data.</li>
             <li>The server is an illegitimate clone of another server.</li>
@@ -19,7 +19,7 @@
         <small>* An example of a hostile stance could be a threat or an attempt at causing harm or disruption.</small>
     </div>
 
-    <p>There's no such thing as a permanent block in SAMonitor. No matter the size of the transgression, if you have truly rectified it, you may appeal and be unblocked.</p>
+    <p>There are no permanent blocks in SAMonitor. No matter the size of the transgression, if you have truly rectified it, you may appeal and be unblocked.</p>
     <p>If you own a blocked server and wish to appeal, contact me.</p>
     <p>Email: me@markski.ar<br/>Discord: markski.ar (yes, that's a username)</p>
 

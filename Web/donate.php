@@ -32,7 +32,7 @@
             <li><b>Promote your server</b>: </li>
             While you're getting a green box for 30 days, this will not improve it's positioning in the list in any way. If your server doesn't show up in the first page now, it won't do after donating either.
             <li><b>Protect your server</b>: </li>
-            If your server or staff is found to engage in dishonest or harmful activity, such as the ones listed in the 'blacklist' page, you will be blacklisted all the same.
+            If your server or staff is found to engage in harmful activity, such as the ones listed in the 'blacklist' page, you will be blacklisted all the same.
         </ul>
     </div>
     <div class="innerContent">

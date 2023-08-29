@@ -10,7 +10,7 @@
     <p>Tracking <?=$total_servers?> servers, with <?=$total_players?> players total.</p>
     <form hx-get="./view/bits/list_servers.php" hx-target="#server-list">
         <fieldset>
-            <legend>Search</legend>
+            <h3 style="margin-bottom: 0.33rem">Search</h3>
             <table>
                 <tr>
                     <td>Name:</td><td><input type="text" name="name" <?php if (isset($_GET['name'])) echo 'value="{}"'?> /></td>
@@ -21,15 +21,15 @@
             </table>
         </fieldset>
 
-        <fieldset>
-            <legend>Options</legend>
+        <fieldset style="margin-top: 1rem">
+            <h3 style="margin-bottom: 0.33rem">Options</h3>
             <label><input type="checkbox" name="show_empty"> Show empty servers</label><br />
             <label><input type="checkbox" name="hide_roleplay"> Hide roleplay servers</label><br />
             <label><input type="radio" name="order" value="none"> Don't order</label><br />
             <label><input type="radio" name="order" value="players"> Order by players</label><br />
             <label><input type="radio" name="order" checked value="ratio"> Order by players/max ratio</label>
         </fieldset>
-        <div style="margin-top: .5rem; margin-bottom: 0; width: 10rem">
+        <div style="margin-top: 1rem; margin-bottom: 0; width: 10rem">
             <input type="submit" value="Apply filter" hx-indicator="#filter-indicator" />
             <img style="width: 2rem; vertical-align: middle" src="assets/loading.svg" id="filter-indicator" class="htmx-indicator" />
         </div>

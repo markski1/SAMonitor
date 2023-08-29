@@ -1,30 +1,10 @@
-/* Colors */
-/*
-:root {
-    --background: #090f10;
-    --text: #e8f0f2;
-    --primary: #a4c2cb;
-    --secondary: #1c2c31;
-    --accent: #6d9dab;
-}
-*/
-
-:root {
-    --background: #070913;
-    --text: #ffffff;
-    --primary: #a2a8dd;
-    --secondary: #151838;
-    --secondary-darker: #0e1024;
-    --accent: #5762c1;
-}
-
 /* Main layout */
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
     Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-    background-color: var(--background);
-    color: var(--text);
+    background-color: #1F1F1F;
+    color: #E3E3E3;
     font-size: 16px;
 }
 
@@ -36,6 +16,7 @@ header {
 main {
     margin-top: 2rem;
     width: 100%;
+    max-width: 75rem;
     display: flex;
     flex-direction: row-reverse;
     justify-content: center;
@@ -117,30 +98,27 @@ header .separators {
 /* Global elements */
 
 button {
-    padding: .6rem 1.2rem;
+    padding: .8rem 1.33rem;
     border: 1px solid black;
     border-radius: 8px;
     margin-right: 1rem;
-    background-color: var(--primary);
-    border: 2px solid var(--primary);
     cursor: pointer;
+    background-color: #A8C7FA;
+    border: 0;
 }
 
 button[disabled] {
     cursor: not-allowed;
 }
 
-button.connectButton {
-    background-color: var(--accent);
-    border: 2px solid var(--accent);
-}
-
 button:hover {
-    border: 2px solid white;
+    background-color: white;
+    color: black;
 }
 
 button:active {
-    background-color: white;
+    background-color: #062E6F;
+    color: #A8C7FA;
 }
 
 td, th {
@@ -154,8 +132,8 @@ td, th {
 }
 
 .serverDetailsTable td {
-    background-color: var(--background);
-    border: 1px solid var(--primary);
+    background-color: #1F1F1F;
+    border: 1px solid #A8C7FA;
     margin: 0;
     padding-left: 5px;
 }
@@ -196,7 +174,9 @@ h2 {
 }
 
 fieldset {
-    border: 1px solid var(--primary);
+    border-radius: 12px;
+    border: 1px solid #1F1F1F;
+    background-color: #252525;
 }
 
 /* Containers */
@@ -208,13 +188,13 @@ fieldset {
 
 .server {
     max-width: 34rem;
-    background-color: var(--secondary);
+    background-color: #28292A;
+    box-shadow: rgba(0, 0, 0, 0.15) 0px 3px 8px;
     margin: 0;
     margin-bottom: 1.25rem;
     padding: .66rem;
     border: 0;
-    border-radius: 12px;
-    box-shadow: #6d9dab55 3px 3px;
+    border-radius: 18px;
 }
 
 .server div {
@@ -226,12 +206,10 @@ fieldset {
     min-width: 20rem;
     margin: 0;
     margin-bottom: 1rem;
-    background-color: var(--secondary-darker);
-    border: 1px solid var(--secondary);
+    background-color: #2D2F31;
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
     padding: .75rem;
     border-radius: 12px;
-    max-height: 25.5rem;
-
     
     position: fixed;
     top: 3.5rem;
@@ -247,8 +225,8 @@ fieldset {
 }
 
 .innerContent {
-    background-color: var(--secondary-darker);
-    border: 1px solid var(--secondary);
+    background-color: #2D2F31;
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
     border-radius: 6px;
     padding: .8rem;
     width: 95%;
