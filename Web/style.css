@@ -123,6 +123,11 @@ button {
     margin-right: 1rem;
     background-color: var(--primary);
     border: 2px solid var(--primary);
+    cursor: pointer;
+}
+
+button[disabled] {
+    cursor: not-allowed;
 }
 
 button.connectButton {
