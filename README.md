@@ -21,7 +21,7 @@ Providing: A server browser, a public API and a Masterlist alternative.
 
 ## Server browser
 
-The server browser is available at https://gateway.markski.ar
+The server browser is available at https://sam.markski.ar
 
 It is still at a very early stage. Eventually it'll have filtering among other features.
 
@@ -31,7 +31,7 @@ It is written in HTMX and PHP, which provides a very lightweight website where l
 
 ## Masterlist
 
-We offer a masterlist alternative, at http://gateway.markski.ar:42069/api/GetMasterlist
+We offer a masterlist alternative, at `http://gateway.markski.ar:42069/api/GetMasterlist`
 
 It is a relatively high-quality masterlist, since rather than functioning as a hastily-updated text file or database, it only provides servers which are actively running.
 Servers which failed to be online in the last ~24 hours are not included in this list (but are re-added when they return).
