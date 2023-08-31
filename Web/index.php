@@ -2,14 +2,14 @@
     include 'logic/layout.php';
     PageHeader("SA-MP and open.mp server monitor");
 
-    $total_servers = file_get_contents("http://gateway.markski.ar:42069/api/GetAmountServers");
+    $online_servers = file_get_contents("http://gateway.markski.ar:42069/api/GetAmountServers");
+    $total_servers = file_get_contents("http://gateway.markski.ar:42069/api/GetAmountServers?include_dead=1");
     $total_players = file_get_contents("http://gateway.markski.ar:42069/api/GetTotalPlayers");
 ?>
 
 <div class="filterBox">
-    <p>Tracking <?=$total_servers?> servers, with <?=$total_players?> players total.</p>
     <form hx-get="./view/bits/list_servers.php" hx-target="#server-list">
-        <fieldset>
+        <fieldset style="margin-top: 1rem">
             <h3 style="margin-bottom: 0.33rem">Search</h3>
             <table>
                 <tr>
@@ -34,6 +34,11 @@
             <img style="width: 2rem; vertical-align: middle" src="assets/loading.svg" id="filter-indicator" class="htmx-indicator" />
         </div>
     </form>
+</div>
+<div class="currentStats">
+    <p><?=$total_servers?> total servers tracked.</br>
+    <?=$online_servers?> servers currently online.</br>
+    <?=$total_players?> people playing right now.</p>
 </div>
 <div id="server-list" class="pageContent" hx-get="view/bits/list_servers.php" hx-trigger="load">
     <h1>Loading servers!</h1>

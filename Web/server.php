@@ -2,13 +2,13 @@
     include 'logic/layout.php';
     PageHeader("server");
 
-    $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours=24&ip_addr=".urlencode($_GET['ip_addr'])), true);
+    $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours=24&include_misses=1&ip_addr=".urlencode($_GET['ip_addr'])), true);
 
     $playerSet = "";
     $timeSet = "";
     $first = true;
 
-    // API provides data in descendent order, but we'd want to show t
+    // API provides data in descendent order, but we'd want to show it ascendant since we're using a graph.
     $metrics = array_reverse($metrics);
 
     $lowest = 69420;
@@ -18,9 +18,20 @@
 
     $skip = true;
 
+    $total_reqs = 0;
+    $req_miss = 0;
+
     foreach ($metrics as $instant) {
         $humanTime = strtotime($instant['time']);
         $humanTime = date("H:i", $humanTime);
+
+        // Because of the "include_misses=1" parameter in the api call, the metrics include times when the server failed to respond,
+        // marked as a time where there were -1 players. This can be used to calculate uptime.
+        if ($instant['players'] < 0) {
+            $req_miss++;
+            $instant['players'] = 0;
+        }
+        $total_reqs++;
 
         if ($instant['players'] > $highest) {
             $highest = $instant['players'];
@@ -40,6 +51,14 @@
             $playerSet .= ", ".$instant['players'];
             $timeSet .= ", '".$humanTime."'";
         }
+    }
+
+    if ($total_reqs > 0 && $req_miss > 0) {
+        $downtime = ($req_miss / $total_reqs) * 100;
+        $uptime = 100 - $uptime;
+    }
+    else {
+        $uptime = 100.0;
     }
 
     if (isset($_GET['ip_addr']) && strlen($_GET['ip_addr']) > 0) {
@@ -99,6 +118,7 @@
                     <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
                 </tr>
             </table>
+            <p>Uptime in the last 24 hours: <?=number_format($uptime, 2)?>%</p>
             <div style="margin-top: 2rem">
                 <div style="float: left; margin-top: 0">
                     <p class="ipAddr" id="ipAddr<?=$server['id']?>"><?=$server['ipAddr']?></p>
@@ -114,7 +134,6 @@
                 <?php if (count($metrics) > 2) { ?>
                     <canvas id='globalPlayersChart' style='width: 100%'></canvas>
                     <p>The highest player count was <span style='color: green'><?=$highest?></span> at <?=$highest_time?>, and the lowest was <span style='color: red'><?=$lowest?></span> at <?=$lowest_time?></p>
-
                 <?php } else { ?>
                     <p>Not enough data for the activity graph, please check later.</p>
                 <?php } ?>

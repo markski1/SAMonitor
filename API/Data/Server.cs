@@ -109,12 +109,18 @@ public class Server
 
             if (serverInfo is null || serverInfo.HostName is null)
             {
-                Console.WriteLine($"Failed to query {IpAddr}");
+                Console.WriteLine($"Server replied to query but response makes no sense: {IpAddr}");
                 return false;
             }
         }
         catch
         {
+            // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
+            var conn = new MySqlConnection(MySQL.ConnectionString);
+
+            var sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @NoPlayers)";
+
+            await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
             return false;
         }
 

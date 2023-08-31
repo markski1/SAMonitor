@@ -128,9 +128,9 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetAmountServers")]
-    public int GetAmountServers(int includeDead = 0)
+    public int GetAmountServers(int include_dead = 0)
     {
-        return ServerManager.ServerCount(includeDead);
+        return ServerManager.ServerCount(include_dead);
     }
 
     [HttpGet("GetMasterlist")]
@@ -162,14 +162,26 @@ public class ApiController : ControllerBase
 }
 
     [HttpGet("GetServerMetrics")]
-    public async Task<dynamic> GetServerMetrics(string ip_addr = "none", int hours = 6)
+    public async Task<dynamic> GetServerMetrics(string ip_addr = "none", int hours = 6, int include_misses = 0)
     {
         DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
         int Id = ServerManager.GetServerIDFromIP(ip_addr);
 
         var conn = new MySqlConnection(MySQL.ConnectionString);
-        var sql = @"SELECT players, time FROM metrics_server WHERE time > @RequestTime AND server_id = @Id ORDER BY time DESC";
+
+        string sql;
+
+        // "Misses" are times where the server was down at the time of being queried. This is recorded as having -1 players online.
+        // This data might be misleading or undesired, as such, we don't include it unless explicitly requested.
+        if (include_misses > 0)
+        {
+            sql = @"SELECT players, time FROM metrics_server WHERE time > @RequestTime AND server_id = @Id ORDER BY time DESC";
+        }
+        else
+        {
+            sql = @"SELECT players, time FROM metrics_server WHERE time > @RequestTime AND server_id = @Id AND players >= 0 ORDER BY time DESC";
+        }
 
         return (await conn.QueryAsync<ServerMetrics>(sql, new { RequestTime, Id })).ToList();
     }

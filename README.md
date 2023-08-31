@@ -34,7 +34,7 @@ It is written in HTMX and PHP, which provides a very lightweight website where l
 We offer a masterlist alternative, at `http://gateway.markski.ar:42069/api/GetMasterlist`
 
 It is a relatively high-quality masterlist, since rather than functioning as a hastily-updated text file or database, it only provides servers which are actively running.
-Servers which failed to be online in the last ~24 hours are not included in this list (but are re-added when they return).
+Servers which failed to be online in the last ~6 hours are not included in this list (but are re-added when they return).
 
 ## GET Endpoints
 
@@ -97,7 +97,9 @@ Try it: http://gateway.markski.ar:42069/api/GetTotalPlayers
 
 ### GetAmountServers
 
-A little pointless for most, but returns the amount of servers SAMonitor is tracking.
+A little pointless for most, but returns the amount of servers currently online.
+
+Optionally, use `include_dead=1` to retrieve the total amount of servers being tracked, including offline.
 
 Try it: http://gateway.markski.ar:42069/api/GetAmountServers
 
@@ -117,6 +119,7 @@ If no hour is provided, defaults to 6.
 
 Try it: http://gateway.markski.ar:42069/api/GetServerMetrics?hours=6&ip_addr=51.68.204.178:7777
 
+NOTE: By default, returns no entries for times a server failed to respond to a query. To have these, use `include_misses=1`. These are marked with a player count of -1, and can be used to (somewhat loosely) track downtime.
 
 ## Data schemas
 

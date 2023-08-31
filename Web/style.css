@@ -240,15 +240,25 @@ fieldset {
     flex-basis: 48%;
 }
 
+.currentStats {
+    display: block;
+    position: fixed;
+    top: 34rem;
+    left: 55rem;
+}
+
 @media (max-width: 1300px) {
     .server, .filterBox {
         min-width: 0;
         position: relative;
     }
-    .filterBox{
+    .filterBox {
         width: 100%;
         top: 0;
         left: 0;
+    }
+    .currentStats {
+        display: none;
     }
 }
 

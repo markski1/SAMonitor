@@ -28,7 +28,7 @@ public static class ServerManager
 
         CreateTimer();
 
-        currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(24)).ToList();
+        currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
         UpdateMasterlist();
     }
 
@@ -195,8 +195,8 @@ public static class ServerManager
         // Update the Blacklist.
         UpdateBlacklist();
 
-        // Update the current servers with only the ones which have responded in the last 24 hours.
-        currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(24)).ToList();
+        // Update the current servers with only the ones which have responded in the last 6 hours.
+        currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
 
         // Update the Masterlist accordingly.
         UpdateMasterlist();

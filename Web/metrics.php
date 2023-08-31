@@ -10,7 +10,7 @@
     //     - Making the main page load faster. HTMX calls this page again with this parameter to get the table without delaying the main page load.
     if (isset($_GET['load_table'])) {
         echo '<table style="width: 100%; border: 1px gray solid;">
-                <tr><th>Time</th><th>Players</th><th>Servers</th></tr>';
+                <tr><th>Time</th><th>Players online</th><th>Servers online</th></tr>';
 
         foreach ($metrics as $instant) {
             $humanTime = strtotime($instant['time']);
@@ -76,7 +76,7 @@
             <canvas id='globalPlayersChart' style='width: 100%'></canvas>
         </div>
         <div style="margin-top: 1rem" hx-target="this">
-            <input type="button" value="Show dataset as a table" hx-get="./metrics.php?load_table"/>
+            <input type="button" value="Show dataset as table" hx-get="./metrics.php?load_table"/>
         </div>
         <p>The highest player count was <span style='color: green'><?=$highest?></span> at <?=$highest_time?>, and the lowest was <span style='color: red'><?=$lowest?></span> at <?=$lowest_time?></p>
         <p>
