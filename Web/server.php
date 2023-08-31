@@ -2,60 +2,110 @@
     include 'logic/layout.php';
     PageHeader("server");
 
-    $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours=24&include_misses=1&ip_addr=".urlencode($_GET['ip_addr'])), true);
+    // if this is set, ONLY LOAD THE GRAPH.
+    if (isset($_GET['load_graph'])) {
+        if (isset($_GET['hours'])) {
+            $hours = $_GET['hours'];
+        }
+        else $hours = 24;
 
-    $playerSet = "";
-    $timeSet = "";
-    $first = true;
+        $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours={$hours}&include_misses=1&ip_addr=".urlencode($_GET['ip_addr'])), true);
 
-    // API provides data in descendent order, but we'd want to show it ascendant since we're using a graph.
-    $metrics = array_reverse($metrics);
+        if (count($metrics) < 3) {
+            exit("<p>Not enough data for the activity graph, please check later.</p>");
+        }
 
-    $lowest = 69420;
-    $lowest_time = null;
-    $highest = -1;
-    $highest_time = null;
+        $playerSet = "";
+        $timeSet = "";
+        $first = true;
 
-    $skip = true;
+        // API provides data in descendent order, but we'd want to show it ascendant since we're using a graph.
+        $metrics = array_reverse($metrics);
 
-    $total_reqs = 0;
+        $lowest = 69420;
+        $lowest_time = null;
+        $highest = -1;
+        $highest_time = null;
+
+        $skip = true;
+
+        foreach ($metrics as $instant) {
+            $humanTime = strtotime($instant['time']);
+            
+            // only specify the day if we're listing more than 24 hours.
+            if ($hours > 24) {
+                $humanTime = date("j/m H:i", $humanTime);
+            }
+            else $humanTime = date("H:i", $humanTime);
+
+            if ($instant['players'] < 0) $instant['players'] = 0;
+
+            if ($instant['players'] > $highest) {
+                $highest = $instant['players'];
+                $highest_time = $humanTime;
+            }
+            if ($instant['players'] < $lowest) {
+                $lowest = $instant['players'];
+                $lowest_time = $humanTime;
+            }
+
+            if ($first) {
+                $playerSet .= $instant['players'];
+                $timeSet .= "'".$humanTime."'";
+                $first = false;
+            } 
+            else {
+                $playerSet .= ", ".$instant['players'];
+                $timeSet .= ", '".$humanTime."'";
+            }
+        }
+
+        echo "
+            <canvas id='globalPlayersChart' style='width: 100%'></canvas>
+            <p>The highest player count was <span style='color: green'>{$highest}</span> at {$highest_time}, and the lowest was <span style='color: red'>{$lowest}</span> at {$lowest_time}</p>
+        
+            <script>
+                new Chart(document.getElementById('globalPlayersChart'), {
+                    type: 'line',
+                    options: {
+                        responsive: false,
+                        scales: {
+                            y: {
+                                min: 0
+                            }
+                        }
+                    },
+                    data: {
+                        labels: [{$timeSet}],
+                        datasets: [
+                            {
+                                label: 'Players online',
+                                data: [{$playerSet}],
+                                borderWidth: 1
+                            }
+                        ]
+                    }
+                });
+            </script>
+        ";
+        exit; // NOTE THE EXIT HERE. IF GRAPH IS REQUESTED, WE STOP HERE.
+    }
+
+    // calculate week's uptime
+    $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours=168&include_misses=1&ip_addr=".urlencode($_GET['ip_addr'])), true);
+
+    $total_reqs = count($metrics);
     $req_miss = 0;
 
     foreach ($metrics as $instant) {
-        $humanTime = strtotime($instant['time']);
-        $humanTime = date("H:i", $humanTime);
-
-        // Because of the "include_misses=1" parameter in the api call, the metrics include times when the server failed to respond,
-        // marked as a time where there were -1 players. This can be used to calculate uptime.
         if ($instant['players'] < 0) {
             $req_miss++;
-            $instant['players'] = 0;
-        }
-        $total_reqs++;
-
-        if ($instant['players'] > $highest) {
-            $highest = $instant['players'];
-            $highest_time = $humanTime;
-        }
-        if ($instant['players'] < $lowest) {
-            $lowest = $instant['players'];
-            $lowest_time = $humanTime;
-        }
-
-        if ($first) {
-            $playerSet .= $instant['players'];
-            $timeSet .= "'".$humanTime."'";
-            $first = false;
-        } 
-        else {
-            $playerSet .= ", ".$instant['players'];
-            $timeSet .= ", '".$humanTime."'";
         }
     }
 
     if ($total_reqs > 0 && $req_miss > 0) {
         $downtime = ($req_miss / $total_reqs) * 100;
-        $uptime = 100 - $uptime;
+        $uptime = 100 - $downtime;
     }
     else {
         $uptime = 100.0;
@@ -118,8 +168,8 @@
                     <td><b>Last updated</b></td><td><?=timeSince($last_updated)?> ago</td>
                 </tr>
             </table>
-            <p>Uptime in the last 24 hours: <?=number_format($uptime, 2)?>%</p>
-            <div style="margin-top: 2rem">
+            <p>Uptime during the last week: <?=number_format($uptime, 2)?>%<br/><small>Based on measurements every 20 minutes.</small></p>
+            <div style="margin-top: 1.5rem">
                 <div style="float: left; margin-top: 0">
                     <p class="ipAddr" id="ipAddr<?=$server['id']?>"><?=$server['ipAddr']?></p>
                 </div>
@@ -129,14 +179,15 @@
             </div>
         </div>
         <div class="innerContent flexBox">
-            <h3>Activity graph - Last 24 hours</h3>
-            <div style='width: 100% !important'>
-                <?php if (count($metrics) > 2) { ?>
-                    <canvas id='globalPlayersChart' style='width: 100%'></canvas>
-                    <p>The highest player count was <span style='color: green'><?=$highest?></span> at <?=$highest_time?>, and the lowest was <span style='color: red'><?=$lowest?></span> at <?=$lowest_time?></p>
-                <?php } else { ?>
-                    <p>Not enough data for the activity graph, please check later.</p>
-                <?php } ?>
+            <h3>Activity graph | 
+                <select hx-target="#graph-cnt" name="hours" hx-get="server.php?load_graph&ip_addr=<?=$server['ipAddr']?>" hx-get="server.php?load_graph&ip_addr=<?=$server['ipAddr']?> hx-get="server.php?load_graph&ip_addr=<?=$server['ipAddr']?>>
+                    <option value=24>Last 24 hours</option>
+                    <option value=72>Last 72 hours</option>
+                    <option value=168>Last week</option>
+                </select>
+            </h3>
+            <div style='width: 100% !important' id="graph-cnt" hx-get="server.php?load_graph&ip_addr=<?=$server['ipAddr']?>" hx-trigger="load">
+                
             </div>
             <p>
                 <small>
@@ -153,30 +204,6 @@
 
 <script>
     document.title = "SAMonitor - <?=$server['name']?>"
-</script>
-
-<script>
-    new Chart(document.getElementById('globalPlayersChart'), {
-        type: 'line',
-        options: {
-            responsive: false,
-            scales: {
-                y: {
-                    min: 0
-                }
-            }
-        },
-        data: {
-            labels: [<?=$timeSet?>],
-            datasets: [
-                {
-                    label: 'Players online',
-                    data: [<?=$playerSet?>],
-                    borderWidth: 1
-                }
-            ]
-        }
-    });
 </script>
 
 <?php

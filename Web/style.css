@@ -44,6 +44,16 @@ header a {
     margin-top: 1rem;
 }
 
+select {
+    background-color: #1F1F1F;
+    color: #CCCCCC;
+    border: 0;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    width: 10rem;
+}
+
 header .separators {
     display: inline;
 }
