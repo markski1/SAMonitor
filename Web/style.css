@@ -38,8 +38,12 @@ header h1 {
     font-size: 2rem;
 }
 
+label {
+    margin: 0;
+}
+
 header a {
-    font-size: 1.25rem;
+    font-size: 1.35rem;
     text-decoration-line: none;
     margin-top: 1rem;
 }
@@ -168,10 +172,6 @@ input[type=checkbox], input[type=radio] {
     margin-top: 8px;
 }
 
-label {
-    vertical-align: middle;
-}
-
 ul {
     margin: 0.25rem;
     line-height: 1.75rem;
@@ -253,7 +253,7 @@ fieldset {
 .currentStats {
     display: block;
     position: fixed;
-    top: 34rem;
+    top: 35rem;
     left: 55rem;
 }
 

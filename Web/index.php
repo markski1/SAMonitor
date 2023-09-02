@@ -9,14 +9,15 @@
 
 <div class="filterBox">
     <form hx-get="./view/bits/list_servers.php" hx-target="#server-list">
-        <fieldset style="margin-top: 1rem">
+        <h2>Filters</h2>
+        <fieldset style="margin-top: .66rem">
             <h3 style="margin-bottom: 0.33rem">Search</h3>
             <table>
                 <tr>
-                    <td>Name:</td><td><input type="text" name="name" <?php if (isset($_GET['name'])) echo 'value="{}"'?> /></td>
+                    <td><label for="name">Name:</label></td><td><input type="text" id="name" name="name" <?php if (isset($_GET['name'])) echo 'value="{}"'?> /></td>
                 </tr>
                 <tr>
-                    <td>Gamemode:</td><td><input type="text" name="gamemode" /></td>
+                    <td><label for="gamemode">Gamemode:</label></td><td><input type="text" id="gamemode" name="gamemode" /></td>
                 </td>
             </table>
         </fieldset>
@@ -24,14 +25,14 @@
         <fieldset style="margin-top: 1rem">
             <h3 style="margin-bottom: 0.33rem">Options</h3>
             <label><input type="checkbox" name="show_empty"> Show empty servers</label><br />
-            <label><input type="checkbox" name="hide_roleplay"> Hide roleplay servers</label><br />
+            <label><input type="checkbox" name="hide_roleplay"> No roleplay servers</label><br />
             <label><input type="radio" name="order" value="none"> Don't order</label><br />
             <label><input type="radio" name="order" value="players"> Order by players</label><br />
             <label><input type="radio" name="order" checked value="ratio"> Order by players/max ratio</label>
         </fieldset>
         <div style="margin-top: 1rem; margin-bottom: 0; width: 10rem">
             <input type="submit" value="Apply filter" hx-indicator="#filter-indicator" />
-            <img style="width: 2rem; vertical-align: middle" src="assets/loading.svg" id="filter-indicator" class="htmx-indicator" />
+            <img style="width: 2rem; vertical-align: middle" src="assets/loading.svg" id="filter-indicator" class="htmx-indicator" alt="Loading indicator" />
         </div>
     </form>
 </div>
