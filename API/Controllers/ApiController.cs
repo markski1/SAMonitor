@@ -134,9 +134,28 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetMasterlist")]
-    public string GetMasterlist()
+    public string GetMasterlist(string version = "any")
     {
-        return ServerManager.GetMasterlist();
+        if (version == "any")
+        {
+            // if no version is specified, try to infer from the user agent.
+            // for referense, from SA-MP, it would look something like "Mozilla/3.0 (compatible; SA:MP v0.3.7)"
+            string userAgent = Request.Headers["User-Agent"].ToString();
+            if (userAgent.Contains("SA:MP"))
+            {
+                int start = userAgent.IndexOf(" v"); 
+                if (start < 0)
+                {
+                    start += 2; // skip past " v"
+                    int end = userAgent.IndexOf(")");
+                    if (end < 0)
+                    {
+                        return ServerManager.GetMasterlist(userAgent[start..end]);
+                    }
+                }
+            }
+        }
+        return ServerManager.GetMasterlist(version);
     }
 
     [HttpGet("AddServer")]

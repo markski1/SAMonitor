@@ -3,6 +3,7 @@ using Dapper;
 using System.Timers;
 using MySqlConnector;
 using SAMonitor.Utils;
+using System.Xml.XPath;
 
 namespace SAMonitor.Data;
 
@@ -14,7 +15,9 @@ public static class ServerManager
 
     private static List<string> blacklist = new();
 
-    private static string MasterList = "";
+    private static string MasterList_global = "";
+    private static string MasterList_037 = "";
+    private static string MasterList_03DL = "";
 
     public static async void LoadServers()
     {
@@ -161,9 +164,24 @@ public static class ServerManager
         return currentServers;
     }
 
-    public static string GetMasterlist()
+    public static string GetMasterlist(string version)
     {
-        return MasterList;
+        // global, 0.3.7 and 0.3DL masterlists are cached once every 30 minutes, as they are the only "current" versions.
+        if (version == "any") return MasterList_global;
+        else if (version.Contains("3.7")) return MasterList_037;
+        else if (version.Contains("DL")) return MasterList_03DL;
+        else
+        {
+            // failing that, generate whatever got requested... I guess!
+            string newList = "";
+
+            currentServers.ForEach(x => 
+            { 
+                if (x.Version.Contains(version)) newList += $"{x.IpAddr}\n";
+            });
+
+            return newList;
+        }
     }
 
     public static int GetServerIDFromIP(string ip_addr)
@@ -226,10 +244,18 @@ public static class ServerManager
 
     private static void UpdateMasterlist()
     {
-        MasterList = "";
+        MasterList_global = "";
         foreach (var server in currentServers)
         {
-            MasterList += $"{server.IpAddr}\n";
+            MasterList_global += $"{server.IpAddr}\n";
+            if (server.Version.Contains("3.7"))
+            {
+                MasterList_037 += $"{server.IpAddr}\n";
+            }
+            else if (server.Version.Contains("DL"))
+            {
+                MasterList_03DL += $"{server.IpAddr}\n";
+            }
         }
     }
 
