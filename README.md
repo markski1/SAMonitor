@@ -9,13 +9,13 @@ Providing: A server browser, a public API and a Masterlist alternative.
 - [Server browser](#server-browser)
 - [Masterlist](#masterlist)
 - [GET Endpoints](#get-endpoints)
-- - [GetAllServers](#getallservers)
-- - [GetFilteredServers](#getfilteredservers)
-- - [GetServerByIP](#getserverbyip)
-- - [GetServerPlayers](#getserverplayers)
-- - [GetTotalPlayers](#gettotalplayers)
-- - [GetGlobalMetrics](#getglobalmetrics)
-- - [GetServerMetrics](#getservermetrics)
+  - [GetAllServers](#getallservers)
+  - [GetFilteredServers](#getfilteredservers)
+  - [GetServerByIP](#getserverbyip)
+  - [GetServerPlayers](#getserverplayers)
+  - [GetTotalPlayers](#gettotalplayers)
+  - [GetGlobalMetrics](#getglobalmetrics)
+  - [GetServerMetrics](#getservermetrics)
 - [Data schemas](#data-schemas)
 - [Add your server](#add-your-server)
 
@@ -31,17 +31,20 @@ It is written in HTMX and PHP, which provides a very lightweight website where l
 
 ## Masterlist
 
-We offer a masterlist alternative, at `http://sam.markski.ar/api/GetMasterlist`.
+We offer a masterlist alternative, at `http://gateway.markski.ar/api/GetMasterlist`.
 
 You may specify a `version` parameter. Example: `http://sam.markski.ar/api/GetMasterlist?version=0.3.7`
 
 It is a relatively high-quality masterlist, since rather than functioning as a hastily-updated text file or database, it only provides servers which are actively running.
 Servers which failed to be online in the last ~6 hours are not included in this list (but are re-added when they return).
 
+If you wish to use SAMonitor's masterlist in SA-MP, check out [SA-MP Masterlist Fix](https://github.com/spmn/sa-mp_masterlist_fix)!
+
 ## GET Endpoints
 
 All of these endpoints are located at `http://sam.markski.ar/api/`.
-The endpoint is currently `http` only. If there is any real push to support https on it, I might do it, but I see no merit in having SSL here.
+
+Note that this endpoint ONLY replies to standard http queries. If that doesn't work, try `http://gateway.markski.ar/api/`. Both return the same data, but `gateway` does not go benefit from Cloudflare's network, which may make it slower.
 
 ### GetAllServers
 
