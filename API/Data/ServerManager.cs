@@ -245,6 +245,8 @@ public static class ServerManager
     private static void UpdateMasterlist()
     {
         MasterList_global = "";
+        MasterList_037 = "";
+        MasterList_03DL = "";
         foreach (var server in currentServers)
         {
             MasterList_global += $"{server.IpAddr}\n";
