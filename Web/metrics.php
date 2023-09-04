@@ -15,7 +15,7 @@
     //     - Making the main page load faster. HTMX calls this page again with this parameter to get the table without delaying the main page load.
     if (isset($_GET['load_table'])) {
         echo '<table style="width: 100%; border: 1px gray solid;">
-                <tr><th>Time</th><th>Players online</th><th>Servers online</th></tr>';
+                <tr><th>Time</th><th>Players online</th><th>Servers online</th><th>API Hits</th></tr>';
 
         foreach ($metrics as $instant) {
             $humanTime = strtotime($instant['time']);
@@ -25,6 +25,7 @@
                     <td>{$humanTime}</td>
                     <td>{$instant['players']}</td>
                     <td>{$instant['servers']}</td>
+                    <td>{$instant['apiHits']}</td>
                 </tr>
             ";
         }
@@ -34,7 +35,7 @@
     }
 
     if (isset($_GET['load_graph'])) {
-        $playerSet = "";
+        $dataSet = "";
         $timeSet = "";
         $first = true;
 
@@ -48,6 +49,23 @@
 
         $skip = true;
 
+        $dataType = $_GET['type'] ?? 0;
+
+        switch ($dataType) {
+            case 0:
+                $getField = 'players';
+                $datasetName = 'Players online';
+                break;
+            case 1:
+                $getField = 'servers';
+                $datasetName = 'Servers online';
+                break;
+            case 2:
+                $getField = 'apiHits';
+                $datasetName = 'API hits';
+                break;
+        }
+
         foreach ($metrics as $instant) {
             $humanTime = strtotime($instant['time']);
 
@@ -57,44 +75,44 @@
             }
             else $humanTime = date("H:i", $humanTime);
 
-            if ($instant['players'] > $highest) {
-                $highest = $instant['players'];
+            if ($instant[$getField] > $highest) {
+                $highest = $instant[$getField];
                 $highest_time = $humanTime;
             }
-            if ($instant['players'] < $lowest) {
-                $lowest = $instant['players'];
+            if ($instant[$getField] < $lowest) {
+                $lowest = $instant[$getField];
                 $lowest_time = $humanTime;
             }
 
             if ($first) {
-                $playerSet .= $instant['players'];
+                $dataSet .= $instant[$getField];
                 $timeSet .= "'".$humanTime."'";
                 $first = false;
             } 
             else {
-                $playerSet .= ", ".$instant['players'];
+                $dataSet .= ", ".$instant[$getField];
                 $timeSet .= ", '".$humanTime."'";
             }
         }
 
+        // Horrible! But, we put the script here to be loaded by HTMX when a new graph is required.
         echo "
             <canvas id='globalPlayersChart' style='width: 100%'></canvas>
-            <!-- Horrible; but we put the script here to reload with htmx when a new graph is required. -->
             <script>
                 new Chart(document.getElementById('globalPlayersChart'), {
                     type: 'line', options: { responsive: false }, data: {
                         labels: [{$timeSet}],
                         datasets: [
                             {
-                                label: 'Players online',
-                                data: [{$playerSet}],
+                                label: '{$datasetName}',
+                                data: [{$dataSet}],
                                 borderWidth: 1
                             }
                         ]
                     }
                 });
             </script>
-            <p>The highest player count was <span style='color: green'>{$highest}</span> at {$highest_time}, and the lowest was <span style='color: red'>{$lowest}</span> at {$lowest_time}</p>
+            <p>The highest count was <span style='color: green'>{$highest}</span> at {$highest_time}, and the lowest was <span style='color: red'>{$lowest}</span> at {$lowest_time}</p>
         ";
         exit;
     }
@@ -104,13 +122,21 @@
     <h2>Metrics</h3>
     <p>SAMonitor accounts for the total amount of servers and players a few times every hour, of every day.</p>
     <div class="innerContent">
-        <h3>Global player metrics | 
-            <select hx-target="#graph-cnt" name="hours" hx-get="metrics.php?load_graph">
-                <option value=24>Last 24 hours</option>
-                <option value=72>Last 72 hours</option>
-                <option value=168>Last week</option>
-            </select>
-        </h3>
+        <form hx-target="#graph-cnt" hx-get="metrics.php?load_graph" hx-trigger="change">
+            <h3>Global 
+                <select name="type" style="width: 7rem">
+                    <option value=0>player</option>
+                    <option value=1>server</option>
+                    <option value=2>api hits</option>
+                </select>
+            metrics | 
+                <select name="hours">
+                    <option value=24>Last 24 hours</option>
+                    <option value=72>Last 72 hours</option>
+                    <option value=168>Last week</option>
+                </select>
+            </h3>
+        </form>
         <div id="graph-cnt" hx-get="metrics.php?load_graph" hx-trigger="load">
         
         </div>

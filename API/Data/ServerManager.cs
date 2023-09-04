@@ -4,6 +4,7 @@ using System.Timers;
 using MySqlConnector;
 using SAMonitor.Utils;
 using System.Xml.XPath;
+using System.Collections.Generic;
 
 namespace SAMonitor.Data;
 
@@ -19,6 +20,8 @@ public static class ServerManager
     private static string MasterList_037 = "";
     private static string MasterList_03DL = "";
 
+    public static int ApiHits { get; set; }
+
     public static async void LoadServers()
     {
         var conn = new MySqlConnection(MySQL.ConnectionString);
@@ -26,6 +29,8 @@ public static class ServerManager
         var sql = @"SELECT id, ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor FROM servers";
 
         servers = (await conn.QueryAsync<Server>(sql)).ToList();
+
+        ApiHits = 0;
 
         UpdateBlacklist();
 
@@ -229,21 +234,33 @@ public static class ServerManager
         #if !DEBUG
             var conn = new MySqlConnection(MySQL.ConnectionString);
 
-            var sql = @"INSERT INTO metrics_global (players, servers) VALUES(@_players, @_servers)";
+            var sql = @"INSERT INTO metrics_global (players, servers, api_hits) VALUES(@_players, @_servers, @ApiHits)";
 
             int _servers = currentServers.Count;
 
             int _players = TotalPlayers();
 
-            await conn.ExecuteAsync(sql, new { _players, _servers });
+            await conn.ExecuteAsync(sql, new { _players, _servers, ApiHits });
         #else
             // just to make the compiler happy, do an await in debug mode
             await Task.Delay(1);
         #endif
+        ApiHits = 0;
     }
 
     private static void UpdateMasterlist()
     {
+        Random rng = new();
+        // To keep things somewhat fair, shuffle the position of all servers
+
+        int n = currentServers.Count;
+        while (n > 1)
+        {
+            n--;
+            int k = rng.Next(n + 1);
+            (currentServers[n], currentServers[k]) = (currentServers[k], currentServers[n]);
+        }
+
         MasterList_global = "";
         MasterList_037 = "";
         MasterList_03DL = "";

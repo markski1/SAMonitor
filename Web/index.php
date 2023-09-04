@@ -14,10 +14,10 @@
             <h3 style="margin-bottom: 0.33rem">Search</h3>
             <table>
                 <tr>
-                    <td><label for="name">Name:</label></td><td><input type="text" id="name" name="name" <?php if (isset($_GET['name'])) echo 'value="{}"'?> /></td>
+                    <td><label for="name">Name:</label></td><td><input type="text" id="name" name="name" <?php if (isset($_GET['name'])) echo 'value="{}"'?>></td>
                 </tr>
                 <tr>
-                    <td><label for="gamemode">Gamemode:</label></td><td><input type="text" id="gamemode" name="gamemode" /></td>
+                    <td><label for="gamemode">Gamemode:</label></td><td><input type="text" id="gamemode" name="gamemode"></td>
                 </td>
             </table>
         </fieldset>

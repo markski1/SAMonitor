@@ -20,12 +20,14 @@ public class GlobalMetrics
 {
     public int Players { get; set; }
     public int Servers { get; set; }
+    public int ApiHits { get; set; }
     public DateTime Time { get; set; }
 
-    public GlobalMetrics(int players, int servers, DateTime time)
+    public GlobalMetrics(int players, int servers, int api_hits, DateTime time)
     {
         Players = players;
         Servers = servers;
+        ApiHits = api_hits;
         Time = time;
     }
 }

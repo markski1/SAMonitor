@@ -16,11 +16,11 @@ function PageHeader($title) {
             <meta name="title" content="SAMonitor - <?=$title?>">
             <meta name="description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist.">
 
-            <meta name="og:title" content="SAMonitor - <?=$title?>" />
-            <meta property="og:description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist." />
+            <meta name="og:title" content="SAMonitor - <?=$title?>">
+            <meta property="og:description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist.">
 
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script src="https://unpkg.com/htmx.org@1.9.4/dist/htmx.min.js"></script>
+            <script src="https://unpkg.com/htmx.org@1.9.5/dist/htmx.min.js"></script>
         </head>
         <body>
             <header>

@@ -20,6 +20,7 @@
             text = text.Replace('к', 'ê');
             text = text.Replace('Ў', '¡');
             text = text.Replace('У', 'Ó');
+            text = text.Replace('у', 'ó');
             text = text.Replace('б', 'á');
             return text;
         }

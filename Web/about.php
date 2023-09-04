@@ -8,11 +8,11 @@
     <p>SAMonitor is a SA-MP and open.mp server monitor. It tracks activity of them and is a good replacement of standard listings.</p>
     <div class="innerContent">
         <h3>Project</h3>
-        <p>SAMonitor intends to be a "spiritual successor" of SACNR Monitor. It is a completely free and open source project. All code and API documentation is in <a href="https://github.com/markski1/SAMonitor">SAMonitor's GitHub monorepo</a>.</p>
+        <p>SAMonitor intends to be a "spiritual successor" of SACNR Monitor. It is a completely free and open source project. All code and API documentation is in <a target="_blank" href="https://github.com/markski1/SAMonitor">GitHub</a>.</p>
 
         <p>It actively monitors for repeated servers, faked statistics and other illegitimate things.<br />As such, it provides higher quality listings than most other places, as it blocks repeated and fake entries.</p>
 
-        <p>If you wish to contact me, please check <a href="https://markski.ar">my personal website</a> for contact methods.</p>
+        <p>If you wish to contact me, please check <a target="_blank" href="https://markski.ar">my personal website</a> for contact methods.</p>
     </div>
 
     <div class="innerContent">
@@ -32,9 +32,9 @@
     </div>
     <div class="innerContent">
         <h3>Third party attributions</h3>
-        <p>HTMX by Carson Gross is used for the website's presentation. <a href="https://htmx.org">htmx.org</a></p>
-        <p>Chart.Js, by multiple people, is used for drawing the website's graphs. <a href="https://www.chartjs.org/">chartjs.org</a></p>
-        <p>SAMPQuery by JustMavi is used for querying on the API. <a href="https://github.com/justmavi/sampquery/">github.com/justmavi/sampquery</a></p>
+        <p>HTMX by Carson Gross is used for the website's presentation. <a target="_blank" href="https://htmx.org">htmx.org</a></p>
+        <p>Chart.Js, by multiple people, is used for drawing the website's graphs. <a target="_blank" href="https://www.chartjs.org/">chartjs.org</a></p>
+        <p>SAMPQuery by JustMavi is used for querying on the API. <a target="_blank" href="https://github.com/justmavi/sampquery/">github.com/justmavi/sampquery</a></p>
     </div>
 </div>
 

@@ -20,6 +20,7 @@ public class ApiController : ControllerBase
     [HttpGet("GetServerByIP")]
     public Server? GetServerByIP(string ip_addr)
     {
+        ServerManager.ApiHits++;
         var result = ServerManager.ServerByIP(ip_addr);
 
         return result;
@@ -28,12 +29,16 @@ public class ApiController : ControllerBase
     [HttpGet("GetAllServers")]
     public IEnumerable<Server> GetAllServers()
     {
+        ServerManager.ApiHits++;
+
         return ServerManager.GetServers();
     }
 
     [HttpGet("GetFilteredServers")]
     public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0)
     {
+        ServerManager.ApiHits++;
+
         var servers = ServerManager.GetServers();
 
         // unless specified, don't show empty servers.
@@ -114,6 +119,8 @@ public class ApiController : ControllerBase
     [HttpGet("GetServerPlayers")]
     public async Task<List<Player>?> GetServerPlayers(string ip_addr)
     {
+        ServerManager.ApiHits++;
+
         var result = ServerManager.ServerByIP(ip_addr);
 
         if (result is null) return null;
@@ -136,6 +143,8 @@ public class ApiController : ControllerBase
     [HttpGet("GetMasterlist")]
     public string GetMasterlist(string version = "any")
     {
+        ServerManager.ApiHits++;
+
         if (version == "any")
         {
             // if no version is specified, try to infer from the user agent.
@@ -161,6 +170,8 @@ public class ApiController : ControllerBase
     [HttpGet("AddServer")]
     public async Task<string> AddServer(string ip_addr)
     {
+        ServerManager.ApiHits++;
+
         ip_addr = ip_addr.Trim();
         string check = Helpers.ValidateIPv4(ip_addr);
         if (check == "valid")
@@ -172,17 +183,21 @@ public class ApiController : ControllerBase
     [HttpGet("GetGlobalMetrics")]
     public async Task<List<GlobalMetrics>> GetGlobalMetrics(int hours = 6)
     {
+        ServerManager.ApiHits++;
+
         DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
         var conn = new MySqlConnection(MySQL.ConnectionString);
-        var sql = @"SELECT players, servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
+        var sql = @"SELECT players, servers, api_hits, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
 
         return (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime })).ToList();
-}
+    }
 
     [HttpGet("GetServerMetrics")]
     public async Task<dynamic> GetServerMetrics(string ip_addr = "none", int hours = 6, int include_misses = 0)
     {
+        ServerManager.ApiHits++;
+
         DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
         int Id = ServerManager.GetServerIDFromIP(ip_addr);
