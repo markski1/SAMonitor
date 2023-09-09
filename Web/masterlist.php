@@ -9,12 +9,27 @@
     <h2>Masterlist mod</h3>
     <p>Integrate SAMonitor's listings right in your SA-MP client. | <a href="masterlist.php?spanish" hx-get="masterlist.php?spanish" hx-push-url="true" hx-target="#main"">Leer en Español</a>.</p>
     <div class="innerContent">
-        <h3>Information</h3>
-        <p>I am happy to announce that SA-MP Masterlist Fix has been updated, and now uses SAMonitor as it's default masterlist.</p>
+        <h3>Preface, regarding SA-MP.com's end of operations.</h3>
+        <p>In the morning of August 21st, 2023, GAME-MP's customer panel added the following announcement:</p>
 
-        <p>This mod will make your SA-MP client use SAMonitor for the Internet tab.</p>
+        <fieldset style="color: #AAAAAA">
+            <p>NOTICE</p>
+            <p>Listings can no longer be renewed as SA-MP.com will be ceasing operations soon.</p>
+            <small>Extracted from customer.game-mp.com</small>
+        </fieldset>
+
+        <p>The motive for this decision is unknown. I don't know Kalcor <small>(and neither do most people speculating on this)</small> so I will not try to take a guess at it.</p>
         
-        <p>This comes with some benefits, mainly that you will be able to see all servers in SA-MP, even after the official masterlist shuts down.</p>
+        <p>What is known, is that the number of servers in the Hosted tab dwindles by the day, and considering listings have a duration of 1 month, it's safe to say the Hosted tab will empty soon.</p>
+
+        <p>As such, this mod was updated.</p>
+    </div>
+
+    <div class="innerContent">
+        <h3>Information</h3>
+        <p>SA-MP Masterlist Fix is a mod which replaces the "Internet" tab's server list with a new source, specifically, SAMonitor.</p>
+        
+        <p>If desired, you can use any other masterlist provider.</p>
 
         <figure style="margin: .5rem">
             <img style="width: 100%; max-width: 640px" src="assets/client-showcase.png">
@@ -66,12 +81,27 @@
     <h2>Masterlist mod</h3>
     <p>Integra el listado de servidores de SAMonitor en SA-MP. | <a href="masterlist.php" hx-get="masterlist.php" hx-push-url="true" hx-target="#main"">Read in English</a>.
     <div class="innerContent">
-        <h3>Información</h3>
-        <p>Estoy feliz de anunciar que SA-MP Masterlist Fix ha sido actualizado, y utiliza SAMonitor como su listado de servidor oficial.</p>
+        <h3>Prólogo, respecto al cese de operaciones de SA-MP.com</h3>
+        <p>En la mañana del 21 de Agosto, 2023, en el panel de cliente de GAME-MP se muestra el siguiente mensaje:</p>
 
-        <p>Este mod hara que tengas el listado de servidores de SAMonitor en SA-MP.</p>
+        <fieldset style="color: #AAAAAA">
+            <p>ATENCIÓN</p>
+            <p>Los listados ya no se puede renovar porque SA-MP.com pronto cesara sus operaciones.</p>
+            <small>(traducido del inglés) | Extraído de customer.game-mp.com</small>
+        </fieldset>
+
+        <p>El motivo es desconocido. No conosco a Kalcor <small>(ni tampoco la mayoria de quienes lo andan especulando)</small> asi que no voy a intentar adivinarlo.</p>
         
-        <p>Tiene varios beneficios, mayormente, que podras seguir viendo todos los servidores, incluso cuando SA-MP.com haya cerrado.</p>
+        <p>Lo que si se sabe es que el numero de servidores en Hosted baja cada dia, y pronto ya no habra ninguno.</p>
+
+        <p>Por lo tanto, este mod fue actualizado.</p>
+    </div>
+    
+    <div class="innerContent">
+        <h3>Información</h3>
+        <p>SA-MP Masterlist Fix es un mod que reemplaza el listado de servidores de Internet en SA-MP con los de esta página.</p>
+        
+        <p>Si lo deseas, podes configurarlo para que use cualquier otro masterlist.</p>
 
         <figure style="margin: .5rem">
             <img style="width: 100%; max-width: 640px" src="assets/client-showcase.png">
