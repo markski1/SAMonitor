@@ -183,8 +183,6 @@ public class ApiController : ControllerBase
     [HttpGet("GetGlobalMetrics")]
     public async Task<List<GlobalMetrics>> GetGlobalMetrics(int hours = 6)
     {
-        ServerManager.ApiHits++;
-
         DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
         var conn = new MySqlConnection(MySQL.ConnectionString);
