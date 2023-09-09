@@ -29,6 +29,10 @@
             <legend>LS.CITY</legend>
             <p>Blocked for faking player count.<br />Permanently reporting 2000/2000 despite that not being the case.</p>
         </fieldset>
+        <fieldset>
+            <legend>Golden State RP (AKA DixelRP)</legend>
+            <p>Blocked for faking player count.<br />Reporting anywhere from 19 to 22 players online at all times, but server was empty all times it was checked.</p>
+        </fieldset>
     </div>
     <div class="innerContent">
         <h3>IP Blocking regardless of server</h3>

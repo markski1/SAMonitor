@@ -39,7 +39,7 @@
         $timeSet = "";
         $first = true;
 
-        // API provides data in descendent order, but we'd want to show t
+        // API provides data in descendent order, but we'd want to show it as a graph, so it should be ascending.
         $metrics = array_reverse($metrics);
 
         $lowest = 69420;
