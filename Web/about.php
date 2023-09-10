@@ -25,8 +25,8 @@
             <li>Don't have repeated servers or any other type of clutter.</li>
             <li>Blacklist illegitimate servers, be them stolen scripts, malicious or faking data.</li>
         </ul>
-        <p>SAMonitor's listings only include servers which replied to queries in the last 6 hours.</p>
-        <p>Servers which fail to reply to queries in 6 hours are removed for public listings. However, SAMonitor will keep querying every server in the database, and servers which go offline for too long will show up again when they return.</p>
+        <p>SAMonitor's listings only include servers which are online.</p>
+        <p>A server is considered offline if they replied to queries in the last 6 hours, and if they're not password protected. Servers who don't meet this are not listed, but continue to be tracked, and become listed when they do.</p>
         <p>Every server is queried every 20 minutes (3 times per hour). It will update it's listing data when this happens, and store the amount of players at that time into the database.</p>
         <p>SAMonitor keeps a constant, real-time count of servers and players online across the globe. These are stored every 30 minutes and visible in the "metrics" page.</p>
     </div>

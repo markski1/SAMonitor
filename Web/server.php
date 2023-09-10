@@ -9,7 +9,7 @@
         }
         else $hours = 24;
 
-        $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours={$hours}&include_misses=1&ip_addr=".urlencode($_GET['ip_addr'])), true);
+        $metrics = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerMetrics?hours={$hours}&ip_addr=".urlencode($_GET['ip_addr'])), true);
 
         if (count($metrics) < 3) {
             exit("<p>Not enough data for the activity graph, please check later.</p>");

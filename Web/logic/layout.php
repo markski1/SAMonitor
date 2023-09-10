@@ -19,8 +19,8 @@ function PageHeader($title) {
             <meta name="og:title" content="SAMonitor - <?=$title?>">
             <meta property="og:description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist.">
 
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script src="https://unpkg.com/htmx.org@1.9.5/dist/htmx.min.js"></script>
+            <script src="./assets/chart.js"></script>
+            <script defer src="./assets/htmx.min.js"></script>
         </head>
         <body>
             <header>
