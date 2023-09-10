@@ -117,15 +117,15 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetServerPlayers")]
-    public async Task<List<Player>?> GetServerPlayers(string ip_addr)
+    public List<Player> GetServerPlayers(string ip_addr)
     {
         ServerManager.ApiHits++;
 
         var result = ServerManager.ServerByIP(ip_addr);
 
-        if (result is null) return null;
+        if (result is null) return new List<Player>();
 
-        return await result.GetPlayers();
+        return result.GetPlayers();
     }
 
     [HttpGet("GetTotalPlayers")]
@@ -152,7 +152,7 @@ public class ApiController : ControllerBase
             string userAgent = Request.Headers["User-Agent"].ToString();
             if (userAgent.Contains("SA:MP"))
             {
-                int start = userAgent.IndexOf(" v"); 
+                int start = userAgent.IndexOf(" v");
                 if (start < 0)
                 {
                     start += 2; // skip past " v"
@@ -167,9 +167,18 @@ public class ApiController : ControllerBase
         return ServerManager.GetMasterlist(version);
     }
 
+    private long lastAddReq = 0;
+
     [HttpGet("AddServer")]
     public async Task<string> AddServer(string ip_addr)
     {
+        if (lastAddReq >= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+        {
+            return "Please try again in a few seconds.";
+        }
+
+        lastAddReq = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 3;
+
         ServerManager.ApiHits++;
 
         ip_addr = ip_addr.Trim();

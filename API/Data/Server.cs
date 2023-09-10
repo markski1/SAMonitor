@@ -3,6 +3,7 @@ using Dapper;
 using System.Timers;
 using MySqlConnector;
 using SAMonitor.Utils;
+using Microsoft.AspNetCore.Hosting.Server;
 
 namespace SAMonitor.Data;
 
@@ -25,7 +26,7 @@ public class Server
     public string Version { get; set; }
     public string Language { get; set; }
     public string SampCac { get; set; }
-    private List<Player> Players { get; set; }
+    public bool RequiresPassword { get; set; }
     public int Sponsor { get; set; }
 
     // Database fetch constructor
@@ -45,10 +46,10 @@ public class Server
         Version = version;
         SampCac = sampcac;
         Language = language;
-        Players = new();
         WorldTime = DateTime.MinValue;
         Sponsor = sponsor;
         Success = true;
+        RequiresPassword = false;
 
         CreateTimer();
     }
@@ -71,8 +72,8 @@ public class Server
         Language = "Unknown";
         SampCac = "Unknown";
         WorldTime = DateTime.MinValue;
-        Players = new();
         Success = false;
+        RequiresPassword = false;
 
         CreateTimer();
     }
@@ -115,12 +116,17 @@ public class Server
         }
         catch
         {
-            // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
-            var conn = new MySqlConnection(MySQL.ConnectionString);
+            #if !DEBUG
 
-            var sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @NoPlayers)";
+                // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
+                var conn = new MySqlConnection(MySQL.ConnectionString);
 
-            await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
+                var sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @NoPlayers)";
+
+                await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
+
+            #endif
+
             return false;
         }
 
@@ -129,6 +135,7 @@ public class Server
         MaxPlayers = serverInfo.MaxPlayers;
         GameMode = serverInfo.GameMode ?? "Unknown";
         Language = serverInfo.Language ?? "Unknown";
+        RequiresPassword = serverInfo.Password;
         LastUpdated = DateTime.Now;
 
         try
@@ -154,9 +161,9 @@ public class Server
         }
         catch (Exception ex)
         {
-            if ((ex.GetType().FullName ?? "noname").Contains("socket")) // I don't care to log network exceptions
+            if ((ex.GetType().FullName ?? ex.GetType().Assembly.FullName ?? "noname").Contains("socket") == false) // I don't care to log network exceptions
             {
-                System.Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
+                Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
             }
         }
 
@@ -193,14 +200,23 @@ public class Server
 
             // then add a metric entry. ONLY IF IN PRODUCTION.
 
-            #if !DEBUG
+#if !DEBUG
 
                 sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
 
                 await conn.ExecuteAsync(sql, new { Id, PlayersOnline });
 
-            #endif
+#endif
         }
+
+        return success;
+    }
+
+    public List<Player> GetPlayers()
+    {
+        List<Player> Players = new();
+
+        var server = new SampQuery(IpAddr);
 
         IEnumerable<ServerPlayer> serverPlayers;
 
@@ -210,23 +226,13 @@ public class Server
 
             if (serverPlayers is not null)
             {
-                Players.Clear();
+                // we pass it as a different type of object for API compatibility reasons.
                 foreach (var player in serverPlayers) Players.Add(new Player(player));
             }
         }
         catch
         {
             // nothing to handle, this happens if server has >100 players and is a SA-MP issue.
-        }
-
-        return success;
-    }
-
-    public async Task<List<Player>> GetPlayers()
-    {
-        if (LastUpdated < (DateTime.Now - TimeSpan.FromMinutes(20)))
-        {
-            await Query();
         }
 
         return Players;
