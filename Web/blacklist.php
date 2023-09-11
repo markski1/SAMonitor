@@ -1,6 +1,6 @@
 <?php
     include 'logic/layout.php';
-    PageHeader("blacklist");
+    PageHeader("blacklist", "Information regarding servers blacklisted from SAMonitor.");
 ?>
 
 <div>

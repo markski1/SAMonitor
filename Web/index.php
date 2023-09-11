@@ -1,6 +1,6 @@
 <?php
     include 'logic/layout.php';
-    PageHeader("SA-MP and open.mp server monitor");
+    PageHeader("San Andreas Multiplayer server monitor, for SA-MP and open.mp");
 
     $online_servers = file_get_contents("http://gateway.markski.ar:42069/api/GetAmountServers");
     $total_servers = file_get_contents("http://gateway.markski.ar:42069/api/GetAmountServers?include_dead=1");
@@ -47,7 +47,7 @@
 </div>
 
 <script>
-    document.title = "SAMonitor - SA-MP and open.mp server monitor";
+    document.title = "SAMonitor - San Andreas Multiplayer server monitor, for SA-MP and open.mp";
 </script>
 
 <?php PageBottom() ?>

@@ -151,7 +151,7 @@
     </div>
     <div class="innerContent">
         <h3>Server-Specific metrics</h3>
-        <p>The same graphs are available in every server's page. Simply click "Show details" and then "All about this server" where desired.</p>
+        <p>The same graphs are available in every server's page. Simply click "Show details" and then "All server information" where desired.</p>
     </div>
 </div>
 

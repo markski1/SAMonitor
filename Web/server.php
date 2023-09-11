@@ -1,6 +1,5 @@
 <?php
     include 'logic/layout.php';
-    PageHeader("server");
 
     // if this is set, ONLY LOAD THE GRAPH.
     if (isset($_GET['load_graph'])) {
@@ -126,6 +125,13 @@
         $lagcomp = $server['lagComp'] == 1 ? "Enabled" : "Disabled";
         $last_updated = strtotime($server['lastUpdated']);
     }
+
+    if (isset($server) && $server['name'] != null) {
+        PageHeader($server['name'], "Information about the server {$server['name']} in SAMonitor.");
+    }
+    else {
+        PageHeader("Invalid server");
+    }
 ?>
 
 <div>
@@ -174,7 +180,7 @@
                     <p class="ipAddr" id="ipAddr<?=$server['id']?>"><?=$server['ipAddr']?></p>
                 </div>
                 <div style="text-align: right; float: right; margin-top: 0">
-                    <a href="samp://<?=$server['ipAddr']?>"><button>Connect</button></a><button class="connectButton" onclick="CopyAddress('ipAddr<?=$server['id']?>')">Copy IP</button>
+                    <a href="samp://<?=$server['ipAddr']?>"><button>Connect</button></a><button class="connectButton" id="copyButton<?=$server['id']?>" onclick="CopyAddress('ipAddr<?=$server['id']?>', 'copyButton<?=$server['id']?>')">Copy IP</button>
                 </div>
             </div>
         </div>

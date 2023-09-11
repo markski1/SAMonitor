@@ -47,7 +47,7 @@ function DrawServer($server, $details = false) {
                 </tr>
             </table>
             <a hx-get="server.php?&ip_addr=<?=$server['ipAddr']?>" hx-target="#main" hx-push-url="true">
-                <button style="width: 100%; margin-top: 1rem; font-size: 1.25rem">All about this server</button>
+                <button style="width: 100%; margin-top: 1rem; font-size: 1.25rem">All server information</button>
             </a>
         </div>
     <?php } ?>
@@ -59,7 +59,7 @@ function DrawServer($server, $details = false) {
         <?php if (!$details) { ?>
             <button hx-get="view/bits/fragments.php?type=details&ip_addr=<?=$server['ipAddr']?>">Details</button>
         <?php } ?>
-        <button class="connectButton" onclick="CopyAddress('ipAddr<?=$server['id']?>')">Copy IP</button>
+        <button class="connectButton" id="copyButton<?=$server['id']?>" onclick="CopyAddress('ipAddr<?=$server['id']?>', 'copyButton<?=$server['id']?>')">Copy IP</button>
     </div>
     <div style="clear: both"></div>
 <?php

@@ -1,6 +1,6 @@
 <?php
     include 'logic/layout.php';
-    PageHeader("add server");
+    PageHeader("add server", "Here you can add your SA-MP or OMP server to SAMonitor.");
 ?>
 
 <div>

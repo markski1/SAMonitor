@@ -12,7 +12,7 @@
         <h3>Preface, regarding SA-MP.com's end of operations.</h3>
         <p>In the morning of August 21st, 2023, GAME-MP's customer panel added the following announcement:</p>
 
-        <fieldset style="color: #AAAAAA">
+        <fieldset style="color: #CCCCCC; padding: 1rem">
             <p>NOTICE</p>
             <p>Listings can no longer be renewed as SA-MP.com will be ceasing operations soon.</p>
             <small>Extracted from customer.game-mp.com</small>
@@ -84,7 +84,7 @@
         <h3>Prólogo, respecto al cese de operaciones de SA-MP.com</h3>
         <p>En la mañana del 21 de Agosto, 2023, en el panel de cliente de GAME-MP se muestra el siguiente mensaje:</p>
 
-        <fieldset style="color: #AAAAAA">
+        <fieldset style="color: #CCCCCC; padding: 1rem">
             <p>ATENCIÓN</p>
             <p>Los listados ya no se puede renovar porque SA-MP.com pronto cesara sus operaciones.</p>
             <small>(traducido del inglés) | Extraído de customer.game-mp.com</small>

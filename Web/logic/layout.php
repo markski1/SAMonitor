@@ -1,7 +1,10 @@
 <?php
 
-function PageHeader($title) {
+function PageHeader($title, $description = null) {
     if (isset($_SERVER['HTTP_HX_REQUEST'])) return;
+
+    $showDescription = $description ?? "A server monitor for SA-MP servers and open.mp servers. San Andreas Multiplayer public API and Masterlist.";
+
     ?>
 
     <!DOCTYPE html>
@@ -14,10 +17,10 @@ function PageHeader($title) {
             <link rel="stylesheet" type="text/css" href="style.css">
             
             <meta name="title" content="SAMonitor - <?=$title?>">
-            <meta name="description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist.">
+            <meta name="description" content="<?=$showDescription?>">
 
             <meta name="og:title" content="SAMonitor - <?=$title?>">
-            <meta property="og:description" content="A server browser for SA-MP and open.mp servers. Also provides a public API and Masterlist.">
+            <meta property="og:description" content="<?=$showDescription?>">
 
             <script src="./assets/chart.js"></script>
             <script defer src="./assets/htmx.min.js"></script>
@@ -51,11 +54,18 @@ function PageBottom() {
         </body>
     </html>
 
+    
     <script>
-        function CopyAddress(id) {
-            var copyText = document.getElementById(id);
+        var lastUsedCopyButton;
+
+        function CopyAddress(ipID, buttonID) {
+            var copyText = document.getElementById(ipID);
             navigator.clipboard.writeText(copyText.innerText);
-            alert("Address copied.");
+            lastUsedCopyButton = document.getElementById(buttonID)
+            lastUsedCopyButton.innerHTML = "IP Copied!";
+            setTimeout(function () {
+                lastUsedCopyButton.innerHTML = "Copy IP";
+            }, 3000);
         }
     </script>
     
