@@ -25,14 +25,26 @@
 
     <div class="innerContent">
         <h3>List of blocked servers</h3>
-        <fieldset>
-            <h3>LS.CITY</h3>
-            <span>Blocked for faking player count.<br />Permanently reporting 2000/2000 despite that not being the case.</span>
-        </fieldset>
-        <fieldset style="margin-top: 1rem">
-            <h3>Golden State RP</h3>
-            <span>Blocked for faking player count.<br />Reporting anywhere from 19 to 22 players online at all times, but server was empty <b>every time</b> it was checked.</span>
-        </fieldset>
+        <table style="width: 100%">
+            <tr>
+                <th>Name</th><th>Reason</th><th>Note</th>
+            </tr>
+            <tr>
+                <td>LS.CITY</td>
+                <td>Fake player count</td>
+                <td style="max-width: 400px">Permanently reporting a 2000/2000 figure which is not real.</td>
+            </tr>
+            <tr>
+                <td>Golden State RP</td>
+                <td>Fake player count</td>
+                <td style="max-width: 400px">Reporting anywhere from 19 to 22 players online at all times<br>The server was empty <b>every time</b> it was checked.</td>
+            </tr>
+            <tr>
+                <td>VEGAS RolePlay</td>
+                <td>Fake player count</td>
+                <td style="max-width: 400px">Reporting counts in the neighbourhood of ~823 players online at all times.<br>While the server did reflect this amount in-game, they were obviously fake.<br>By our testing, there only seemed to be around ~15 actual players in-game.</td>
+            </tr>
+        </table>
     </div>
     <div class="innerContent">
         <h3>IP Blocking regardless of server</h3>

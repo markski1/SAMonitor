@@ -11,9 +11,14 @@
         $players = json_decode(file_get_contents("http://gateway.markski.ar:42069/api/GetServerPlayers?ip_addr=".$_GET['ip_addr']), true);
         
         if (count($players) > 0) {
+            echo '<table>';
+            echo '<tr style="border: 1px gray solid"><b><td>Id</td><td>Name</td><td>Score</td><td>Ping</td></b></tr>';
+
             foreach ($players as $player) {
-                echo "<p><b>{$player['name']}</b> ({$player['id']}): {$player['score']} score; {$player['ping']} ping.</p>";
+                echo "<tr><td style='width: 100px'>{$player['id']}</td> <td>{$player['name']}</td> <td>{$player['score']}</td> <td>{$player['ping']}</td></tr>";
             }
+
+            echo '</table>';
         }
         else {
             echo "<p>Could not fetch player list.</p>";
@@ -22,9 +27,9 @@
 ?>
 
 <style>
-    p {
+    table {
+        width: 100%;
         color: white;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin: .1rem;
+        border: 0;
     }
 </style>

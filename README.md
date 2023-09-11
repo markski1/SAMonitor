@@ -1,6 +1,6 @@
 # SAMonitor
 
-This is the monorepo for SAMonitor, a free and open source service, tracking hundreds of SA-MP and open.mp servers.
+This is the monorepo for SAMonitor, a free and open source server monitor, tracking over a thousand SA-MP and open.mp servers.
 
 Providing: A server browser, a public API and a Masterlist alternative.
 
@@ -8,7 +8,7 @@ Providing: A server browser, a public API and a Masterlist alternative.
 
 - [Server browser](#server-browser)
 - [Masterlist](#masterlist)
-- [GET Endpoints](#get-endpoints)
+- [API Endpoints](#api-endpoints)
   - [GetAllServers](#getallservers)
   - [GetFilteredServers](#getfilteredservers)
   - [GetServerByIP](#getserverbyip)
@@ -23,28 +23,26 @@ Providing: A server browser, a public API and a Masterlist alternative.
 
 The server browser is available at https://sam.markski.ar
 
-It is still at a very early stage. Eventually it'll have filtering among other features.
-
 It consumes the public API endpoints listed below.
 
-It is written in HTMX and PHP, which provides a very lightweight website where logic largely runs on the server side. Ideal for the types of computers and phones to be expected in regions where San Andreas remains popular.
+It is written in HTMX and PHP, which provides a very lightweight website where logic largely runs on the server side. Ideal for the types of computers and phones to be expected in regions where San Andreas Multiplayer remains popular.
 
 ## Masterlist
 
 We offer a masterlist alternative, at `http://gateway.markski.ar/api/GetMasterlist`.
 
-You may specify a `version` parameter. Example: `http://sam.markski.ar/api/GetMasterlist?version=0.3.7`
+You may specify a `version` parameter. Example: `http://gateway.markski.ar/api/GetMasterlist?version=0.3.7`
 
 It is a relatively high-quality masterlist, since rather than functioning as a hastily-updated text file or database, it only provides servers which are actively running.
 Servers which failed to be online in the last ~6 hours are not included in this list (but are re-added when they return).
 
 If you wish to use SAMonitor's masterlist in SA-MP, check out [SA-MP Masterlist Fix](https://github.com/spmn/sa-mp_masterlist_fix)!
 
-## GET Endpoints
+## API Endpoints
 
 All of these endpoints are located at `http://sam.markski.ar/api/`.
 
-Note that this endpoint ONLY replies to standard http queries. If that doesn't work, try `http://gateway.markski.ar/api/`. Both return the same data, but `gateway` does not go benefit from Cloudflare's network, which may make it slower.
+Note that this endpoint ONLY replies to standard GET http queries. If that doesn't work, try `http://gateway.markski.ar/api/`. Both return the same data, but `gateway` does not go benefit from Cloudflare's network, which may make it slower.
 
 ### GetAllServers
 
@@ -159,7 +157,7 @@ The server schema is likely to change as SAMonitor is fairly in-development. How
   sampCac:       String (Version of SAMPCAC required. "Not required" otherwise.)
 ```
 
-The API ***should*** never return any null values. Either '0' or "Unknown" would come in their placee where appropiate. Still, because bugs exist, you may wish to account for the possibility of 'null' values.
+The API ***should*** never return any null values. Either '0' or "Unknown" would come in their placee where appropiate, or at worst, an empty [] response. Still, because bugs can exist, you may wish to account for the possibility of 'null' returns.
 
 ## Add your server
 
