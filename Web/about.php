@@ -29,6 +29,7 @@
         <p>A server is considered offline if they replied to queries in the last 6 hours, and if they're not password protected. Servers who don't meet this are not listed, but continue to be tracked, and become listed when they do.</p>
         <p>Every server is queried every 20 minutes (3 times per hour). It will update it's listing data when this happens, and store the amount of players at that time into the database.</p>
         <p>SAMonitor keeps a constant, real-time count of servers and players online across the globe. These are stored every 30 minutes and visible in the "metrics" page.</p>
+        <p>For supporting SAMonitor, check the <a href="donate.php" hx-get="donate.php" hx-push-url="true" hx-target="#main">donations</a> page.</p>
     </div>
     <div class="innerContent">
         <h3>Third party attributions</h3>

@@ -138,6 +138,11 @@ public class Server
         RequiresPassword = serverInfo.Password;
         LastUpdated = DateTime.Now;
 
+        if (PlayersOnline > MaxPlayers)
+        {
+            return false;
+        }
+
         try
         {
             serverRules = await server.GetServerRulesAsync();
