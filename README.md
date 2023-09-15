@@ -1,6 +1,6 @@
-# SAMonitor
+# SAMonitor - San Andreas Monitor
 
-This is the monorepo for SAMonitor, a free and open source server monitor, tracking over a thousand SA-MP and open.mp servers.
+A free and open source server monitor, tracking over a thousand SA-MP and open.mp servers.
 
 Providing: A server browser, a public API and a Masterlist alternative.
 
@@ -25,13 +25,11 @@ The server browser is available at https://sam.markski.ar
 
 It consumes the public API endpoints listed below.
 
-It is written in HTMX and PHP, which provides a very lightweight website where logic largely runs on the server side. Ideal for the types of computers and phones to be expected in regions where San Andreas Multiplayer remains popular.
-
 ## Masterlist
 
-We offer a masterlist alternative, at `http://gateway.markski.ar/api/GetMasterlist`.
+We offer a masterlist alternative, at `http://sam.markski.ar/api/GetMasterlist`.
 
-You may specify a `version` parameter. Example: `http://gateway.markski.ar/api/GetMasterlist?version=0.3.7`
+You may specify a `version` parameter. Example: `http://sam.markski.ar/api/GetMasterlist?version=0.3.7`
 
 It is a relatively high-quality masterlist, since rather than functioning as a hastily-updated text file or database, it only provides servers which are actively running.
 Servers which failed to be online in the last ~6 hours are not included in this list (but are re-added when they return).
@@ -41,8 +39,6 @@ If you wish to use SAMonitor's masterlist in SA-MP, check out [SA-MP Masterlist 
 ## API Endpoints
 
 All of these endpoints are located at `http://sam.markski.ar/api/`.
-
-Note that this endpoint ONLY replies to standard GET http queries. If that doesn't work, try `http://gateway.markski.ar/api/`. Both return the same data, but `gateway` does not go benefit from Cloudflare's network, which may make it slower.
 
 ### GetAllServers
 
@@ -162,3 +158,4 @@ The API ***should*** never return any null values. Either '0' or "Unknown" would
 ## Add your server
 
 You may add your server through the option at the SAMonitor website.
+I'll be writing an 'announce.pwn' type thing in the future.

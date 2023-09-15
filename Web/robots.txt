@@ -1,4 +1,0 @@
-User-agent: googlebot
-Disallow: /view/
-Disallow: /assets/
-Disallow: /action/
