@@ -35,7 +35,7 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetFilteredServers")]
-    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0)
+    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any")
     {
         ServerManager.ApiHits++;
 
@@ -52,6 +52,18 @@ public class ApiController : ControllerBase
             servers = servers.Where(x => x.Name.ToLower().Contains(name.ToLower()));
         }
 
+        if (version != "any")
+        {
+            servers = servers.Where(x => x.Version.ToLower().Contains(version.ToLower()));
+        }
+
+        // In the future, should probably have a way to specify a language in a more broad sense rather than by string,
+        // as server operators define languages in rather inconsistent ways.
+        if (language != "any")
+        {
+            servers = servers.Where(x => x.Language.ToLower().Contains(language.ToLower()));
+        }
+
         if (gamemode != "unspecified")
         {
             servers = servers.Where(x => x.GameMode.ToLower().Contains(gamemode.ToLower()));
@@ -59,7 +71,10 @@ public class ApiController : ControllerBase
 
         if (hide_roleplay != 0)
         {
+            // safe to assume the substring "rp" or "role" in the gamemode can mean nothing but a roleplay server.
             servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") && !x.GameMode.ToLower().Contains("role"));
+
+            // when checking by the name however we must be conservative.
             servers = servers.Where(x => !x.Name.ToLower().Contains("roleplay") && !x.Name.ToLower().Contains("role play"));
         }
 
@@ -128,16 +143,15 @@ public class ApiController : ControllerBase
         return result.GetPlayers();
     }
 
-    [HttpGet("GetTotalPlayers")]
-    public int GetTotalPlayers()
+    [HttpGet("GetGlobalStats")]
+    public GlobalStats GetGlobalStats()
     {
-        return ServerManager.TotalPlayers();
-    }
-
-    [HttpGet("GetAmountServers")]
-    public int GetAmountServers(int include_dead = 0)
-    {
-        return ServerManager.ServerCount(include_dead);
+        return
+            new GlobalStats(
+                serversTracked: ServerManager.ServerCount(1),
+                serversOnline: ServerManager.ServerCount(0),
+                playersOnline: ServerManager.TotalPlayers()
+            );
     }
 
     [HttpGet("GetMasterlist")]
@@ -225,5 +239,24 @@ public class ApiController : ControllerBase
         }
 
         return (await conn.QueryAsync<ServerMetrics>(sql, new { RequestTime, Id })).ToList();
+    }
+
+
+
+
+
+
+    // TO BE DEPRECATED
+
+    [HttpGet("GetTotalPlayers")]
+    public int GetTotalPlayers()
+    {
+        return ServerManager.TotalPlayers();
+    }
+
+    [HttpGet("GetAmountServers")]
+    public int GetAmountServers(int include_dead = 0)
+    {
+        return ServerManager.ServerCount(include_dead);
     }
 }

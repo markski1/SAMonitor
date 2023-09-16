@@ -42,3 +42,17 @@ public class ServerMetrics
         Time = time;
     }
 }
+
+public class GlobalStats
+{
+    public int playersOnline { get; set; }
+    public int serversTracked { get; set; }
+    public int serversOnline { get; set; }
+
+    public GlobalStats(int playersOnline, int serversTracked, int serversOnline)
+    {
+        this.playersOnline = playersOnline;
+        this.serversTracked = serversTracked;
+        this.serversOnline = serversOnline;
+    }
+}
