@@ -52,6 +52,11 @@ public static class ServerManager
             return "Server did not respond to query.";
         }
 
+        if (newServer.Version.ToLower().Contains("crce"))
+        {
+            return $"'SA-MP: Criminal Russia' modded servers are currently unsupported.";
+        }
+
         // check for copies                                                                                     they usually try to get smart by slightly modifying the gamemode string;
         //                                                                                                      so a little flexibility on this one
         var copies = currentServers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
