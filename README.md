@@ -31,8 +31,9 @@ We offer a masterlist alternative, at `http://sam.markski.ar/api/GetMasterlist`.
 
 You may specify a `version` parameter. Example: `http://sam.markski.ar/api/GetMasterlist?version=0.3.7`
 
-It is a relatively high-quality masterlist, since rather than functioning as a hastily-updated text file or database, it only provides servers which are actively running.
-Servers which failed to be online in the last ~6 hours are not included in this list (but are re-added when they return).
+It is a relatively high-quality masterlist: It is both automatically and manually pruned of repeated and illegitimate servers regularly. It omits servers which are password protected or have been offline for more than 6 hours.
+
+To ensure fairness, the position of every server in the list is shuffled every 30 minutes.
 
 If you wish to use SAMonitor's masterlist in SA-MP, check out [SA-MP Masterlist Fix](https://github.com/spmn/sa-mp_masterlist_fix)!
 
@@ -42,25 +43,25 @@ All of these endpoints are located at `http://sam.markski.ar/api/`.
 
 ### GetAllServers
 
-Return a JSON collection with the latest information of every server SAMonitor tracks.
+Return a collection with the latest information of every server SAMonitor tracks.
 
 Try it: http://sam.markski.ar/api/GetAllServers
 
 ### GetFilteredServers
 
-The most complex endpoint of all, but certainly worth it: Returns the list of servers, but with specified filtering.
+Returns the list of servers, but with specified filtering.
 
 By default, it'll omit severs with 0 players.
 
 Parameters, all of which are optional: 
 ```
   show_empty:
-   - Possible values: 0 or 1. If unspecified, 0.
+   - Possible values: 0 or 1. If 1, it will include servers with 0 players.
 
   order:
    - Possible values: "none", "players", "ratio". If unspecified, "none".
 
-  name, gamemode:
+  name, gamemode, version, language:
    - Possible values: Any specified text. This is basically a search.
   
   paging_size:
@@ -88,11 +89,13 @@ Provided an IP address (optionaly with a specified port), return a list of playe
 
 Try it: http://sam.markski.ar/api/GetServerPlayers?ip_addr=51.68.204.178:7777
 
-### GetTotalPlayers
+### GetGlobalStats
 
-Get a simple integer with the sum of players in the tracked servers.
+Receive counts for amount of servers tracked, amount of servers online, and amount of players playing in them.
 
-Try it: http://sam.markski.ar/api/GetTotalPlayers
+Try it: http://sam.markski.ar/api/GetGlobalStats
+
+NOTE: `GetTotalPlayers` and `GetAmountServers` are deprecated and will be removed in the future.
 
 ### GetAmountServers
 
