@@ -196,11 +196,11 @@ public class ApiController : ControllerBase
         ServerManager.ApiHits++;
 
         ip_addr = ip_addr.Trim();
-        string check = Helpers.ValidateIPv4(ip_addr);
-        if (check == "valid")
-            return (await ServerManager.AddServer(ip_addr));
+        string validIP = Helpers.ValidateIPv4(ip_addr);
+        if (validIP != "invalid")
+            return (await ServerManager.AddServer(validIP));
         else
-            return check;
+            return "Entered IP address or hostname is invalid or not resolving.";
     }
 
     [HttpGet("GetGlobalMetrics")]

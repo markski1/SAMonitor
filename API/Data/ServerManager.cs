@@ -1,10 +1,7 @@
-﻿using SAMPQuery;
-using Dapper;
+﻿using Dapper;
 using System.Timers;
 using MySqlConnector;
 using SAMonitor.Utils;
-using System.Xml.XPath;
-using System.Collections.Generic;
 
 namespace SAMonitor.Data;
 
@@ -54,7 +51,7 @@ public static class ServerManager
 
         if (newServer.Version.ToLower().Contains("crce"))
         {
-            return $"'SA-MP: Criminal Russia' modded servers are currently unsupported.";
+            return "'SA-MP: Criminal Russia' modded servers are currently unsupported.";
         }
 
         // check for copies                                                                                     they usually try to get smart by slightly modifying the gamemode string;
