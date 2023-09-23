@@ -1,4 +1,10 @@
-﻿using Dapper;
+﻿/*
+ * This file is pretty ugly. Classic "grew bigger than I thought" case.
+ * Eventually I'll split the SQL stuff to an ORM interface file, and generally make things prettier.
+ * Just need time.
+ */
+
+using Dapper;
 using System.Timers;
 using MySqlConnector;
 using SAMonitor.Utils;
@@ -58,16 +64,29 @@ public static class ServerManager
         //                                                                                                      so a little flexibility on this one
         var copies = currentServers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
 
+        var conn = new MySqlConnection(MySQL.ConnectionString);
+        string sql;
+
         if (copies.Any())
         {
             return "Server is already monitored. Be advised: Sneaking in repeated IP's for the same server is a motive for blacklisting.";
         }
+        else
+        {
+            // if there's an 'old' dead version of this, then delete it.
+            copies = servers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
+
+            foreach (var server in copies)
+            {
+                sql = "DELETE FROM servers WHERE id = @Id";
+                await conn.QueryAsync(sql, new { server.Id });
+                servers.Remove(server);
+            }
+        }
 
         bool success;
 
-        var conn = new MySqlConnection(MySQL.ConnectionString);
-
-        var sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
+        sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
                         VALUES(@IpAddr, @Name, @LastUpdated, @AllowsDL, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
 
         try
