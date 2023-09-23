@@ -13,7 +13,7 @@ Providing: A server browser, a public API and a Masterlist alternative.
   - [GetFilteredServers](#getfilteredservers)
   - [GetServerByIP](#getserverbyip)
   - [GetServerPlayers](#getserverplayers)
-  - [GetTotalPlayers](#gettotalplayers)
+  - [GetGlobalStats](#GetGlobalStats)
   - [GetGlobalMetrics](#getglobalmetrics)
   - [GetServerMetrics](#getservermetrics)
 - [Data schemas](#data-schemas)
@@ -63,6 +63,12 @@ Parameters, all of which are optional:
 
   name, gamemode, version, language:
    - Possible values: Any specified text. This is basically a search.
+
+  hide_roleplay:
+   - If specified 1, hide roleplay servers.
+
+  require_sampcac:
+   - If specified 1, only get servers where SAMPCAC is required.
   
   paging_size:
    - Provide any number greater than 0 to do paging.
@@ -96,14 +102,6 @@ Receive counts for amount of servers tracked, amount of servers online, and amou
 Try it: http://sam.markski.ar/api/GetGlobalStats
 
 NOTE: `GetTotalPlayers` and `GetAmountServers` are deprecated and will be removed in the future.
-
-### GetAmountServers
-
-A little pointless for most, but returns the amount of servers currently online.
-
-Optionally, use `include_dead=1` to retrieve the total amount of servers being tracked, including offline.
-
-Try it: http://sam.markski.ar/api/GetAmountServers
 
 ### GetGlobalMetrics
 

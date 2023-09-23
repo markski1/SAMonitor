@@ -35,7 +35,7 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetFilteredServers")]
-    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any")
+    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0)
     {
         ServerManager.ApiHits++;
 
@@ -76,6 +76,11 @@ public class ApiController : ControllerBase
 
             // when checking by the name however we must be conservative.
             servers = servers.Where(x => !x.Name.ToLower().Contains("roleplay") && !x.Name.ToLower().Contains("role play"));
+        }
+
+        if (require_sampcac != 0)
+        {
+            servers = servers.Where(x => !x.SampCac.ToLower().Contains("not required"));
         }
 
         // after ordering we exclusively manage lists
