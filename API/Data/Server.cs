@@ -9,7 +9,8 @@ namespace SAMonitor.Data;
 
 public class Server
 {
-    private readonly System.Timers.Timer QueryTimer = new();
+    private readonly System.Timers.Timer QueryTimer = new(); // 20 minute timer
+    private int DeadCount = 0; // count for continued fails to reply to queries in a row.
     public int Id { get; set; }
     public bool Success { get; set; }
     public DateTime LastUpdated { get; set; }
@@ -127,8 +128,18 @@ public class Server
 
             #endif
 
+            // if the server has already been failing to reply to queries lately, let's save ourselves some resources and query once every hour instead.
+            if (DeadCount > 1)
+            {
+                QueryTimer.Interval = 3600000;
+            }
+
+            DeadCount++;
+
             return false;
         }
+
+        DeadCount = 0;
 
         Name = serverInfo.HostName;
         PlayersOnline = serverInfo.Players;
@@ -166,12 +177,11 @@ public class Server
         }
         catch (Exception ex)
         {
-            if ((ex.GetType().FullName ?? ex.GetType().Assembly.FullName ?? "noname").Contains("socket") == false) // I don't care to log network exceptions
+            if (ex.ToString().Contains("SocketException") == false) // I don't care to log network exceptions
             {
                 Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
             }
         }
-
         
         // SAMP encodes certain special latin characters as if they were Cyrillic.
         // So, if the server doesn't seem russian, we replace certain known ones.

@@ -35,7 +35,7 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetFilteredServers")]
-    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0)
+    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0, int show_passworded = 0)
     {
         ServerManager.ApiHits++;
 
@@ -45,6 +45,25 @@ public class ApiController : ControllerBase
         if (show_empty == 0)
         {
             servers = servers.Where(x => x.PlayersOnline > 0);
+        }
+
+        if (show_passworded == 0)
+        {
+            servers = servers.Where(x => x.RequiresPassword == false);
+        }
+
+        if (hide_roleplay != 0)
+        {
+            // safe to assume the substring "rp" or "role" in the gamemode can mean nothing but a roleplay server.
+            servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") && !x.GameMode.ToLower().Contains("role"));
+
+            // when checking by the name however we must be conservative.
+            servers = servers.Where(x => !x.Name.ToLower().Contains("roleplay") && !x.Name.ToLower().Contains("role play"));
+        }
+
+        if (require_sampcac != 0)
+        {
+            servers = servers.Where(x => !x.SampCac.ToLower().Contains("not required"));
         }
 
         if (name != "unspecified")
@@ -67,20 +86,6 @@ public class ApiController : ControllerBase
         if (gamemode != "unspecified")
         {
             servers = servers.Where(x => x.GameMode.ToLower().Contains(gamemode.ToLower()));
-        }
-
-        if (hide_roleplay != 0)
-        {
-            // safe to assume the substring "rp" or "role" in the gamemode can mean nothing but a roleplay server.
-            servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") && !x.GameMode.ToLower().Contains("role"));
-
-            // when checking by the name however we must be conservative.
-            servers = servers.Where(x => !x.Name.ToLower().Contains("roleplay") && !x.Name.ToLower().Contains("role play"));
-        }
-
-        if (require_sampcac != 0)
-        {
-            servers = servers.Where(x => !x.SampCac.ToLower().Contains("not required"));
         }
 
         // after ordering we exclusively manage lists
@@ -164,25 +169,6 @@ public class ApiController : ControllerBase
     {
         ServerManager.ApiHits++;
 
-        if (version == "any")
-        {
-            // if no version is specified, try to infer from the user agent.
-            // for referense, from SA-MP, it would look something like "Mozilla/3.0 (compatible; SA:MP v0.3.7)"
-            string userAgent = Request.Headers["User-Agent"].ToString();
-            if (userAgent.Contains("SA:MP"))
-            {
-                int start = userAgent.IndexOf(" v");
-                if (start < 0)
-                {
-                    start += 2; // skip past " v"
-                    int end = userAgent.IndexOf(")");
-                    if (end < 0)
-                    {
-                        return ServerManager.GetMasterlist(userAgent[start..end]);
-                    }
-                }
-            }
-        }
         return ServerManager.GetMasterlist(version);
     }
 
@@ -205,7 +191,7 @@ public class ApiController : ControllerBase
         if (validIP != "invalid")
             return (await ServerManager.AddServer(validIP));
         else
-            return "Entered IP address or hostname is invalid or not resolving.";
+            return "Entered IP address or hostname is invalid or failing to resolve.";
     }
 
     [HttpGet("GetGlobalMetrics")]

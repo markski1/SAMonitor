@@ -80,8 +80,9 @@ public static class ServerManager
             {
                 sql = "DELETE FROM servers WHERE id = @Id";
                 await conn.QueryAsync(sql, new { server.Id });
-                servers.Remove(server);
             }
+
+            servers.RemoveAll(x => copies.Contains(x));
         }
 
         bool success;
@@ -239,8 +240,8 @@ public static class ServerManager
         // Update the Blacklist.
         UpdateBlacklist();
 
-        // Update the current servers with only the ones which have responded in the last 6 hours, and are not password protected.
-        currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6) && x.RequiresPassword == false).ToList();
+        // Update the current servers with only the ones which have responded in the last 6 hours
+        currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
 
         // Update the Masterlist accordingly.
         UpdateMasterlist();
@@ -287,6 +288,9 @@ public static class ServerManager
         MasterList_03DL = "";
         foreach (var server in currentServers)
         {
+            // passworded servers don't make it to the masterlist.
+            if (server.RequiresPassword) continue;
+
             MasterList_global += $"{server.IpAddr}\n";
             if (server.Version.Contains("3.7"))
             {
