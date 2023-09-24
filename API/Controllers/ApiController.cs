@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using SAMonitor.Data;
@@ -35,7 +35,7 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetFilteredServers")]
-    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0, int show_passworded = 0)
+    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int hide_russian = 0,  int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0, int show_passworded = 0)
     {
         ServerManager.ApiHits++;
 
@@ -50,6 +50,11 @@ public class ApiController : ControllerBase
         if (show_passworded == 0)
         {
             servers = servers.Where(x => x.RequiresPassword == false);
+        }
+
+        if (hide_russian != 0)
+        {
+            servers = servers.Where(x => !x.Language.ToLower().Contains("ru") && !x.Language.ToLower().Contains("ру"));
         }
 
         if (hide_roleplay != 0)
