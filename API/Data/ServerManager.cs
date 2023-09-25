@@ -57,7 +57,7 @@ public static class ServerManager
 
         if (newServer.Version.ToLower().Contains("crce"))
         {
-            return "'SA-MP: Criminal Russia' modded servers are currently unsupported.";
+            return "CR-MP servers are currently unsupported.";
         }
 
         // check for copies                                                                                     they usually try to get smart by slightly modifying the gamemode string;
@@ -222,6 +222,67 @@ public static class ServerManager
         {
             return -1;
         }
+    }
+
+    public static LanguageStats LanguageAnalytics()
+    {
+        LanguageStats langsts = new();
+        foreach (var server in servers)
+        {
+            string lang = server.Language.ToLower();
+            
+            if (lang.Contains("ru") || lang.Contains("ру")) {
+                langsts.Russian++;
+                continue;
+            }
+
+            if (lang.Contains("esp") || lang.Contains("spa"))
+            {
+                langsts.Spanish++;
+                continue;
+            }
+
+            if (lang.Contains("ro"))
+            {
+                langsts.Romanian++;
+                continue;
+            }
+
+            if (lang.Contains("br") || lang.Contains("port") || lang.Contains("pt"))
+            {
+                langsts.Portuguese++;
+                continue;
+            }
+
+            if (lang.Contains("geor") || lang.Contains("balkan") || lang.Contains("ex-yu") || lang.Contains("shqip") || lang.Contains("bulg") || lang.Contains("srb") || lang.Contains("tur") || lang.Contains("ukr"))
+            {
+                langsts.EastEuro++;
+                continue;
+            }
+
+            if (lang.Contains("ger") || lang.Contains("pol") || lang.Contains("hung") || lang.Contains("mag") || lang.Contains("fr") || lang.Contains("belg") || lang.Contains("slov") || lang.Contains("lat") || lang.Contains("liet") || lang.Contains("it"))
+            {
+                langsts.WestEuro++;
+                continue;
+            }
+
+            if (lang.Contains("viet") || lang.Contains("tamil") || lang.Contains("ko") || lang.Contains("th") || lang.Contains("ch") || lang.Contains("bahasa") || lang.Contains("malay") || lang.Contains("indo") || lang.Contains("jp") || lang.Contains("jap"))
+            {
+                langsts.Asia++;
+                continue;
+            }
+
+            if (lang.Contains("en"))
+            {
+                langsts.English++;
+                continue;
+            }
+
+            langsts.Other++;
+            Console.WriteLine(lang);
+        }
+
+        return langsts;
     }
 
     private static readonly System.Timers.Timer CurrentCheckTimer = new();

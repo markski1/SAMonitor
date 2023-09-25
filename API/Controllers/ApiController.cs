@@ -169,6 +169,12 @@ public class ApiController : ControllerBase
             );
     }
 
+    [HttpGet("GetLanguageStats")]
+    public LanguageStats GetLanguageStats()
+    {
+        return ServerManager.LanguageAnalytics();
+    }
+
     [HttpGet("GetMasterlist")]
     public string GetMasterlist(string version = "any")
     {

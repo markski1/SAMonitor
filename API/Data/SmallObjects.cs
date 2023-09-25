@@ -45,14 +45,39 @@ public class ServerMetrics
 
 public class GlobalStats
 {
-    public int playersOnline { get; set; }
-    public int serversTracked { get; set; }
-    public int serversOnline { get; set; }
+    public int PlayersOnline { get; set; }
+    public int ServersTracked { get; set; }
+    public int ServersOnline { get; set; }
 
     public GlobalStats(int playersOnline, int serversTracked, int serversOnline)
     {
-        this.playersOnline = playersOnline;
-        this.serversTracked = serversTracked;
-        this.serversOnline = serversOnline;
+        this.PlayersOnline = playersOnline;
+        this.ServersTracked = serversTracked;
+        this.ServersOnline = serversOnline;
+    }
+}
+
+public class LanguageStats
+{
+    public int Spanish { get; set; }
+    public int Russian { get; set; }
+    public int English { get; set; }
+    public int Romanian { get; set; }
+    public int Portuguese { get; set; }
+    public int Asia { get; set; }
+    public int EastEuro { get; set; }
+    public int WestEuro { get; set; }
+    public int Other { get; set; }
+
+    public LanguageStats()
+    {
+        Spanish = 0;
+        Russian = 0;
+        English = 0;
+        Romanian = 0;
+        Portuguese = 0;
+        Asia = 0;
+        EastEuro = 0;
+        WestEuro = 0;
     }
 }
