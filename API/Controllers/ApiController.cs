@@ -175,6 +175,12 @@ public class ApiController : ControllerBase
         return ServerManager.LanguageAnalytics();
     }
 
+    [HttpGet("GetGamemodeStats")]
+    public GamemodeStats GetGamemodeStats()
+    {
+        return ServerManager.GamemodeAnalytics();
+    }
+
     [HttpGet("GetMasterlist")]
     public string GetMasterlist(string version = "any")
     {

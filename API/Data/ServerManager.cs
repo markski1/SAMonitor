@@ -279,10 +279,67 @@ public static class ServerManager
             }
 
             langsts.Other++;
-            Console.WriteLine(lang);
         }
 
         return langsts;
+    }
+
+    public static GamemodeStats GamemodeAnalytics()
+    {
+        GamemodeStats gmsts = new();
+        foreach (var server in servers)
+        {
+            string gm = server.GameMode.ToLower();
+            string name = server.Name.ToLower();
+
+            if (gm.Contains("cnr") || gm.Contains("cop") || name.Contains("cnr"))
+            {
+                gmsts.CNR++;
+                continue;
+            }
+
+            if (gm.Contains("dm") || gm.Contains("dea") || gm.Contains("pvp") || gm.Contains("war") || name.Contains("war") || name.Contains("war"))
+            {
+                gmsts.Deathmatch++;
+                continue;
+            }
+
+            if (gm.Contains("rp") || gm.Contains("role") || gm.Contains("real") || name.Contains("role") || name.Contains(" rp"))
+            {
+                gmsts.Roleplay++;
+                continue;
+            }
+
+            if (gm.Contains("rac") || gm.Contains("stunt") || gm.Contains("drift") || name.Contains("race") || name.Contains("stunt") || name.Contains("drift"))
+            {
+                gmsts.RaceStunt++;
+                continue;
+            }
+
+            if (gm.Contains("surv") || name.Contains("surv") || gm.Contains("dayz") || name.Contains("dayz") || gm.Contains("zomb") || name.Contains("zomb") || name.Contains("stalk"))
+            {
+                gmsts.Survival++;
+                continue;
+            }
+
+            if (gm.Contains("pilot") || name.Contains("truck") || gm.Contains("pilot") || name.Contains("pilot") || gm.Contains("sim") || name.Contains("sim"))
+            {
+                gmsts.VehSim++;
+                continue;
+            }
+
+            if (gm.Contains("free") || name.Contains("freeroam"))
+            {
+                gmsts.FreeRoam++;
+                continue;
+            }
+
+            gmsts.Other++;
+
+            Console.WriteLine(name);
+        }
+
+        return gmsts;
     }
 
     private static readonly System.Timers.Timer CurrentCheckTimer = new();

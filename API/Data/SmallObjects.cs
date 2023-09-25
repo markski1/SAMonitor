@@ -79,5 +79,30 @@ public class LanguageStats
         Asia = 0;
         EastEuro = 0;
         WestEuro = 0;
+        Other = 0;
+    }
+}
+
+public class GamemodeStats
+{
+    public int Deathmatch { get; set; }
+    public int Roleplay { get; set; }
+    public int RaceStunt { get; set; }
+    public int CNR { get; set; }
+    public int FreeRoam { get; set; }
+    public int Survival { get; set; }
+    public int VehSim { get; set; }
+    public int Other { get; set; }
+
+    public GamemodeStats()
+    {
+        Deathmatch = 0;
+        Roleplay = 0;
+        RaceStunt = 0;
+        CNR = 0;
+        FreeRoam = 0;
+        Survival = 0;
+        VehSim = 0;
+        Other = 0;
     }
 }
