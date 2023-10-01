@@ -28,10 +28,10 @@ public class Server
     public string Language { get; set; }
     public string SampCac { get; set; }
     public bool RequiresPassword { get; set; }
-    public int Sponsor { get; set; }
+    public int ShuffledOrder { get; set; }
 
     // Database fetch constructor
-    public Server(int id, string ip_addr, string name, DateTime last_updated, int allows_dl, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, int sponsor)
+    public Server(int id, string ip_addr, string name, DateTime last_updated, int allows_dl, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac)
     {
         Id = id;
         Name = name;
@@ -48,9 +48,9 @@ public class Server
         SampCac = sampcac;
         Language = language;
         WorldTime = DateTime.MinValue;
-        Sponsor = sponsor;
         Success = true;
         RequiresPassword = false;
+        ShuffledOrder = 9999;
 
         CreateTimer();
     }
@@ -75,6 +75,7 @@ public class Server
         WorldTime = DateTime.MinValue;
         Success = false;
         RequiresPassword = false;
+        ShuffledOrder = 9999;
 
         CreateTimer();
     }

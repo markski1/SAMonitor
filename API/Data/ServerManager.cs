@@ -29,7 +29,7 @@ public static class ServerManager
     {
         var conn = new MySqlConnection(MySQL.ConnectionString);
 
-        var sql = @"SELECT id, ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor FROM servers";
+        var sql = @"SELECT id, ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac FROM servers";
 
         servers = (await conn.QueryAsync<Server>(sql)).ToList();
 
@@ -404,8 +404,11 @@ public static class ServerManager
         MasterList_global = "";
         MasterList_037 = "";
         MasterList_03DL = "";
+        n = 0;
         foreach (var server in currentServers)
         {
+            server.ShuffledOrder = n;
+            n++;
             // passworded servers don't make it to the masterlist.
             if (server.RequiresPassword) continue;
 

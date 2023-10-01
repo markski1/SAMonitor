@@ -1,7 +1,128 @@
 ﻿using SAMPQuery;
+using System.Xml.Linq;
+using System;
 
 namespace SAMonitor.Data;
 
+// Internal use classes.
+
+public class ServerFilterer
+{
+    public bool ShowEmpty { get; set; }
+    public bool ShowPassworded { get; set; }
+    public bool HideRoleplay { get; set; }
+    public bool RequireSampCAC { get; set; }
+    public string Name { get; set; }
+    public string Gamemode { get; set; }
+    public string Version { get; set; }
+    public string Language { get; set; }
+    public string Order { get; set; }
+
+    public ServerFilterer(bool showEmpty, bool showPassworded, bool hideRoleplay, bool requireSampCAC, string name, string gamemode, string version, string language, string order)
+    {
+        ShowEmpty = showEmpty;
+        ShowPassworded = showPassworded;
+        HideRoleplay = hideRoleplay;
+        RequireSampCAC = requireSampCAC;
+        Name = name;
+        Gamemode = gamemode;
+        Version = version;
+        Language = language;
+        Order = order;
+    }
+
+    public List<Server> GetFilteredServers()
+    {
+        var servers = ServerManager.GetServers();
+
+        // unless specified, don't show empty servers.
+        if (!ShowEmpty)
+        {
+            servers = servers.Where(x => x.PlayersOnline > 0);
+        }
+
+        if (!ShowPassworded)
+        {
+            servers = servers.Where(x => x.RequiresPassword == false);
+        }
+
+        if (!HideRoleplay)
+        {
+            // safe to assume the substring "rp" or "role" in the gamemode can mean nothing but a roleplay server.
+            servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") && !x.GameMode.ToLower().Contains("role"));
+
+            // when checking by the name however we must be conservative.
+            servers = servers.Where(x => !x.Name.ToLower().Contains("roleplay") && !x.Name.ToLower().Contains("role play"));
+        }
+
+        if (!RequireSampCAC)
+        {
+            servers = servers.Where(x => !x.SampCac.ToLower().Contains("not required"));
+        }
+
+        if (Name != "unspecified")
+        {
+            servers = servers.Where(x => x.Name.ToLower().Contains(Name));
+        }
+
+        if (Version != "any")
+        {
+            servers = servers.Where(x => x.Version.ToLower().Contains(Version));
+        }
+
+        // In the future, should probably have a way to specify a language in a more broad sense rather than by string,
+        // as server operators define languages in rather inconsistent ways.
+        if (Language != "any")
+        {
+            servers = servers.Where(x => x.Language.ToLower().Contains(Language));
+        }
+
+        if (Gamemode != "unspecified")
+        {
+            servers = servers.Where(x => x.GameMode.ToLower().Contains(Gamemode));
+        }
+
+        List<Server> filteredServers = servers.ToList();
+
+        // if specified, order
+        if (Order != "none")
+        {
+            // by player count
+            if (Order == "players")
+            {
+                filteredServers = servers.OrderByDescending(x => x.PlayersOnline).ToList();
+            }
+            // by player count over max player ratio.
+            else
+            {
+                // show_empty=0 guarantees PlayersOnline will never be zero.
+                // otherwise we have to separate them
+                if (!ShowEmpty)
+                {
+                    filteredServers = servers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
+                }
+                else
+                {
+                    var emptyServers = servers.Where(x => x.PlayersOnline == 0);
+                    var populatedServers = servers.Where(x => x.PlayersOnline > 0);
+
+                    filteredServers = populatedServers.OrderByDescending(x => x.PlayersOnline / x.MaxPlayers).ToList();
+                    filteredServers.AddRange(emptyServers);
+                }
+            }
+        }
+        else
+        {
+            // if "none", then order by the ShuffleOrder which gets shuffled every 30 minutes.
+            filteredServers = servers.OrderBy(x => x.ShuffledOrder).ToList();
+        }
+
+        return filteredServers;
+    }
+}
+
+
+// API Return classes.
 public class Player
 {
     public int Id { get; set; }

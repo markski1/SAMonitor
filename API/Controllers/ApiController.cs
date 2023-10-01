@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using SAMonitor.Data;
 using SAMonitor.Utils;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SAMonitor.Controllers;
 
@@ -21,7 +22,7 @@ public class ApiController : ControllerBase
     public Server? GetServerByIP(string ip_addr)
     {
         ServerManager.ApiHits++;
-        var result = ServerManager.ServerByIP(ip_addr);
+        Server? result = ServerManager.ServerByIP(ip_addr);
 
         return result;
     }
@@ -35,100 +36,23 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetFilteredServers")]
-    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int hide_russian = 0,  int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0, int show_passworded = 0)
+    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0, int show_passworded = 0)
     {
         ServerManager.ApiHits++;
 
-        var servers = ServerManager.GetServers();
+        ServerFilterer filterServers = new(
+                showEmpty: show_empty != 0,
+                showPassworded: show_passworded != 0,
+                hideRoleplay: hide_roleplay != 0,
+                requireSampCAC: require_sampcac != 0,
+                order: order,
+                name: name.ToLower(),
+                gamemode: gamemode.ToLower(),
+                language: language.ToLower(),
+                version: version.ToLower()
+            );
 
-        // unless specified, don't show empty servers.
-        if (show_empty == 0)
-        {
-            servers = servers.Where(x => x.PlayersOnline > 0);
-        }
-
-        if (show_passworded == 0)
-        {
-            servers = servers.Where(x => x.RequiresPassword == false);
-        }
-
-        if (hide_russian != 0)
-        {
-            servers = servers.Where(x => !x.Language.ToLower().Contains("ru") && !x.Language.ToLower().Contains("ру"));
-        }
-
-        if (hide_roleplay != 0)
-        {
-            // safe to assume the substring "rp" or "role" in the gamemode can mean nothing but a roleplay server.
-            servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") && !x.GameMode.ToLower().Contains("role"));
-
-            // when checking by the name however we must be conservative.
-            servers = servers.Where(x => !x.Name.ToLower().Contains("roleplay") && !x.Name.ToLower().Contains("role play"));
-        }
-
-        if (require_sampcac != 0)
-        {
-            servers = servers.Where(x => !x.SampCac.ToLower().Contains("not required"));
-        }
-
-        if (name != "unspecified")
-        {
-            servers = servers.Where(x => x.Name.ToLower().Contains(name.ToLower()));
-        }
-
-        if (version != "any")
-        {
-            servers = servers.Where(x => x.Version.ToLower().Contains(version.ToLower()));
-        }
-
-        // In the future, should probably have a way to specify a language in a more broad sense rather than by string,
-        // as server operators define languages in rather inconsistent ways.
-        if (language != "any")
-        {
-            servers = servers.Where(x => x.Language.ToLower().Contains(language.ToLower()));
-        }
-
-        if (gamemode != "unspecified")
-        {
-            servers = servers.Where(x => x.GameMode.ToLower().Contains(gamemode.ToLower()));
-        }
-
-        // after ordering we exclusively manage lists
-        // as lists guarantee order and generic enumerables do not.
-
-        List<Server> orderedServers;
-
-        // if specified, order
-        if (order != "none")
-        {
-            // by player count
-            if (order == "players")
-            {
-                orderedServers = servers.OrderByDescending(x => x.PlayersOnline).ToList();
-            }
-            // by player count over max player ratio.
-            else
-            {
-                // show_empty=0 guarantees PlayersOnline will never be zero.
-                // otherwise we have to separate them
-                if (show_empty == 0)
-                {
-                    orderedServers = servers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
-                }
-                else
-                {
-                    var emptyServers = servers.Where(x => x.PlayersOnline == 0);
-                    var populatedServers = servers.Where(x => x.PlayersOnline > 0);
-
-                    orderedServers = populatedServers.OrderByDescending(x => x.PlayersOnline / x.MaxPlayers).ToList();
-                    orderedServers.AddRange(emptyServers);
-                }
-            }
-        }
-        else
-        {
-            orderedServers = servers.ToList();
-        }
+        List<Server> orderedServers = filterServers.GetFilteredServers();
 
         // If we're paging, return a "page".
         if (paging_size > 0)
