@@ -29,7 +29,7 @@ public static class ServerManager
     {
         var conn = new MySqlConnection(MySQL.ConnectionString);
 
-        var sql = @"SELECT id, ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac FROM servers";
+        var sql = @"SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac FROM servers";
 
         servers = (await conn.QueryAsync<Server>(sql)).ToList();
 
@@ -87,8 +87,8 @@ public static class ServerManager
 
         bool success;
 
-        sql = @"INSERT INTO servers (ip_addr, name, last_updated, allows_dl, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
-                        VALUES(@IpAddr, @Name, @LastUpdated, @AllowsDL, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
+        sql = @"INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
+                        VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
 
         try
         {
@@ -97,7 +97,7 @@ public static class ServerManager
                 newServer.IpAddr,
                 newServer.Name,
                 newServer.LastUpdated,
-                newServer.AllowsDL,
+                newServer.IsOpenMp,
                 newServer.LagComp,
                 newServer.MapName,
                 newServer.GameMode,

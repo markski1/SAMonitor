@@ -25,5 +25,10 @@ namespace SAMPQuery
         /// </summary>
         /// <value>x</value>
         public static char Rcon => 'x';
+        /// <summary>
+        /// OMP Packet
+        /// </summary>
+        /// <value>i</value>
+        public static char OMP => 'o';
     }
 }

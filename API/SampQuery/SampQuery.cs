@@ -1,13 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SAMPQuery
 {
@@ -161,45 +155,42 @@ namespace SAMPQuery
                 ReceiveTimeout = this.timeoutMilliseconds
             };
 
-            using(var stream = new MemoryStream())
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+
+            string[] splitIp = this.serverIpString.Split('.');
+
+            writer.Write(this.socketHeader);
+
+            for (sbyte i = 0; i < splitIp.Length; i++)
             {
-                using(var writer = new BinaryWriter(stream))
-                {
-                    string[] splitIp = this.serverIpString.Split('.');
-
-                    writer.Write(this.socketHeader);
-
-                    for (sbyte i = 0; i < splitIp.Length; i++)
-                    {
-                        writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
-                    }
-
-                    writer.Write(this.serverPort);
-                    writer.Write(packetType);
-
-                    if (packetType == ServerPacketTypes.Rcon && cmd is not null) {
-                        writer.Write((ushort)this.password.Length);
-                        writer.Write(this.password.ToCharArray());
-
-                        writer.Write((ushort)cmd.Length);
-                        writer.Write(cmd.ToCharArray());
-                    }
-
-                    this.transmitMS = DateTime.Now;
-
-                    this.serverSocket.SendTo(stream.ToArray(), SocketFlags.None, this.serverEndPoint);
-
-                    EndPoint rawPoint = this.serverEndPoint;
-                    var szReceive = new byte[this.receiveArraySize];
-
-                    this.serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
-
-                    this.serverSocket.Close();
-                    return szReceive;
-                }
-
+                writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
             }
 
+            writer.Write(this.serverPort);
+            writer.Write(packetType);
+
+            if (packetType == ServerPacketTypes.Rcon && cmd is not null)
+            {
+                writer.Write((ushort)this.password.Length);
+                writer.Write(this.password.ToCharArray());
+
+                writer.Write((ushort)cmd.Length);
+                writer.Write(cmd.ToCharArray());
+            }
+
+            this.transmitMS = DateTime.Now;
+
+            this.serverSocket.SendTo(stream.ToArray(), SocketFlags.None, this.serverEndPoint);
+
+            EndPoint rawPoint = this.serverEndPoint;
+            var szReceive = new byte[this.receiveArraySize];
+
+            this.serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
+
+            this.serverSocket.Close();
+
+            return szReceive;
         }
         /// <summary>
         /// Execute RCON command
@@ -275,6 +266,64 @@ namespace SAMPQuery
         {
             byte[] data = await SendSocketToServerAsync(ServerPacketTypes.Info);
             return CollectServerInfoFromByteArray(data);
+        }
+        /// <summary>
+        /// Get wether the server software is open.mp or not
+        /// </summary>
+        /// <returns>An asynchronous task that completes with an instance of Bool</returns>
+        /// <exception cref="System.Net.Sockets.SocketException">Thrown when operation timed out</exception>
+        public bool GetServerIsOMP()
+        {
+            try
+            {
+                this.serverSocket = new Socket(this.serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
+                {
+                    SendTimeout = this.timeoutMilliseconds,
+                    ReceiveTimeout = this.timeoutMilliseconds
+                };
+
+                using var stream = new MemoryStream();
+                using var writer = new BinaryWriter(stream);
+
+                string[] splitIp = this.serverIpString.Split('.');
+
+                writer.Write(this.socketHeader);
+
+                for (sbyte i = 0; i < splitIp.Length; i++)
+                {
+                    writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
+                }
+
+                writer.Write(this.serverPort);
+                writer.Write('o');
+
+                this.transmitMS = DateTime.Now;
+
+                this.serverSocket.SendTo(stream.ToArray(), SocketFlags.None, this.serverEndPoint);
+
+                byte[] pingWith = new byte[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    pingWith[i] = 0;
+                }
+
+                this.serverSocket.SendTo(pingWith, SocketFlags.None, this.serverEndPoint);
+
+                EndPoint rawPoint = this.serverEndPoint;
+                var szReceive = new byte[this.receiveArraySize];
+
+                this.serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
+
+                this.serverSocket.Close();
+            }
+            catch
+            {
+                // timeout results in an exception.
+                // a timeout means the server is not open.mp
+                return false;
+            }
+
+            return true;
         }
         /// <summary>
         /// Get information about server

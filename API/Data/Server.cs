@@ -3,7 +3,6 @@ using Dapper;
 using System.Timers;
 using MySqlConnector;
 using SAMonitor.Utils;
-using Microsoft.AspNetCore.Hosting.Server;
 
 namespace SAMonitor.Data;
 
@@ -17,7 +16,7 @@ public class Server
     public DateTime WorldTime { get; set; }
     public int PlayersOnline { get; set; }
     public int MaxPlayers { get; set; }
-    public bool AllowsDL { get; set; }
+    public bool IsOpenMp { get; set; }
     public bool LagComp { get; set; }
     public string Name { get; set; }
     public string GameMode { get; set; }
@@ -31,14 +30,14 @@ public class Server
     public int ShuffledOrder { get; set; }
 
     // Database fetch constructor
-    public Server(int id, string ip_addr, string name, DateTime last_updated, int allows_dl, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac)
+    public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac)
     {
         Id = id;
         Name = name;
         LastUpdated = last_updated;
         PlayersOnline = players_online;
         MaxPlayers = max_players;
-        AllowsDL = (allows_dl == 1);
+        IsOpenMp = (is_open_mp == 1);
         LagComp = (lag_comp == 1);
         MapName = map_name;
         GameMode = gamemode;
@@ -64,7 +63,7 @@ public class Server
         LastUpdated = DateTime.Now;
         PlayersOnline = 0;
         MaxPlayers = 0;
-        AllowsDL = false;
+        IsOpenMp = false;
         LagComp = false;
         Version = "Unknown";
         MapName = "Unknown";
@@ -108,7 +107,7 @@ public class Server
 
         try
         {
-            serverInfo = await server.GetServerInfoAsync();
+            serverInfo = server.GetServerInfo();
 
             if (serverInfo is null || serverInfo.HostName is null)
             {
@@ -157,7 +156,7 @@ public class Server
 
         try
         {
-            serverRules = await server.GetServerRulesAsync();
+            serverRules = server.GetServerRules();
 
             if (serverRules is not null)
             {
@@ -194,6 +193,13 @@ public class Server
             MapName = Utils.Helpers.BodgedEncodingFix(MapName);
         }
 
+        IsOpenMp = server.GetServerIsOMP();
+
+        if (IsOpenMp)
+        {
+            Console.WriteLine($"IS OPENMP!! {Name}");
+        }
+
         bool success = true;
 
         if (doUpdate)
@@ -202,12 +208,12 @@ public class Server
             var conn = new MySqlConnection(MySQL.ConnectionString);
 
             var sql = @"UPDATE servers
-                            SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, allows_dl=@AllowsDL, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
+                            SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
                             WHERE ip_addr = @IpAddr";
 
             try
             {
-                success = (await conn.ExecuteAsync(sql, new { IpAddr, Name, LastUpdated, AllowsDL, LagComp, MapName, GameMode, PlayersOnline, MaxPlayers, Website, Version, Language, SampCac })) > 0;
+                success = (await conn.ExecuteAsync(sql, new { IpAddr, Name, LastUpdated, IsOpenMp, LagComp, MapName, GameMode, PlayersOnline, MaxPlayers, Website, Version, Language, SampCac })) > 0;
             }
             catch
             {
@@ -216,13 +222,13 @@ public class Server
 
             // then add a metric entry. ONLY IF IN PRODUCTION.
 
-#if !DEBUG
+                #if !DEBUG
 
                 sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
 
                 await conn.ExecuteAsync(sql, new { Id, PlayersOnline });
 
-#endif
+                #endif
         }
 
         return success;

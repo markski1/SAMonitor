@@ -31,6 +31,13 @@ public class ServerFilterer
         Order = order;
     }
 
+    /*
+     * People who hate if statements for no reason beware:
+     * 
+     * I don't care that there's "prettier" ways to do this. I don't want this to be pretty, I want it to be performant.
+     * 
+     * Don't tell me about all the fancy ways this could be refactored to be "pretty", unless they run as fast as this does.
+     */
     public List<Server> GetFilteredServers()
     {
         var servers = ServerManager.GetServers();
