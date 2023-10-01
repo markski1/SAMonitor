@@ -180,10 +180,15 @@ public static class ServerManager
         return currentServers.Sum(x => x.PlayersOnline);
     }
 
-    public static int ServerCount(int includeDead)
+    public static int ServerCount(bool includeDead = false, bool onlyOMP = false)
     {
-        if (includeDead == 0) return currentServers.Count;
-        else return servers.Count;
+        List<Server> countServers;
+        if (includeDead) countServers = servers;
+        else countServers = currentServers;
+
+        if (onlyOMP) return countServers.Where(x => x.IsOpenMp).Count();
+
+        return countServers.Count;
     }
 
     public static IEnumerable<Server> GetServers()

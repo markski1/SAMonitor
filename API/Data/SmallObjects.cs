@@ -176,12 +176,14 @@ public class GlobalStats
     public int PlayersOnline { get; set; }
     public int ServersTracked { get; set; }
     public int ServersOnline { get; set; }
+    public int ServersOnlineOMP { get; set; }
 
-    public GlobalStats(int playersOnline, int serversTracked, int serversOnline)
+    public GlobalStats(int playersOnline, int serversTracked, int serversOnline, int serversOnlineOMP)
     {
-        this.PlayersOnline = playersOnline;
-        this.ServersTracked = serversTracked;
-        this.ServersOnline = serversOnline;
+        PlayersOnline = playersOnline;
+        ServersTracked = serversTracked;
+        ServersOnline = serversOnline;
+        ServersOnlineOMP = serversOnlineOMP;
     }
 }
 

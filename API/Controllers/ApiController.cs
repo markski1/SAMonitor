@@ -87,8 +87,9 @@ public class ApiController : ControllerBase
     {
         return
             new GlobalStats(
-                serversTracked: ServerManager.ServerCount(1),
-                serversOnline: ServerManager.ServerCount(0),
+                serversOnline: ServerManager.ServerCount(),
+                serversTracked: ServerManager.ServerCount(includeDead: true),
+                serversOnlineOMP: ServerManager.ServerCount(onlyOMP: true),
                 playersOnline: ServerManager.TotalPlayers()
             );
     }
