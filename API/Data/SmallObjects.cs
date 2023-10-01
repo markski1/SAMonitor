@@ -12,23 +12,26 @@ public class ServerFilterer
     public bool ShowPassworded { get; set; }
     public bool HideRoleplay { get; set; }
     public bool RequireSampCAC { get; set; }
+    public bool OnlyOpenMp { get; set; }
     public string Name { get; set; }
     public string Gamemode { get; set; }
     public string Version { get; set; }
     public string Language { get; set; }
     public string Order { get; set; }
 
-    public ServerFilterer(bool showEmpty, bool showPassworded, bool hideRoleplay, bool requireSampCAC, string name, string gamemode, string version, string language, string order)
+    public ServerFilterer(bool showEmpty, bool showPassworded, bool hideRoleplay, bool requireSampCAC, string name, string gamemode, string version, string language, string order, bool onlyOpenMp)
     {
         ShowEmpty = showEmpty;
         ShowPassworded = showPassworded;
         HideRoleplay = hideRoleplay;
         RequireSampCAC = requireSampCAC;
+        OnlyOpenMp = onlyOpenMp;
         Name = name;
         Gamemode = gamemode;
         Version = version;
         Language = language;
         Order = order;
+        OnlyOpenMp = onlyOpenMp;
     }
 
     /*
@@ -42,7 +45,11 @@ public class ServerFilterer
     {
         var servers = ServerManager.GetServers();
 
-        // unless specified, don't show empty servers.
+        if (OnlyOpenMp)
+        {
+            servers = servers.Where(x => x.IsOpenMp);
+        }
+
         if (!ShowEmpty)
         {
             servers = servers.Where(x => x.PlayersOnline > 0);

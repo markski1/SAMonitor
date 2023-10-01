@@ -36,7 +36,7 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetFilteredServers")]
-    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0, int show_passworded = 0)
+    public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0, int show_passworded = 0, int only_openmp = 0)
     {
         ServerManager.ApiHits++;
 
@@ -45,6 +45,7 @@ public class ApiController : ControllerBase
                 showPassworded: show_passworded != 0,
                 hideRoleplay: hide_roleplay != 0,
                 requireSampCAC: require_sampcac != 0,
+                onlyOpenMp: only_openmp != 0,
                 order: order,
                 name: name.ToLower(),
                 gamemode: gamemode.ToLower(),

@@ -295,19 +295,14 @@ namespace SAMPQuery
                 }
 
                 writer.Write(this.serverPort);
-                writer.Write('o');
+                for (int i = 0; i < 5; i++)
+                {
+                    writer.Write('o');
+                }
 
                 this.transmitMS = DateTime.Now;
 
                 this.serverSocket.SendTo(stream.ToArray(), SocketFlags.None, this.serverEndPoint);
-
-                byte[] pingWith = new byte[4];
-                for (int i = 0; i < 4; i++)
-                {
-                    pingWith[i] = 0;
-                }
-
-                this.serverSocket.SendTo(pingWith, SocketFlags.None, this.serverEndPoint);
 
                 EndPoint rawPoint = this.serverEndPoint;
                 var szReceive = new byte[this.receiveArraySize];
@@ -315,6 +310,8 @@ namespace SAMPQuery
                 this.serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
 
                 this.serverSocket.Close();
+
+                return true;
             }
             catch
             {
@@ -322,8 +319,6 @@ namespace SAMPQuery
                 // a timeout means the server is not open.mp
                 return false;
             }
-
-            return true;
         }
         /// <summary>
         /// Get information about server
