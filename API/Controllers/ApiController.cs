@@ -172,23 +172,4 @@ public class ApiController : ControllerBase
 
         return (await conn.QueryAsync<ServerMetrics>(sql, new { RequestTime, Id })).ToList();
     }
-
-
-
-
-
-
-    // TO BE DEPRECATED
-
-    [HttpGet("GetTotalPlayers")]
-    public int GetTotalPlayers()
-    {
-        return ServerManager.TotalPlayers();
-    }
-
-    [HttpGet("GetAmountServers")]
-    public int GetAmountServers(int include_dead = 0)
-    {
-        return ServerManager.ServerCount(include_dead);
-    }
 }
