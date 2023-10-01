@@ -195,11 +195,6 @@ public class Server
 
         IsOpenMp = server.GetServerIsOMP();
 
-        if (IsOpenMp)
-        {
-            Console.WriteLine($"IS OPENMP!! {Name}");
-        }
-
         bool success = true;
 
         if (doUpdate)

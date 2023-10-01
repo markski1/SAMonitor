@@ -335,8 +335,6 @@ public static class ServerManager
             }
 
             gmsts.Other++;
-
-            Console.WriteLine(name);
         }
 
         return gmsts;

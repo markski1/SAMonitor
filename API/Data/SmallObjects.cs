@@ -53,7 +53,7 @@ public class ServerFilterer
             servers = servers.Where(x => x.RequiresPassword == false);
         }
 
-        if (!HideRoleplay)
+        if (HideRoleplay)
         {
             // safe to assume the substring "rp" or "role" in the gamemode can mean nothing but a roleplay server.
             servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") && !x.GameMode.ToLower().Contains("role"));
@@ -62,7 +62,7 @@ public class ServerFilterer
             servers = servers.Where(x => !x.Name.ToLower().Contains("roleplay") && !x.Name.ToLower().Contains("role play"));
         }
 
-        if (!RequireSampCAC)
+        if (RequireSampCAC)
         {
             servers = servers.Where(x => !x.SampCac.ToLower().Contains("not required"));
         }
