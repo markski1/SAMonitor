@@ -232,7 +232,7 @@ public static class ServerManager
     public static LanguageStats LanguageAnalytics()
     {
         LanguageStats langsts = new();
-        foreach (var server in servers)
+        foreach (var server in currentServers)
         {
             string lang = server.Language.ToLower();
             
@@ -292,7 +292,7 @@ public static class ServerManager
     public static GamemodeStats GamemodeAnalytics()
     {
         GamemodeStats gmsts = new();
-        foreach (var server in servers)
+        foreach (var server in currentServers)
         {
             string gm = server.GameMode.ToLower();
             string name = server.Name.ToLower();
