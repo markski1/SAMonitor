@@ -200,16 +200,6 @@ public class Server
         if (doUpdate)
         {
             success = await ServerManager._interface.UpdateServer(this);
-
-            // then add a metric entry. ONLY IF IN PRODUCTION.
-
-            #if !DEBUG
-
-                sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
-
-                await conn.ExecuteAsync(sql, new { Id, PlayersOnline });
-
-            #endif
         }
 
         return success;

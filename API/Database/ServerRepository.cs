@@ -1,7 +1,6 @@
 ﻿using MySqlConnector;
 using SAMonitor.Data;
 using SAMonitor.Utils;
-using System.Xml.Linq;
 using static Dapper.SqlMapper;
 
 namespace SAMonitor.Database
@@ -95,9 +94,11 @@ namespace SAMonitor.Database
                         SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
                         WHERE ip_addr = @IpAddr";
 
+            bool success = true;
+
             try
             {
-                return (await db.ExecuteAsync(sql, new
+                success = (await db.ExecuteAsync(sql, new
                 {
                     server.IpAddr,
                     server.Name,
@@ -116,8 +117,20 @@ namespace SAMonitor.Database
             }
             catch
             {
-                return false;
+                success = false;
             }
+
+            // then add a metric entry. ONLY IF IN PRODUCTION.
+
+            #if !DEBUG
+
+                sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
+
+                await db.ExecuteAsync(sql, new { server.Id, server.PlayersOnline });
+
+            #endif
+
+            return success;
         }
     }
 }
