@@ -199,31 +199,17 @@ public class Server
 
         if (doUpdate)
         {
-            // first update the db entry for the server
-            var conn = new MySqlConnection(MySQL.ConnectionString);
-
-            var sql = @"UPDATE servers
-                            SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
-                            WHERE ip_addr = @IpAddr";
-
-            try
-            {
-                success = (await conn.ExecuteAsync(sql, new { IpAddr, Name, LastUpdated, IsOpenMp, LagComp, MapName, GameMode, PlayersOnline, MaxPlayers, Website, Version, Language, SampCac })) > 0;
-            }
-            catch
-            {
-                success = false;
-            }
+            success = await ServerManager._interface.UpdateServer(this);
 
             // then add a metric entry. ONLY IF IN PRODUCTION.
 
-                #if !DEBUG
+            #if !DEBUG
 
                 sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
 
                 await conn.ExecuteAsync(sql, new { Id, PlayersOnline });
 
-                #endif
+            #endif
         }
 
         return success;

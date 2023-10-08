@@ -8,6 +8,7 @@ using Dapper;
 using System.Timers;
 using MySqlConnector;
 using SAMonitor.Utils;
+using SAMonitor.Database;
 
 namespace SAMonitor.Data;
 
@@ -23,15 +24,13 @@ public static class ServerManager
     private static string MasterList_037 = "";
     private static string MasterList_03DL = "";
 
+    public static readonly ServerRepository _interface = new();
+
     public static int ApiHits { get; set; }
 
     public static async void LoadServers()
     {
-        var conn = new MySqlConnection(MySQL.ConnectionString);
-
-        var sql = @"SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac FROM servers";
-
-        servers = (await conn.QueryAsync<Server>(sql)).ToList();
+        servers = await _interface.GetAllServersAsync();
 
         ApiHits = 0;
 
@@ -85,40 +84,9 @@ public static class ServerManager
             servers.RemoveAll(x => copies.Contains(x));
         }
 
-        bool success;
-
-        sql = @"INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
-                        VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
-
-        try
+        if (await _interface.InsertServer(newServer))
         {
-            success = (await conn.ExecuteAsync(sql, new
-            {
-                newServer.IpAddr,
-                newServer.Name,
-                newServer.LastUpdated,
-                newServer.IsOpenMp,
-                newServer.LagComp,
-                newServer.MapName,
-                newServer.GameMode,
-                newServer.PlayersOnline,
-                newServer.MaxPlayers,
-                newServer.Website,
-                newServer.Version,
-                newServer.Language,
-                newServer.SampCac
-            })) > 0;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to add {ipAddr} to the database: {ex}");
-            success = false;
-        }
-
-        if (success)
-        {
-            sql = @"SELECT id FROM servers WHERE ip_addr=@IpAddr";
-            newServer.Id = (await conn.QueryAsync<int>(sql, new { newServer.IpAddr })).Single();
+            newServer.Id = await _interface.GetServerID(ipAddr);
             servers.Add(newServer);
             currentServers.Add(newServer);
 
@@ -128,7 +96,6 @@ public static class ServerManager
         {
             return "Sorry, there was an error adding your server to SAMonitor.";
         }
-
     }
 
     private static bool IsBlacklisted(string ipAddr)
