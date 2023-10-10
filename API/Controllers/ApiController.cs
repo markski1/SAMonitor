@@ -17,6 +17,12 @@ public class ApiController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet("CheckAlive")]
+    public string CheckAlive()
+    {
+        return "SAMonitor lives!";
+    }
+
     [HttpGet("GetServerByIP")]
     public Server? GetServerByIP(string ip_addr)
     {
