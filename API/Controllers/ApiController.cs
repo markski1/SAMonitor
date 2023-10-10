@@ -85,25 +85,25 @@ public class ApiController : ControllerBase
     [HttpGet("GetGlobalStats")]
     public GlobalStats GetGlobalStats()
     {
-        return
-            new GlobalStats(
-                serversOnline: ServerManager.ServerCount(),
-                serversTracked: ServerManager.ServerCount(includeDead: true),
-                serversOnlineOMP: ServerManager.ServerCount(onlyOMP: true),
-                playersOnline: ServerManager.TotalPlayers()
-            );
+        return StatsManager.GlobalStats;
     }
 
     [HttpGet("GetLanguageStats")]
     public LanguageStats GetLanguageStats()
     {
-        return ServerManager.LanguageAnalytics();
+        return StatsManager.LanguageStats;
     }
 
     [HttpGet("GetGamemodeStats")]
     public GamemodeStats GetGamemodeStats()
     {
-        return ServerManager.GamemodeAnalytics();
+        return StatsManager.GamemodeStats;
+    }
+
+    [HttpGet("GetGlobalMetrics")]
+    public List<GlobalMetrics> GetGlobalMetrics(int hours = 6)
+    {
+        return StatsManager.GetGlobalMetrics(hours);
     }
 
     [HttpGet("GetMasterlist")]
@@ -134,17 +134,6 @@ public class ApiController : ControllerBase
             return (await ServerManager.AddServer(validIP));
         else
             return "Entered IP address or hostname is invalid or failing to resolve.";
-    }
-
-    [HttpGet("GetGlobalMetrics")]
-    public async Task<List<GlobalMetrics>> GetGlobalMetrics(int hours = 6)
-    {
-        DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
-
-        var conn = new MySqlConnection(MySQL.ConnectionString);
-        var sql = @"SELECT players, servers, api_hits, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
-
-        return (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime })).ToList();
     }
 
     [HttpGet("GetServerMetrics")]

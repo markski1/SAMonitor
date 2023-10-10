@@ -1,6 +1,4 @@
 ﻿using SAMPQuery;
-using System.Xml.Linq;
-using System;
 
 namespace SAMonitor.Data;
 
@@ -40,63 +38,64 @@ public class ServerFilterer
      * I don't care that there's "prettier" ways to do this. I don't want this to be pretty, I want it to be performant.
      * 
      * Don't tell me about all the fancy ways this could be refactored to be "pretty", unless they run as fast as this does.
+     * 
+     * Also, it might seem counter-intuitive, but using ToList() after every filter is actually faster than just doing it once at the end.
+     * If you don't believe me, look into how lambda expression trees work in LINQ. It's rather trippy.
      */
     public List<Server> GetFilteredServers()
     {
-        var servers = ServerManager.GetServers();
+        List<Server> servers = ServerManager.GetServers();
 
         if (OnlyOpenMp)
         {
-            servers = servers.Where(x => x.IsOpenMp);
+            servers = servers.Where(x => x.IsOpenMp).ToList();
         }
 
         if (!ShowEmpty)
         {
-            servers = servers.Where(x => x.PlayersOnline > 0);
+            servers = servers.Where(x => x.PlayersOnline > 0).ToList();
         }
 
         if (!ShowPassworded)
         {
-            servers = servers.Where(x => x.RequiresPassword == false);
+            servers = servers.Where(x => x.RequiresPassword == false).ToList();
         }
 
         if (HideRoleplay)
         {
-            // safe to assume the substring "rp" or "role" in the gamemode can mean nothing but a roleplay server.
-            servers = servers.Where(x => !x.GameMode.ToLower().Contains("rp") && !x.GameMode.ToLower().Contains("role"));
-
-            // when checking by the name however we must be conservative.
-            servers = servers.Where(x => !x.Name.ToLower().Contains("roleplay") && !x.Name.ToLower().Contains("role play"));
+            servers = servers.Where(x => !x.GameMode.Contains("rp", StringComparison.OrdinalIgnoreCase) &&
+                                         !x.GameMode.Contains("role", StringComparison.OrdinalIgnoreCase) &&
+                                         !x.Name.Contains("roleplay", StringComparison.OrdinalIgnoreCase) &&
+                                         !x.Name.Contains("role play", StringComparison.OrdinalIgnoreCase))
+                             .ToList();
         }
 
         if (RequireSampCAC)
         {
-            servers = servers.Where(x => !x.SampCac.ToLower().Contains("not required"));
+            servers = servers.Where(x => !x.SampCac.Contains("not required", StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         if (Name != "unspecified")
         {
-            servers = servers.Where(x => x.Name.ToLower().Contains(Name));
+            servers = servers.Where(x => x.Name.Contains(Name, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         if (Version != "any")
         {
-            servers = servers.Where(x => x.Version.ToLower().Contains(Version));
+            servers = servers.Where(x => x.Version.Contains(Version, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         // In the future, should probably have a way to specify a language in a more broad sense rather than by string,
         // as server operators define languages in rather inconsistent ways.
         if (Language != "any")
         {
-            servers = servers.Where(x => x.Language.ToLower().Contains(Language));
+            servers = servers.Where(x => x.Language.Contains(Language, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         if (Gamemode != "unspecified")
         {
-            servers = servers.Where(x => x.GameMode.ToLower().Contains(Gamemode));
+            servers = servers.Where(x => x.GameMode.Contains(Gamemode, StringComparison.OrdinalIgnoreCase)).ToList();
         }
-
-        List<Server> filteredServers = servers.ToList();
 
         // if specified, order
         if (Order != "none")
@@ -104,7 +103,7 @@ public class ServerFilterer
             // by player count
             if (Order == "players")
             {
-                filteredServers = servers.OrderByDescending(x => x.PlayersOnline).ToList();
+                servers = servers.OrderByDescending(x => x.PlayersOnline).ToList();
             }
             // by player count over max player ratio.
             else
@@ -113,25 +112,25 @@ public class ServerFilterer
                 // otherwise we have to separate them
                 if (!ShowEmpty)
                 {
-                    filteredServers = servers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
+                    servers = servers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
                 }
                 else
                 {
                     var emptyServers = servers.Where(x => x.PlayersOnline == 0);
                     var populatedServers = servers.Where(x => x.PlayersOnline > 0);
 
-                    filteredServers = populatedServers.OrderByDescending(x => x.PlayersOnline / x.MaxPlayers).ToList();
-                    filteredServers.AddRange(emptyServers);
+                    servers = populatedServers.OrderByDescending(x => x.PlayersOnline / x.MaxPlayers).ToList();
+                    servers.AddRange(emptyServers);
                 }
             }
         }
         else
         {
             // if "none", then order by the ShuffleOrder which gets shuffled every 30 minutes.
-            filteredServers = servers.OrderBy(x => x.ShuffledOrder).ToList();
+            servers = servers.OrderBy(x => x.ShuffledOrder).ToList();
         }
 
-        return filteredServers;
+        return servers;
     }
 }
 

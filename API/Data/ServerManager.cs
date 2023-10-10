@@ -1,10 +1,4 @@
-﻿/*
- * This file is pretty ugly. Classic "grew bigger than I thought" case.
- * Eventually I'll split the SQL stuff to an ORM interface file, and generally make things prettier.
- * Just need time.
- */
-
-using Dapper;
+﻿using Dapper;
 using System.Timers;
 using MySqlConnector;
 using SAMonitor.Utils;
@@ -26,20 +20,19 @@ public static class ServerManager
 
     public static readonly ServerRepository _interface = new();
 
-    public static int ApiHits { get; set; }
+    public static int ApiHits { get; set; } = 0;
 
-    public static async void LoadServers()
+    public static async Task<bool> LoadServers()
     {
         servers = await _interface.GetAllServersAsync();
 
-        ApiHits = 0;
-
         UpdateBlacklist();
-
-        CreateTimer();
-
         currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
         UpdateMasterlist();
+
+        CreateTimers();
+
+        return true;
     }
 
     public static async Task<string> AddServer(string ipAddr)
@@ -158,7 +151,7 @@ public static class ServerManager
         return countServers.Count;
     }
 
-    public static IEnumerable<Server> GetServers()
+    public static List<Server> GetServers()
     {
         return currentServers;
     }
@@ -196,131 +189,14 @@ public static class ServerManager
         }
     }
 
-    public static LanguageStats LanguageAnalytics()
+    private static readonly System.Timers.Timer ThirtyMinuteTimer = new();
+
+    private static void CreateTimers()
     {
-        LanguageStats langsts = new();
-        foreach (var server in currentServers)
-        {
-            string lang = server.Language.ToLower();
-            
-            if (lang.Contains("ru") || lang.Contains("ру")) {
-                langsts.Russian++;
-                continue;
-            }
-
-            if (lang.Contains("esp") || lang.Contains("spa"))
-            {
-                langsts.Spanish++;
-                continue;
-            }
-
-            if (lang.Contains("ro"))
-            {
-                langsts.Romanian++;
-                continue;
-            }
-
-            if (lang.Contains("br") || lang.Contains("port") || lang.Contains("pt"))
-            {
-                langsts.Portuguese++;
-                continue;
-            }
-
-            if (lang.Contains("geor") || lang.Contains("balkan") || lang.Contains("ex-yu") || lang.Contains("shqip") || lang.Contains("bulg") || lang.Contains("srb") || lang.Contains("tur") || lang.Contains("ukr"))
-            {
-                langsts.EastEuro++;
-                continue;
-            }
-
-            if (lang.Contains("ger") || lang.Contains("pol") || lang.Contains("hung") || lang.Contains("mag") || lang.Contains("fr") || lang.Contains("belg") || lang.Contains("slov") || lang.Contains("lat") || lang.Contains("liet") || lang.Contains("it"))
-            {
-                langsts.WestEuro++;
-                continue;
-            }
-
-            if (lang.Contains("viet") || lang.Contains("tamil") || lang.Contains("ko") || lang.Contains("th") || lang.Contains("ch") || lang.Contains("bahasa") || lang.Contains("malay") || lang.Contains("indo") || lang.Contains("jp") || lang.Contains("jap"))
-            {
-                langsts.Asia++;
-                continue;
-            }
-
-            if (lang.Contains("en"))
-            {
-                langsts.English++;
-                continue;
-            }
-
-            langsts.Other++;
-        }
-
-        return langsts;
-    }
-
-    public static GamemodeStats GamemodeAnalytics()
-    {
-        GamemodeStats gmsts = new();
-        foreach (var server in currentServers)
-        {
-            string gm = server.GameMode.ToLower();
-            string name = server.Name.ToLower();
-
-            if (gm.Contains("cnr") || gm.Contains("cop") || name.Contains("cnr"))
-            {
-                gmsts.CNR++;
-                continue;
-            }
-
-            if (gm.Contains("dm") || gm.Contains("dea") || gm.Contains("pvp") || gm.Contains("war") || name.Contains("war") || name.Contains("war"))
-            {
-                gmsts.Deathmatch++;
-                continue;
-            }
-
-            if (gm.Contains("rp") || gm.Contains("role") || gm.Contains("real") || name.Contains("role") || name.Contains(" rp"))
-            {
-                gmsts.Roleplay++;
-                continue;
-            }
-
-            if (gm.Contains("rac") || gm.Contains("stunt") || gm.Contains("drift") || name.Contains("race") || name.Contains("stunt") || name.Contains("drift"))
-            {
-                gmsts.RaceStunt++;
-                continue;
-            }
-
-            if (gm.Contains("surv") || name.Contains("surv") || gm.Contains("dayz") || name.Contains("dayz") || gm.Contains("zomb") || name.Contains("zomb") || name.Contains("stalk"))
-            {
-                gmsts.Survival++;
-                continue;
-            }
-
-            if (gm.Contains("pilot") || name.Contains("truck") || gm.Contains("pilot") || name.Contains("pilot") || gm.Contains("sim") || name.Contains("sim"))
-            {
-                gmsts.VehSim++;
-                continue;
-            }
-
-            if (gm.Contains("free") || name.Contains("freeroam"))
-            {
-                gmsts.FreeRoam++;
-                continue;
-            }
-
-            gmsts.Other++;
-        }
-
-        return gmsts;
-    }
-
-    private static readonly System.Timers.Timer CurrentCheckTimer = new();
-
-    private static void CreateTimer()
-    {
-        Random rand = new();
-        CurrentCheckTimer.Elapsed += EveryThirtyMinutes;
-        CurrentCheckTimer.AutoReset = true;
-        CurrentCheckTimer.Interval = 1800000;
-        CurrentCheckTimer.Enabled = true;
+        ThirtyMinuteTimer.Elapsed += EveryThirtyMinutes;
+        ThirtyMinuteTimer.AutoReset = true;
+        ThirtyMinuteTimer.Interval = 1800000;
+        ThirtyMinuteTimer.Enabled = true;
     }
 
     private static void EveryThirtyMinutes(object? sender, ElapsedEventArgs e)

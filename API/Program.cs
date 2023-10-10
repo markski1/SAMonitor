@@ -3,7 +3,9 @@ using SAMonitor.Utils;
 
 if (MySQL.MySQLSetup())
 {
-    ServerManager.LoadServers();
+    await ServerManager.LoadServers();
+
+    StatsManager.LoadStats();
 
     var builder = WebApplication.CreateBuilder(args);
 
@@ -22,10 +24,6 @@ if (MySQL.MySQLSetup())
         app.UseSwagger();
         app.UseSwaggerUI();
     }
-
-    app.UseHttpsRedirection();
-
-    app.UseAuthorization();
 
     app.MapControllers();
 
