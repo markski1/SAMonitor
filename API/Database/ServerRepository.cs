@@ -86,9 +86,9 @@ namespace SAMonitor.Database
             }
         }
 
-        public async Task<bool> UpdateServer(Server server)
+        public async Task<bool> UpdateServer(Server server, MySqlConnection? db = null)
         {
-            var db = DBConnection();
+            db ??= DBConnection();
 
             var sql = @"UPDATE servers
                         SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac

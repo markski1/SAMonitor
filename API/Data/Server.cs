@@ -218,7 +218,7 @@ public class Server
 
         if (doUpdate)
         {
-            _ = Task.Run(() => ServerManager._interface.UpdateServer(this));
+            ServerUpdater.Queue(this);
         }
 
         return true;
