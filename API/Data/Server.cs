@@ -98,7 +98,7 @@ public class Server
         _ = Query(true);
     }
 
-    public async Task<bool> Query(bool doUpdate = true)
+    public bool Query(bool doUpdate = true)
     {
         var server = new SampQuery(IpAddr);
 
@@ -112,29 +112,44 @@ public class Server
             if (serverInfo is null || serverInfo.HostName is null)
             {
                 Console.WriteLine($"Server replied to query but response makes no sense: {IpAddr}");
+                if (Id == -1)
+                {
+                    QueryTimer.Stop();
+                    QueryTimer.Dispose();
+                }
                 return false;
             }
         }
         catch
         {
-            #if !DEBUG
-
-                // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
-                var conn = new MySqlConnection(MySQL.ConnectionString);
-
-                var sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @NoPlayers)";
-
-                await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
-
-            #endif
-
-            // if the server has already been failing to reply to queries lately, let's save ourselves some resources and query once every hour instead.
-            if (DeadCount > 1)
+            if (doUpdate)
             {
-                QueryTimer.Interval = 3600000;
+                #if !DEBUG
+
+                    // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
+                    var conn = new MySqlConnection(MySQL.ConnectionString);
+
+                    var sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @NoPlayers)";
+
+                    await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
+
+                #endif
+
+
+                // if the server has already been failing to reply to queries lately, let's save ourselves some resources and query once every hour instead.
+                if (DeadCount > 1)
+                {
+                    QueryTimer.Interval = 3600000;
+                }
+
+                DeadCount++;
             }
 
-            DeadCount++;
+            if (Id == -1)
+            {
+                QueryTimer.Stop();
+                QueryTimer.Dispose();
+            }
 
             return false;
         }
@@ -151,6 +166,12 @@ public class Server
 
         if (PlayersOnline > MaxPlayers)
         {
+            if (Id == -1)
+            {
+                QueryTimer.Stop();
+                QueryTimer.Dispose();
+            }
+
             return false;
         }
 
@@ -193,16 +214,14 @@ public class Server
             MapName = Utils.Helpers.BodgedEncodingFix(MapName);
         }
 
-        IsOpenMp = server.GetServerIsOMP();
-
-        bool success = true;
+        _ = Task.Run(() => IsOpenMp = server.GetServerIsOMP());
 
         if (doUpdate)
         {
-            success = await ServerManager._interface.UpdateServer(this);
+            ServerUpdater.Queue(this);
         }
 
-        return success;
+        return true;
     }
 
     public List<Player> GetPlayers()

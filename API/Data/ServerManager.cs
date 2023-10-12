@@ -42,7 +42,7 @@ public static class ServerManager
 
         var newServer = new Server(ipAddr);
 
-        if (!await newServer.Query(false))
+        if (!newServer.Query(false))
         {
             return "Server did not respond to query.";
         }
@@ -142,13 +142,14 @@ public static class ServerManager
 
     public static int ServerCount(bool includeDead = false, bool onlyOMP = false)
     {
-        List<Server> countServers;
-        if (includeDead) countServers = servers;
-        else countServers = currentServers;
+        if (includeDead)
+        {
+            if (onlyOMP) return servers.Where(x => x.IsOpenMp).Count();
+            return servers.Count;
+        }
 
-        if (onlyOMP) return countServers.Where(x => x.IsOpenMp).Count();
-
-        return countServers.Count;
+        if (onlyOMP) return currentServers.Where(x => x.IsOpenMp).Count();
+        return currentServers.Count;
     }
 
     public static List<Server> GetServers()

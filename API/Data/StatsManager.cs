@@ -21,6 +21,7 @@ public static class StatsManager
     public static void LoadStats()
     {
         var servers = ServerManager.GetServers();
+        
         UpdateGlobalStats();
         UpdateGlobalMetrics();
         UpdateGamemodeStats(servers);
@@ -39,11 +40,14 @@ public static class StatsManager
 
     private static void EveryFiveMinutes(object? sender, ElapsedEventArgs e)
     {
-        var servers = ServerManager.GetServers();
-        UpdateGlobalStats();
-        UpdateGlobalMetrics();
-        UpdateGamemodeStats(servers);
-        UpdateLanguageStats(servers);
+        _ = Task.Run(() =>
+        {
+            var servers = ServerManager.GetServers();
+            UpdateGlobalStats();
+            UpdateGlobalMetrics();
+            UpdateGamemodeStats(servers);
+            UpdateLanguageStats(servers);
+        });
     }
 
     // Getters
