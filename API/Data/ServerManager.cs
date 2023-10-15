@@ -42,7 +42,7 @@ public static class ServerManager
 
         var newServer = new Server(ipAddr);
 
-        if (!newServer.Query(false))
+        if (!await newServer.Query(false))
         {
             return "Server did not respond to query.";
         }
@@ -161,20 +161,18 @@ public static class ServerManager
     {
         // global, 0.3.7 and 0.3DL masterlists are cached once every 30 minutes, as they are the only "current" versions.
         if (version == "any") return MasterList_global;
-        else if (version.Contains("3.7")) return MasterList_037;
-        else if (version.Contains("DL")) return MasterList_03DL;
-        else
+        if (version.Contains("3.7")) return MasterList_037;
+        if (version.Contains("DL")) return MasterList_03DL;
+
+        // failing all of the above, generate whatever got requested... I guess!
+        string newList = "";
+
+        currentServers.ForEach(x => 
         {
-            // failing that, generate whatever got requested... I guess!
-            string newList = "";
+            if (x.Version.Contains(version)) newList += $"{x.IpAddr}\n";
+        });
 
-            currentServers.ForEach(x => 
-            { 
-                if (x.Version.Contains(version)) newList += $"{x.IpAddr}\n";
-            });
-
-            return newList;
-        }
+        return newList;
     }
 
     public static int GetServerIDFromIP(string ip_addr)
@@ -201,6 +199,12 @@ public static class ServerManager
     }
 
     private static void EveryThirtyMinutes(object? sender, ElapsedEventArgs e)
+    {
+        Thread timedActions = new(TimedActions);
+        timedActions.Start();
+    }
+
+    private static void TimedActions()
     {
         // Update the Blacklist.
         UpdateBlacklist();

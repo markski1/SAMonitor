@@ -44,7 +44,7 @@ public class ServerFilterer
      */
     public List<Server> GetFilteredServers()
     {
-        List<Server> servers = ServerManager.GetServers();
+        List<Server> servers = new(ServerManager.GetServers());
 
         if (OnlyOpenMp)
         {

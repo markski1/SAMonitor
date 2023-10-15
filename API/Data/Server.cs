@@ -95,12 +95,26 @@ public class Server
     private void TimedQuery(object? sender, ElapsedEventArgs e)
     {
         QueryTimer.Interval = 1200000;
+        Thread timedActions = new(TimedQueryLaunch);
+        timedActions.Start();
+    }
+
+    public void TimedQueryLaunch() {
         _ = Query(true);
     }
 
-    public bool Query(bool doUpdate = true)
+    public async Task<bool> Query(bool doUpdate = true)
     {
-        var server = new SampQuery(IpAddr);
+        SampQuery server;
+
+        try
+        {
+            server = new(IpAddr);
+        }
+        catch
+        {
+            return false;
+        }
 
         ServerInfo serverInfo;
         ServerRules serverRules;
@@ -133,6 +147,9 @@ public class Server
 
                     await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
 
+                #else
+                    // makes the compiler happy
+                    await Task.Delay(1);
                 #endif
 
 

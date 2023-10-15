@@ -20,7 +20,7 @@ public static class StatsManager
 
     public static void LoadStats()
     {
-        var servers = ServerManager.GetServers();
+        List<Server> servers = new(ServerManager.GetServers());
         
         UpdateGlobalStats();
         UpdateGlobalMetrics();
@@ -42,7 +42,8 @@ public static class StatsManager
     {
         _ = Task.Run(() =>
         {
-            var servers = ServerManager.GetServers();
+            List<Server> servers = new(ServerManager.GetServers());
+
             UpdateGlobalStats();
             UpdateGlobalMetrics();
             UpdateGamemodeStats(servers);

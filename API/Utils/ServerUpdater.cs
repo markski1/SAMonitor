@@ -1,5 +1,6 @@
 ﻿using MySqlConnector;
 using SAMonitor.Data;
+using SAMonitor.Database;
 using System.Timers;
 
 namespace SAMonitor.Utils
@@ -9,11 +10,14 @@ namespace SAMonitor.Utils
         private static readonly List<Server> UpdateQueue = new();
 
         private static readonly System.Timers.Timer UpdateQueueTimer = new();
+
+        public static readonly ServerRepository _interface = new();
+
         public static void Initialize()
         {
-            UpdateQueueTimer.Elapsed += ProcessQueue;
+            UpdateQueueTimer.Elapsed += TimedRun;
             UpdateQueueTimer.AutoReset = true;
-            UpdateQueueTimer.Interval = 10000;
+            UpdateQueueTimer.Interval = 15000;
             UpdateQueueTimer.Enabled = true;
         }
 
@@ -21,20 +25,26 @@ namespace SAMonitor.Utils
             UpdateQueue.Add(server);
         }
 
-        private static void ProcessQueue(object? sender, ElapsedEventArgs e)
+        private static void TimedRun(object? sender, ElapsedEventArgs e) {
+            Thread timedActions = new(ProcessQueue);
+            Console.WriteLine("3");
+            timedActions.Start();
+            Console.WriteLine("4");
+        }
+
+        private static async void ProcessQueue()
         {
-            _ = Task.Run(async () =>
+            Console.WriteLine("1");
+            var CurrentQueue = new List<Server>(UpdateQueue);
+            UpdateQueue.Clear();
+
+            MySqlConnection db = new(MySQL.ConnectionString);
+
+            foreach (var server in CurrentQueue)
             {
-                var CurrentQueue = new List<Server>(UpdateQueue);
-                UpdateQueue.Clear();
-
-                MySqlConnection db = new(MySQL.ConnectionString);
-
-                foreach (var server in CurrentQueue)
-                {
-                    await ServerManager._interface.UpdateServer(server, db);
-                }
-            });
+                await _interface.UpdateServer(server, db);
+            }
+            Console.WriteLine("2");
         }
     }
 }
