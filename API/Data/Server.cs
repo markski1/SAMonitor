@@ -241,7 +241,7 @@ public class Server
         return true;
     }
 
-    public List<Player> GetPlayers()
+    public async Task<List<Player>> GetPlayers()
     {
         List<Player> Players = new();
 
@@ -251,12 +251,17 @@ public class Server
 
         try
         {
-            serverPlayers = server.GetServerPlayers();
-
-            if (serverPlayers is not null)
+            var serverPlayersTask = server.GetServerPlayersAsync();
+            // Timeout at 1.5 seconds.
+            if (await Task.WhenAny(serverPlayersTask, Task.Delay(1500)) == serverPlayersTask)
             {
-                // we pass it as a different type of object for API compatibility reasons.
-                foreach (var player in serverPlayers) Players.Add(new Player(player));
+                await serverPlayersTask;
+                serverPlayers = serverPlayersTask.Result;
+                if (serverPlayers is not null)
+                {
+                    // we pass it as a different type of object for API compatibility reasons.
+                    foreach (var player in serverPlayers) Players.Add(new Player(player));
+                }
             }
         }
         catch

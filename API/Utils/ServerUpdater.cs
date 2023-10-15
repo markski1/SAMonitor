@@ -27,14 +27,11 @@ namespace SAMonitor.Utils
 
         private static void TimedRun(object? sender, ElapsedEventArgs e) {
             Thread timedActions = new(ProcessQueue);
-            Console.WriteLine("3");
             timedActions.Start();
-            Console.WriteLine("4");
         }
 
         private static async void ProcessQueue()
         {
-            Console.WriteLine("1");
             var CurrentQueue = new List<Server>(UpdateQueue);
             UpdateQueue.Clear();
 
@@ -44,7 +41,6 @@ namespace SAMonitor.Utils
             {
                 await _interface.UpdateServer(server, db);
             }
-            Console.WriteLine("2");
         }
     }
 }

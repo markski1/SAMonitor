@@ -70,7 +70,7 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetServerPlayers")]
-    public List<Player> GetServerPlayers(string ip_addr)
+    public async Task<List<Player>> GetServerPlayers(string ip_addr)
     {
         ServerManager.ApiHits++;
 
@@ -78,7 +78,7 @@ public class ApiController : ControllerBase
 
         if (result is null) return new List<Player>();
 
-        return result.GetPlayers();
+        return await result.GetPlayers();
     }
 
     [HttpGet("GetGlobalStats")]
