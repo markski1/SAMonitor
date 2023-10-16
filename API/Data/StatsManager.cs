@@ -40,7 +40,8 @@ public static class StatsManager
         ThreeMinuteTimer.Enabled = true;
     }
 
-    private static void UpdateStatsTimer(object? sender, ElapsedEventArgs e) {
+    private static void UpdateStatsTimer(object? sender, ElapsedEventArgs e)
+    {
         Thread statsThread = new(UpdateStats);
         statsThread.Start();
     }

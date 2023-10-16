@@ -21,11 +21,13 @@ namespace SAMonitor.Utils
             UpdateQueueTimer.Enabled = true;
         }
 
-        public static void Queue(Server server) {
+        public static void Queue(Server server)
+        {
             UpdateQueue.Add(server);
         }
 
-        private static void TimedRun(object? sender, ElapsedEventArgs e) {
+        private static void TimedRun(object? sender, ElapsedEventArgs e)
+        {
             Thread timedActions = new(ProcessQueue);
             timedActions.Start();
         }

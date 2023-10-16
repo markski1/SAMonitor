@@ -1,8 +1,8 @@
 ﻿using Dapper;
-using System.Timers;
 using MySqlConnector;
-using SAMonitor.Utils;
 using SAMonitor.Database;
+using SAMonitor.Utils;
+using System.Timers;
 
 namespace SAMonitor.Data;
 
@@ -143,7 +143,7 @@ public static class ServerManager
         // failing all of the above, generate whatever got requested... I guess!
         string newList = "";
 
-        currentServers.ForEach(x => 
+        currentServers.ForEach(x =>
         {
             if (x.Version.Contains(version)) newList += $"{x.IpAddr}\n";
         });
@@ -194,7 +194,7 @@ public static class ServerManager
     private static async void SaveMetrics()
     {
         // don't save metrics unless in production
-        #if !DEBUG
+#if !DEBUG
             var conn = new MySqlConnection(MySQL.ConnectionString);
 
             var sql = @"INSERT INTO metrics_global (players, servers, api_hits) VALUES(@_players, @_servers, @ApiHits)";
@@ -204,10 +204,10 @@ public static class ServerManager
             int _players = TotalPlayers();
 
             await conn.ExecuteAsync(sql, new { _players, _servers, ApiHits });
-        #else
-            // just to make the compiler happy, do an await in debug mode
-            await Task.Delay(1);
-        #endif
+#else
+        // just to make the compiler happy, do an await in debug mode
+        await Task.Delay(1);
+#endif
         ApiHits = 0;
     }
 

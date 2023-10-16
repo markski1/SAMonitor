@@ -25,11 +25,11 @@ namespace SAMonitor.Database
 
             var sql = @"SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac FROM servers";
 
-            try 
+            try
             {
                 return (await db.QueryAsync<Server>(sql)).ToList();
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 Console.WriteLine($"[db_err] Could not get servers from database \n {ex}");
                 return new List<Server>();
@@ -122,13 +122,13 @@ namespace SAMonitor.Database
 
             // then add a metric entry. ONLY IF IN PRODUCTION.
 
-            #if !DEBUG
+#if !DEBUG
 
                 sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
 
                 await db.ExecuteAsync(sql, new { server.Id, server.PlayersOnline });
 
-            #endif
+#endif
 
             return success;
         }

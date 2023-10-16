@@ -8,7 +8,7 @@ namespace SAMPQuery
         /// <summary>
         /// Hostname
         /// </summary>
-        public string? HostName { get; set; } 
+        public string? HostName { get; set; }
 
         /// <summary>
         /// Gamemode text

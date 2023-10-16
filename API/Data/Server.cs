@@ -1,8 +1,6 @@
-﻿using SAMPQuery;
-using Dapper;
+﻿using SAMonitor.Utils;
+using SAMPQuery;
 using System.Timers;
-using MySqlConnector;
-using SAMonitor.Utils;
 
 namespace SAMonitor.Data;
 
@@ -99,7 +97,8 @@ public class Server
         timedActions.Start();
     }
 
-    public void TimedQueryLaunch() {
+    public void TimedQueryLaunch()
+    {
         _ = Query(true);
     }
 
@@ -138,7 +137,7 @@ public class Server
         {
             if (doUpdate)
             {
-                #if !DEBUG
+#if !DEBUG
 
                     // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
                     var conn = new MySqlConnection(MySQL.ConnectionString);
@@ -147,10 +146,10 @@ public class Server
 
                     await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
 
-                #else
-                    // makes the compiler happy
-                    await Task.Delay(1);
-                #endif
+#else
+                // makes the compiler happy
+                await Task.Delay(1);
+#endif
 
 
                 // if the server has already been failing to reply to queries lately, let's save ourselves some resources and query once every hour instead.
@@ -220,7 +219,7 @@ public class Server
                 Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
             }
         }
-        
+
         // SAMP encodes certain special latin characters as if they were Cyrillic.
         // So, if the server doesn't seem russian, we replace certain known ones.
         if (Language.ToLower().Contains("ru") == false && Language.ToLower().Contains("ру") == false)

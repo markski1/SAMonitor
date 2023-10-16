@@ -1,8 +1,7 @@
-using System;
 using System.Globalization;
 using System.Reflection;
 
-namespace SAMPQuery 
+namespace SAMPQuery
 {
     internal static class Helpers
     {
@@ -10,7 +9,7 @@ namespace SAMPQuery
         {
             if (value == null)
                 throw new ArgumentNullException(parameterName);
-        
+
             if (value.Length == 0)
                 throw new ArgumentException("Empty value not allowed", parameterName);
         }

@@ -1,9 +1,9 @@
-namespace SAMPQuery 
+namespace SAMPQuery
 {
     /// <summary>
     /// Server Packet Types. See https://sampwiki.blast.hk/wiki/Query_Mechanism#Recieving_the_packets
     /// </summary>
-    public static class ServerPacketTypes 
+    public static class ServerPacketTypes
     {
         /// <summary>
         /// Information Packet

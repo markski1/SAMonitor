@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Reflection;
+using System.Text;
 
 namespace SAMPQuery
 {
@@ -37,7 +37,8 @@ namespace SAMPQuery
 
             IPAddress? getAddr = null;
 
-            if (!IPAddress.TryParse(host, out getAddr)) {
+            if (!IPAddress.TryParse(host, out getAddr))
+            {
                 serverIp = Dns.GetHostEntry(host).AddressList
                     .First(a => a.AddressFamily == AddressFamily.InterNetwork);
             }
@@ -90,7 +91,7 @@ namespace SAMPQuery
         /// <param name="port">Server port</param>
         /// <param name="password">Server password</param>
         /// <returns>SampQuery instance</returns>
-        public SampQuery(IPAddress ip, ushort port, string password) : this(ip.ToString(), port, password) {}
+        public SampQuery(IPAddress ip, ushort port, string password) : this(ip.ToString(), port, password) { }
 
         private static ushort GetPortFromStringOrDefault(string ip)
         {
@@ -102,9 +103,9 @@ namespace SAMPQuery
         {
             this.serverSocket = new Socket(this.serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
-                using(var writer = new BinaryWriter(stream))
+                using (var writer = new BinaryWriter(stream))
                 {
                     string[] splitIp = this.serverIpString.Split('.');
 
@@ -118,7 +119,8 @@ namespace SAMPQuery
                     writer.Write(this.serverPort);
                     writer.Write(packetType);
 
-                    if (packetType == ServerPacketTypes.Rcon && cmd is not null) {
+                    if (packetType == ServerPacketTypes.Rcon && cmd is not null)
+                    {
                         writer.Write((ushort)this.password.Length);
                         writer.Write(this.password.ToCharArray());
 
@@ -368,12 +370,13 @@ namespace SAMPQuery
                 }
             }
         }
-        private IEnumerable<ServerPlayer> CollectServerPlayersInfoFromByteArray(byte[] data) {
+        private IEnumerable<ServerPlayer> CollectServerPlayersInfoFromByteArray(byte[] data)
+        {
             List<ServerPlayer> returnData = new List<ServerPlayer>();
 
-            using(var stream = new MemoryStream(data))
+            using (var stream = new MemoryStream(data))
             {
-                using(BinaryReader read = new BinaryReader(stream))
+                using (BinaryReader read = new BinaryReader(stream))
                 {
                     read.ReadBytes(10);
                     read.ReadChar();
@@ -393,7 +396,8 @@ namespace SAMPQuery
 
             return returnData;
         }
-        private ServerInfo CollectServerInfoFromByteArray(byte[] data) {
+        private ServerInfo CollectServerInfoFromByteArray(byte[] data)
+        {
             using (var stream = new MemoryStream(data))
             {
                 using (BinaryReader read = new BinaryReader(stream, Encoding.GetEncoding(1251)))
@@ -416,7 +420,8 @@ namespace SAMPQuery
                 }
             }
         }
-        private ServerRules CollectServerRulesFromByteArray(byte[] data) {
+        private ServerRules CollectServerRulesFromByteArray(byte[] data)
+        {
             var sampServerRulesData = new ServerRules();
 
             using (var stream = new MemoryStream(data))
