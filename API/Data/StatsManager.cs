@@ -20,38 +20,10 @@ public static class StatsManager
 
     public static void LoadStats()
     {
-        List<Server> servers = new(ServerManager.GetServers());
-        
-        UpdateGlobalStats();
-        UpdateGlobalMetrics();
-        UpdateGamemodeStats(servers);
-        UpdateLanguageStats(servers);
+        UpdateStats();
 
         CreateTimers();
     }
-
-    private static void CreateTimers()
-    {
-        ThreeMinuteTimer.Elapsed += EveryFiveMinutes;
-        ThreeMinuteTimer.AutoReset = true;
-        ThreeMinuteTimer.Interval = 300000;
-        ThreeMinuteTimer.Enabled = true;
-    }
-
-    private static void EveryFiveMinutes(object? sender, ElapsedEventArgs e)
-    {
-        _ = Task.Run(() =>
-        {
-            List<Server> servers = new(ServerManager.GetServers());
-
-            UpdateGlobalStats();
-            UpdateGlobalMetrics();
-            UpdateGamemodeStats(servers);
-            UpdateLanguageStats(servers);
-        });
-    }
-
-    // Getters
 
     public static List<GlobalMetrics> GetGlobalMetrics(int hours)
     {
@@ -60,21 +32,50 @@ public static class StatsManager
         return GlobalMetrics.Where(x => x.Time > RequestTime).ToList();
     }
 
+    private static void CreateTimers()
+    {
+        ThreeMinuteTimer.Elapsed += UpdateStatsTimer;
+        ThreeMinuteTimer.AutoReset = true;
+        ThreeMinuteTimer.Interval = 300000;
+        ThreeMinuteTimer.Enabled = true;
+    }
+
+    private static void UpdateStatsTimer(object? sender, ElapsedEventArgs e) {
+        Thread statsThread = new(UpdateStats);
+        statsThread.Start();
+    }
+
+    private static void UpdateStats()
+    {
+        List<Server> servers = new(ServerManager.GetServers());
+
+        UpdateGlobalMetrics();
+        UpdateGlobalStats(servers);
+        UpdateGamemodeStats(servers);
+        UpdateLanguageStats(servers);
+    }
+
     // Statistics update functions
 
-    private static void UpdateGlobalStats()
+    private static void UpdateGlobalStats(List<Server> servers)
     {
+        int allServers = ServerManager.GetAllServers().Count;
+
+        int playerCount = servers.Sum(x => x.PlayersOnline);
+        int onlineServers = servers.Count;
+        int onlineServersOMP = servers.Where(x => x.IsOpenMp).Count();
+
         GlobalStats = new GlobalStats(
-                serversOnline: ServerManager.ServerCount(),
-                serversTracked: ServerManager.ServerCount(includeDead: true),
-                serversOnlineOMP: ServerManager.ServerCount(onlyOMP: true),
-                playersOnline: ServerManager.TotalPlayers()
+                serversOnline: onlineServers,
+                serversTracked: allServers,
+                serversOnlineOMP: onlineServersOMP,
+                playersOnline: playerCount
             );
     }
 
     private static async void UpdateGlobalMetrics()
     {
-        DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(168);
+        DateTime RequestTime = DateTime.Now - TimeSpan.FromDays(8);
 
         var conn = new MySqlConnection(MySQL.ConnectionString);
         var sql = @"SELECT players, servers, api_hits, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";

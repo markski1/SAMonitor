@@ -154,7 +154,7 @@ public class Server
 
 
                 // if the server has already been failing to reply to queries lately, let's save ourselves some resources and query once every hour instead.
-                if (DeadCount > 1)
+                if (DeadCount > 0)
                 {
                     QueryTimer.Interval = 3600000;
                 }

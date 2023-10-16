@@ -123,33 +123,9 @@ public static class ServerManager
         return result.FirstOrDefault();
     }
 
-    public static List<Server> ServersByName(string name)
+    public static List<Server> GetAllServers()
     {
-        var results = servers.Where(x => x.Name.Contains(name)).ToList();
-
-        if (results is null)
-        {
-            return new List<Server>();
-        }
-
-        return results;
-    }
-
-    public static int TotalPlayers()
-    {
-        return currentServers.Sum(x => x.PlayersOnline);
-    }
-
-    public static int ServerCount(bool includeDead = false, bool onlyOMP = false)
-    {
-        if (includeDead)
-        {
-            if (onlyOMP) return servers.Where(x => x.IsOpenMp).Count();
-            return servers.Count;
-        }
-
-        if (onlyOMP) return currentServers.Where(x => x.IsOpenMp).Count();
-        return currentServers.Count;
+        return servers;
     }
 
     public static List<Server> GetServers()
@@ -177,15 +153,11 @@ public static class ServerManager
 
     public static int GetServerIDFromIP(string ip_addr)
     {
-        try
-        {
-            var server = servers.Where(x => x.IpAddr.Contains(ip_addr)).Single();
+        var server = ServerByIP(ip_addr);
+        if (server is not null)
             return server.Id;
-        }
-        catch
-        {
+        else
             return -1;
-        }
     }
 
     private static readonly System.Timers.Timer ThirtyMinuteTimer = new();
