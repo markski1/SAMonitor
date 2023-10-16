@@ -110,7 +110,7 @@ public static class ServerManager
             return null;
         }
 
-        if (result.Count > 0)
+        if (result.Count > 1)
         {
             var newFind = result.Where(x => x.IpAddr.Contains("7777")).ToList();
 
