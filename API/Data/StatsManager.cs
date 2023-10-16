@@ -13,7 +13,7 @@ public static class StatsManager
     public static GlobalStats GlobalStats { get; private set; } = new(0, 0, 0, 0);
     public static GamemodeStats GamemodeStats { get; private set; } = new();
     public static LanguageStats LanguageStats { get; private set; } = new();
-    public static List<GlobalMetrics> GlobalMetrics { get; private set; } = new();
+    private static List<GlobalMetrics> GlobalMetrics { get; set; } = new();
 
 
     // Initializers
@@ -27,9 +27,9 @@ public static class StatsManager
 
     public static List<GlobalMetrics> GetGlobalMetrics(int hours)
     {
-        DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
+        DateTime requestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
-        return GlobalMetrics.Where(x => x.Time > RequestTime).ToList();
+        return GlobalMetrics.Where(x => x.Time > requestTime).ToList();
     }
 
     private static void CreateTimers()
@@ -64,24 +64,24 @@ public static class StatsManager
 
         int playerCount = servers.Sum(x => x.PlayersOnline);
         int onlineServers = servers.Count;
-        int onlineServersOMP = servers.Where(x => x.IsOpenMp).Count();
+        int onlineServersOmp = servers.Count(x => x.IsOpenMp);
 
         GlobalStats = new GlobalStats(
                 serversOnline: onlineServers,
                 serversTracked: allServers,
-                serversOnlineOMP: onlineServersOMP,
+                serversOnlineOMP: onlineServersOmp,
                 playersOnline: playerCount
             );
     }
 
     private static async void UpdateGlobalMetrics()
     {
-        DateTime RequestTime = DateTime.Now - TimeSpan.FromDays(8);
+        DateTime requestTime = DateTime.Now - TimeSpan.FromDays(8);
 
-        var conn = new MySqlConnection(MySQL.ConnectionString);
+        var conn = new MySqlConnection(MySql.ConnectionString);
         var sql = @"SELECT players, servers, api_hits, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
 
-        GlobalMetrics = (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime })).ToList();
+        GlobalMetrics = (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime = requestTime })).ToList();
     }
 
     private static void UpdateLanguageStats(IEnumerable<Server> servers)

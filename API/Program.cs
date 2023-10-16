@@ -1,41 +1,20 @@
 using SAMonitor.Data;
 using SAMonitor.Utils;
 
-if (MySQL.MySQLSetup())
+if (MySql.MySqlSetup())
 {
+    Console.WriteLine("Loading servers.");
     await ServerManager.LoadServers();
 
+    Console.WriteLine("Loading statistics.");
     StatsManager.LoadStats();
 
+    Console.WriteLine("Initializing server updater.");
     ServerUpdater.Initialize();
 
-    var builder = WebApplication.CreateBuilder(args);
+    WebServer.Initialize(args);
 
-    // Add services to the container.
-
-    builder.Services.AddControllers();
-    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
-
-    var app = builder.Build();
-
-    // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
-
-    app.MapControllers();
-
-    app.UseCors(x => x
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .SetIsOriginAllowed(origin => true)
-                .AllowCredentials());
-
-    app.Run();
+    await Task.Delay(-1);
 }
 else
 {

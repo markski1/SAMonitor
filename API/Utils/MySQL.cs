@@ -3,10 +3,10 @@ using Newtonsoft.Json;
 
 namespace SAMonitor.Utils
 {
-    public static class MySQL
+    public static class MySql
     {
-        public static string? ConnectionString { get; set; }
-        public static bool MySQLSetup()
+        public static string? ConnectionString { get; private set; }
+        public static bool MySqlSetup()
         {
             MySqlConnectionStringBuilder builder = new();
 

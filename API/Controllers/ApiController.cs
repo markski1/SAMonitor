@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using SAMonitor.Data;
 using SAMonitor.Utils;
+// ReSharper disable InconsistentNaming
 
 namespace SAMonitor.Controllers;
 
@@ -17,10 +18,10 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetServerByIP")]
-    public Server? GetServerByIP(string ip_addr)
+    public Server? GetServerByIp(string ip_addr)
     {
         ServerManager.ApiHits++;
-        Server? result = ServerManager.ServerByIP(ip_addr);
+        var result = ServerManager.ServerByIp(ip_addr);
 
         return result;
     }
@@ -42,7 +43,7 @@ public class ApiController : ControllerBase
                 showEmpty: show_empty != 0,
                 showPassworded: show_passworded != 0,
                 hideRoleplay: hide_roleplay != 0,
-                requireSampCAC: require_sampcac != 0,
+                requireSampCac: require_sampcac != 0,
                 onlyOpenMp: only_openmp != 0,
                 order: order,
                 name: name.ToLower(),
@@ -74,7 +75,7 @@ public class ApiController : ControllerBase
     {
         ServerManager.ApiHits++;
 
-        var result = ServerManager.ServerByIP(ip_addr);
+        var result = ServerManager.ServerByIp(ip_addr);
 
         if (result is null) return new List<Player>();
 
@@ -113,7 +114,7 @@ public class ApiController : ControllerBase
         return ServerManager.GetMasterlist(version);
     }
 
-    private long lastAddReq = 0;
+    private long lastAddReq;
 
     [HttpGet("AddServer")]
     public async Task<string> AddServer(string ip_addr)
@@ -142,9 +143,9 @@ public class ApiController : ControllerBase
 
         DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
-        int Id = ServerManager.GetServerIDFromIP(ip_addr);
+        int Id = ServerManager.GetServerIdFromIp(ip_addr);
 
-        var conn = new MySqlConnection(MySQL.ConnectionString);
+        var conn = new MySqlConnection(MySql.ConnectionString);
 
         string sql;
 

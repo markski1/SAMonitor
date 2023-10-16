@@ -8,26 +8,26 @@ namespace SAMonitor.Data;
 
 public static class ServerManager
 {
-    private static List<Server> servers = new();
+    private static List<Server> _servers = new();
 
-    private static List<Server> currentServers = new();
+    private static List<Server> _currentServers = new();
 
-    private static List<string> blacklist = new();
+    private static List<string> _blacklist = new();
 
-    private static string MasterList_global = "";
-    private static string MasterList_037 = "";
-    private static string MasterList_03DL = "";
+    private static string _masterListGlobal = "";
+    private static string _masterList037 = "";
+    private static string _masterList03Dl = "";
 
-    public static readonly ServerRepository _interface = new();
+    private static readonly ServerRepository Interface = new();
 
-    public static int ApiHits { get; set; } = 0;
+    public static int ApiHits { get; set; }
 
     public static async Task<bool> LoadServers()
     {
-        servers = await _interface.GetAllServersAsync();
+        _servers = await Interface.GetAllServersAsync();
 
         UpdateBlacklist();
-        currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
+        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
         UpdateMasterlist();
 
         CreateTimers();
@@ -38,7 +38,7 @@ public static class ServerManager
     public static async Task<string> AddServer(string ipAddr)
     {
         if (IsBlacklisted(ipAddr)) return "IP Address is blacklisted.";
-        if (servers.Any(x => x.IpAddr == ipAddr)) return "Server is already monitored.";
+        if (_servers.Any(x => x.IpAddr == ipAddr)) return "Server is already monitored.";
 
         var newServer = new Server(ipAddr);
 
@@ -47,41 +47,41 @@ public static class ServerManager
             return "Server did not respond to query.";
         }
 
-        if (newServer.Version.ToLower().Contains("crce"))
+        if (newServer.Version.ToLower().Contains("cr"))
         {
             return "CR-MP servers are currently unsupported.";
         }
 
         // check for copies                                                                                     they usually try to get smart by slightly modifying the gamemode string;
         //                                                                                                      so a little flexibility on this one
-        var copies = currentServers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
+        var copies = _currentServers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
 
-        var conn = new MySqlConnection(MySQL.ConnectionString);
-        string sql;
+        var conn = new MySqlConnection(MySql.ConnectionString);
 
         if (copies.Any())
         {
-            return "Server is already monitored. Be advised: Sneaking in repeated IP's for the same server is a motive for blacklisting.";
+            return "Server is already monitored. Be advised: Sneaking in repeated IPs for the same server is a motive for blacklisting.";
         }
         else
         {
             // if there's an 'old' dead version of this, then delete it.
-            copies = servers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
+            copies = _servers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
 
-            foreach (var server in copies)
+            var enumerable = copies as Server[] ?? copies.ToArray();
+            foreach (var server in enumerable)
             {
-                sql = "DELETE FROM servers WHERE id = @Id";
+                const string sql = "DELETE FROM servers WHERE id = @Id";
                 await conn.QueryAsync(sql, new { server.Id });
             }
 
-            servers.RemoveAll(x => copies.Contains(x));
+            _servers.RemoveAll(x => enumerable.Contains(x));
         }
 
-        if (await _interface.InsertServer(newServer))
+        if (await Interface.InsertServer(newServer))
         {
-            newServer.Id = await _interface.GetServerID(ipAddr);
-            servers.Add(newServer);
-            currentServers.Add(newServer);
+            newServer.Id = await Interface.GetServerId(ipAddr);
+            _servers.Add(newServer);
+            _currentServers.Add(newServer);
 
             return "Server added to SAMonitor.";
         }
@@ -93,7 +93,7 @@ public static class ServerManager
 
     private static bool IsBlacklisted(string ipAddr)
     {
-        foreach (var addr in blacklist)
+        foreach (var addr in _blacklist)
         {
             if (ipAddr.Contains(addr))
                 return true;
@@ -101,9 +101,9 @@ public static class ServerManager
         return false;
     }
 
-    public static Server? ServerByIP(string ip)
+    public static Server? ServerByIp(string ip)
     {
-        var result = servers.Where(x => x.IpAddr.Contains(ip)).ToList();
+        var result = _servers.Where(x => x.IpAddr.Contains(ip)).ToList();
 
         if (result.Count < 1)
         {
@@ -125,25 +125,25 @@ public static class ServerManager
 
     public static List<Server> GetAllServers()
     {
-        return servers;
+        return _servers;
     }
 
     public static List<Server> GetServers()
     {
-        return currentServers;
+        return _currentServers;
     }
 
     public static string GetMasterlist(string version)
     {
         // global, 0.3.7 and 0.3DL masterlists are cached once every 30 minutes, as they are the only "current" versions.
-        if (version == "any") return MasterList_global;
-        if (version.Contains("3.7")) return MasterList_037;
-        if (version.Contains("DL")) return MasterList_03DL;
+        if (version == "any") return _masterListGlobal;
+        if (version.Contains("3.7")) return _masterList037;
+        if (version.Contains("DL")) return _masterList03Dl;
 
         // failing all of the above, generate whatever got requested... I guess!
         string newList = "";
 
-        currentServers.ForEach(x =>
+        _currentServers.ForEach(x =>
         {
             if (x.Version.Contains(version)) newList += $"{x.IpAddr}\n";
         });
@@ -151,9 +151,9 @@ public static class ServerManager
         return newList;
     }
 
-    public static int GetServerIDFromIP(string ip_addr)
+    public static int GetServerIdFromIp(string ipAddr)
     {
-        var server = ServerByIP(ip_addr);
+        var server = ServerByIp(ipAddr);
         if (server is not null)
             return server.Id;
         else
@@ -182,7 +182,7 @@ public static class ServerManager
         UpdateBlacklist();
 
         // Update the current servers with only the ones which have responded in the last 6 hours
-        currentServers = servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
+        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
 
         // Update the Masterlist accordingly.
         UpdateMasterlist();
@@ -194,20 +194,19 @@ public static class ServerManager
     private static async void SaveMetrics()
     {
         // don't save metrics unless in production
-#if !DEBUG
-            var conn = new MySqlConnection(MySQL.ConnectionString);
+        if (!Global.IsDevelopment)
+        {
+            var conn = new MySqlConnection(MySql.ConnectionString);
 
             var sql = @"INSERT INTO metrics_global (players, servers, api_hits) VALUES(@_players, @_servers, @ApiHits)";
 
-            int _servers = currentServers.Count;
+            int servers = _currentServers.Count;
 
-            int _players = TotalPlayers();
+            int players = _currentServers.Sum(x => x.PlayersOnline);
 
-            await conn.ExecuteAsync(sql, new { _players, _servers, ApiHits });
-#else
-        // just to make the compiler happy, do an await in debug mode
-        await Task.Delay(1);
-#endif
+            await conn.ExecuteAsync(sql, new { _players = players, _servers = servers, ApiHits });
+        }
+
         ApiHits = 0;
     }
 
@@ -216,51 +215,51 @@ public static class ServerManager
         Random rng = new();
         // To keep things somewhat fair, shuffle the position of all servers
 
-        int n = currentServers.Count;
+        int n = _currentServers.Count;
         while (n > 1)
         {
             n--;
             int k = rng.Next(n + 1);
-            (currentServers[n], currentServers[k]) = (currentServers[k], currentServers[n]);
+            (_currentServers[n], _currentServers[k]) = (_currentServers[k], _currentServers[n]);
         }
 
-        MasterList_global = "";
-        MasterList_037 = "";
-        MasterList_03DL = "";
+        _masterListGlobal = "";
+        _masterList037 = "";
+        _masterList03Dl = "";
         n = 0;
-        foreach (var server in currentServers)
+        foreach (var server in _currentServers)
         {
             server.ShuffledOrder = n;
             n++;
             // passworded servers don't make it to the masterlist.
             if (server.RequiresPassword) continue;
 
-            MasterList_global += $"{server.IpAddr}\n";
+            _masterListGlobal += $"{server.IpAddr}\n";
             if (server.Version.Contains("3.7"))
             {
-                MasterList_037 += $"{server.IpAddr}\n";
+                _masterList037 += $"{server.IpAddr}\n";
             }
             else if (server.Version.Contains("DL"))
             {
-                MasterList_03DL += $"{server.IpAddr}\n";
+                _masterList03Dl += $"{server.IpAddr}\n";
             }
         }
     }
 
     private static async void UpdateBlacklist()
     {
-        var conn = new MySqlConnection(MySQL.ConnectionString);
+        var conn = new MySqlConnection(MySql.ConnectionString);
 
         var sql = @"SELECT ip_addr FROM blacklist";
 
-        blacklist = (await conn.QueryAsync<string>(sql)).ToList();
+        _blacklist = (await conn.QueryAsync<string>(sql)).ToList();
 
-        foreach (var blocked_addr in blacklist)
+        foreach (var blockedAddr in _blacklist)
         {
             sql = @"DELETE FROM servers WHERE ip_addr LIKE @BlockedAddr";
-            await conn.ExecuteAsync(sql, new { BlockedAddr = $"%{blocked_addr}%" });
+            await conn.ExecuteAsync(sql, new { BlockedAddr = $"%{blockedAddr}%" });
         }
 
-        servers = servers.Where(x => !blacklist.Any(addr => x.IpAddr.Contains(addr))).ToList();
+        _servers = _servers.Where(x => !_blacklist.Any(addr => x.IpAddr.Contains(addr))).ToList();
     }
 }

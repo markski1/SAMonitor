@@ -8,22 +8,22 @@ namespace SAMonitor.Database
     public interface IServerRepository
     {
         Task<List<Server>> GetAllServersAsync();
-        Task<int> GetServerID(string ip_addr);
+        Task<int> GetServerId(string ipAddr);
         Task<bool> InsertServer(Server server);
         Task<bool> UpdateServer(Server server);
     }
     public class ServerRepository
     {
-        private static MySqlConnection DBConnection()
+        private static MySqlConnection DbConnection()
         {
-            return new MySqlConnection(MySQL.ConnectionString);
+            return new MySqlConnection(MySql.ConnectionString);
         }
 
         public async Task<List<Server>> GetAllServersAsync()
         {
-            var db = DBConnection();
+            var db = DbConnection();
 
-            var sql = @"SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac FROM servers";
+            const string sql = @"SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac FROM servers";
 
             try
             {
@@ -36,26 +36,26 @@ namespace SAMonitor.Database
             }
         }
 
-        public async Task<int> GetServerID(string IpAddr)
+        public async Task<int> GetServerId(string ipAddr)
         {
-            var db = DBConnection();
+            var db = DbConnection();
 
             var sql = @"SELECT id FROM servers WHERE ip_addr=@IpAddr";
 
             try
             {
-                return (await db.QueryAsync<int>(sql, new { IpAddr })).Single();
+                return (await db.QueryAsync<int>(sql, new { IpAddr = ipAddr })).Single();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[db_err] Failed to get ID for {IpAddr} !! \n {ex}");
+                Console.WriteLine($"[db_err] Failed to get ID for {ipAddr} !! \n {ex}");
                 return 0;
             }
         }
 
         public async Task<bool> InsertServer(Server server)
         {
-            var db = DBConnection();
+            var db = DbConnection();
 
             var sql = @"INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
                         VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
@@ -88,13 +88,13 @@ namespace SAMonitor.Database
 
         public async Task<bool> UpdateServer(Server server, MySqlConnection? db = null)
         {
-            db ??= DBConnection();
+            db ??= DbConnection();
 
             var sql = @"UPDATE servers
                         SET ip_addr=@IpAddr, name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
                         WHERE ip_addr = @IpAddr";
 
-            bool success = true;
+            bool success;
 
             try
             {
@@ -122,13 +122,11 @@ namespace SAMonitor.Database
 
             // then add a metric entry. ONLY IF IN PRODUCTION.
 
-#if !DEBUG
+            if (Global.IsDevelopment) return success;
+            
+            sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
 
-                sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
-
-                await db.ExecuteAsync(sql, new { server.Id, server.PlayersOnline });
-
-#endif
+            await db.ExecuteAsync(sql, new { server.Id, server.PlayersOnline });
 
             return success;
         }

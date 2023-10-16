@@ -11,7 +11,7 @@ namespace SAMonitor.Utils
 
         private static readonly System.Timers.Timer UpdateQueueTimer = new();
 
-        public static readonly ServerRepository _interface = new();
+        private static readonly ServerRepository Interface = new();
 
         public static void Initialize()
         {
@@ -34,14 +34,14 @@ namespace SAMonitor.Utils
 
         private static async void ProcessQueue()
         {
-            var CurrentQueue = new List<Server>(UpdateQueue);
+            var currentQueue = new List<Server>(UpdateQueue);
             UpdateQueue.Clear();
 
-            MySqlConnection db = new(MySQL.ConnectionString);
+            MySqlConnection db = new(MySql.ConnectionString);
 
-            foreach (var server in CurrentQueue)
+            foreach (var server in currentQueue)
             {
-                await _interface.UpdateServer(server, db);
+                await Interface.UpdateServer(server, db);
             }
         }
     }

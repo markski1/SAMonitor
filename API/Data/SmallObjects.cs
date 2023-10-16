@@ -9,7 +9,7 @@ public class ServerFilterer
     public bool ShowEmpty { get; set; }
     public bool ShowPassworded { get; set; }
     public bool HideRoleplay { get; set; }
-    public bool RequireSampCAC { get; set; }
+    public bool RequireSampCac { get; set; }
     public bool OnlyOpenMp { get; set; }
     public string Name { get; set; }
     public string Gamemode { get; set; }
@@ -17,12 +17,12 @@ public class ServerFilterer
     public string Language { get; set; }
     public string Order { get; set; }
 
-    public ServerFilterer(bool showEmpty, bool showPassworded, bool hideRoleplay, bool requireSampCAC, string name, string gamemode, string version, string language, string order, bool onlyOpenMp)
+    public ServerFilterer(bool showEmpty, bool showPassworded, bool hideRoleplay, bool requireSampCac, string name, string gamemode, string version, string language, string order, bool onlyOpenMp)
     {
         ShowEmpty = showEmpty;
         ShowPassworded = showPassworded;
         HideRoleplay = hideRoleplay;
-        RequireSampCAC = requireSampCAC;
+        RequireSampCac = requireSampCac;
         OnlyOpenMp = onlyOpenMp;
         Name = name;
         Gamemode = gamemode;
@@ -70,7 +70,7 @@ public class ServerFilterer
                              .ToList();
         }
 
-        if (RequireSampCAC)
+        if (RequireSampCac)
         {
             servers = servers.Where(x => !x.SampCac.Contains("not required", StringComparison.OrdinalIgnoreCase)).ToList();
         }
