@@ -55,16 +55,15 @@ public class ApiController : ControllerBase
         List<Server> orderedServers = filterServers.GetFilteredServers();
 
         // If we're paging, return a "page".
-        if (paging_size > 0)
+        if (paging_size <= 0) return orderedServers;
+        
+        try
         {
-            try
-            {
-                return orderedServers.Skip(paging_size * page).Take(paging_size).ToList();
-            }
-            catch
-            {
-                // nothing, just return the full list. this just protects from malicious pagingSize or page values.
-            }
+            return orderedServers.Skip(paging_size * page).Take(paging_size).ToList();
+        }
+        catch
+        {
+            // nothing, just return the full list. this just protects from malicious pagingSize or page values.
         }
 
         return orderedServers;

@@ -93,53 +93,53 @@ public static class StatsManager
 
             if (lang.Contains("ru") || lang.Contains("ру"))
             {
-                LanguageStats.Russian++;
+                LanguageStats.Russian.Add(server);
                 continue;
             }
 
             if (lang.Contains("esp") || lang.Contains("spa"))
             {
-                LanguageStats.Spanish++;
+                LanguageStats.Spanish.Add(server);
                 continue;
             }
 
             if (lang.Contains("ro"))
             {
-                LanguageStats.Romanian++;
+                LanguageStats.Romanian.Add(server);
                 continue;
             }
 
             if (lang.Contains("br") || lang.Contains("port") || lang.Contains("pt"))
             {
-                LanguageStats.Portuguese++;
+                LanguageStats.Portuguese.Add(server);
                 continue;
             }
 
             if (lang.Contains("geor") || lang.Contains("balkan") || lang.Contains("ex-yu") || lang.Contains("shqip") || lang.Contains("bulg") || lang.Contains("srb") || lang.Contains("tur") || lang.Contains("ukr"))
             {
-                LanguageStats.EastEuro++;
+                LanguageStats.EastEuro.Add(server);
                 continue;
             }
 
             if (lang.Contains("ger") || lang.Contains("pol") || lang.Contains("hung") || lang.Contains("mag") || lang.Contains("fr") || lang.Contains("belg") || lang.Contains("slov") || lang.Contains("lat") || lang.Contains("liet") || lang.Contains("it"))
             {
-                LanguageStats.WestEuro++;
+                LanguageStats.WestEuro.Add(server);
                 continue;
             }
 
             if (lang.Contains("viet") || lang.Contains("tamil") || lang.Contains("ko") || lang.Contains("th") || lang.Contains("ch") || lang.Contains("bahasa") || lang.Contains("malay") || lang.Contains("indo") || lang.Contains("jp") || lang.Contains("jap"))
             {
-                LanguageStats.Asia++;
+                LanguageStats.Asia.Add(server);
                 continue;
             }
 
             if (lang.Contains("en"))
             {
-                LanguageStats.English++;
+                LanguageStats.English.Add(server);
                 continue;
             }
 
-            LanguageStats.Other++;
+            LanguageStats.Other.Add(server);
         }
     }
 
@@ -154,47 +154,47 @@ public static class StatsManager
 
             if (gm.Contains("cnr") || gm.Contains("cop") || name.Contains("cnr"))
             {
-                GamemodeStats.CNR++;
+                GamemodeStats.CNR.Add(server);
                 continue;
             }
 
             if (gm.Contains("dm") || gm.Contains("dea") || gm.Contains("pvp") || gm.Contains("war") || name.Contains("war") || name.Contains("war"))
             {
-                GamemodeStats.Deathmatch++;
+                GamemodeStats.Deathmatch.Add(server);
                 continue;
             }
 
             if (gm.Contains("rp") || gm.Contains("role") || gm.Contains("real") || name.Contains("role") || name.Contains(" rp"))
             {
-                GamemodeStats.Roleplay++;
+                GamemodeStats.Roleplay.Add(server);
                 continue;
             }
 
             if (gm.Contains("rac") || gm.Contains("stunt") || gm.Contains("drift") || name.Contains("race") || name.Contains("stunt") || name.Contains("drift"))
             {
-                GamemodeStats.RaceStunt++;
+                GamemodeStats.RaceStunt.Add(server);
                 continue;
             }
 
             if (gm.Contains("surv") || name.Contains("surv") || gm.Contains("dayz") || name.Contains("dayz") || gm.Contains("zomb") || name.Contains("zomb") || name.Contains("stalk"))
             {
-                GamemodeStats.Survival++;
+                GamemodeStats.Survival.Add(server);
                 continue;
             }
 
             if (gm.Contains("pilot") || name.Contains("truck") || gm.Contains("pilot") || name.Contains("pilot") || gm.Contains("sim") || name.Contains("sim"))
             {
-                GamemodeStats.VehSim++;
+                GamemodeStats.VehSim.Add(server);
                 continue;
             }
 
             if (gm.Contains("free") || name.Contains("freeroam"))
             {
-                GamemodeStats.FreeRoam++;
+                GamemodeStats.FreeRoam.Add(server);
                 continue;
             }
 
-            GamemodeStats.Other++;
+            GamemodeStats.Other.Add(server);
         }
     }
 }

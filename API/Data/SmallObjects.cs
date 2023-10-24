@@ -193,52 +193,70 @@ public class GlobalStats
     }
 }
 
+public class CategoryStats
+{
+    public int Amount { get; set; }
+    public int Players { get; set; }
+
+    public CategoryStats()
+    {
+        Amount = 0;
+        Players = 0;
+    }
+
+    public void Add(Server server)
+    {
+        Amount++;
+        Players += server.PlayersOnline;
+    }
+}
+
 public class LanguageStats
 {
-    public int Spanish { get; set; }
-    public int Russian { get; set; }
-    public int English { get; set; }
-    public int Romanian { get; set; }
-    public int Portuguese { get; set; }
-    public int Asia { get; set; }
-    public int EastEuro { get; set; }
-    public int WestEuro { get; set; }
-    public int Other { get; set; }
+    public CategoryStats Spanish { get; set; }
+    public CategoryStats Russian { get; set; }
+    public CategoryStats English { get; set; }
+    public CategoryStats Romanian { get; set; }
+    public CategoryStats Portuguese { get; set; }
+    public CategoryStats Asia { get; set; }
+    public CategoryStats EastEuro { get; set; }
+    public CategoryStats WestEuro { get; set; }
+    public CategoryStats Other { get; set; }
 
     public LanguageStats()
     {
-        Spanish = 0;
-        Russian = 0;
-        English = 0;
-        Romanian = 0;
-        Portuguese = 0;
-        Asia = 0;
-        EastEuro = 0;
-        WestEuro = 0;
-        Other = 0;
+        Spanish = new();
+        Russian = new();
+        English = new();
+        Romanian = new();
+        Portuguese = new();
+        Asia = new();
+        EastEuro = new();
+        WestEuro = new();
+        Other = new();
     }
 }
 
 public class GamemodeStats
 {
-    public int Deathmatch { get; set; }
-    public int Roleplay { get; set; }
-    public int RaceStunt { get; set; }
-    public int CNR { get; set; }
-    public int FreeRoam { get; set; }
-    public int Survival { get; set; }
-    public int VehSim { get; set; }
-    public int Other { get; set; }
+    public CategoryStats Deathmatch { get; set; }
+    public CategoryStats Roleplay { get; set; }
+    public CategoryStats RaceStunt { get; set; }
+    public CategoryStats CNR { get; set; }
+    public CategoryStats FreeRoam { get; set; }
+    public CategoryStats Survival { get; set; }
+    public CategoryStats VehSim { get; set; }
+    public CategoryStats Other { get; set; }
 
     public GamemodeStats()
     {
-        Deathmatch = 0;
-        Roleplay = 0;
-        RaceStunt = 0;
-        CNR = 0;
-        FreeRoam = 0;
-        Survival = 0;
-        VehSim = 0;
-        Other = 0;
+        Deathmatch = new();
+        Roleplay = new();
+        RaceStunt = new();
+        CNR = new();
+        FreeRoam = new();
+        Survival = new();
+        VehSim = new();
+        Other = new();
     }
 }
