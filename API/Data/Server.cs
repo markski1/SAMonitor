@@ -3,8 +3,6 @@
 using SAMonitor.Utils;
 using SAMPQuery;
 using System.Timers;
-
-// IDE will disagree, but required for production build
 using Dapper;
 using MySqlConnector;
 
