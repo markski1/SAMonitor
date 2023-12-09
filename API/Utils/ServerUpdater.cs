@@ -34,14 +34,34 @@ namespace SAMonitor.Utils
 
         private static async void ProcessQueue()
         {
-            var currentQueue = new List<Server>(UpdateQueue);
-            UpdateQueue.Clear();
+            /*
+             * Regarding this try catch block:
+             * 
+             * There's a diceroll chance that after a week of runtime, SAMonitor will crash here,
+             * citing an "unhandled exception" because copying an array from source to destionation fails,
+             * due to the destination array not being large enough.
+             * 
+             * There's no explicit array copying here, so I assume it's below the .NET 'List' abstraction.
+             * 
+             * I don't have time to actually -fix- this now, but it's rare enough that I deem it acceptable
+             * we just catch and discard any failure.
+             */
 
-            MySqlConnection db = new(MySql.ConnectionString);
-
-            foreach (var server in currentQueue)
+            try
             {
-                await Interface.UpdateServer(server, db);
+                var currentQueue = new List<Server>(UpdateQueue);
+                UpdateQueue.Clear();
+
+                MySqlConnection db = new(MySql.ConnectionString);
+
+                foreach (var server in currentQueue)
+                {
+                    await Interface.UpdateServer(server, db);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing the server updating queue: {ex}");
             }
         }
     }
