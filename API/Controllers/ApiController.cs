@@ -76,7 +76,7 @@ public class ApiController : ControllerBase
 
         var result = ServerManager.ServerByIp(ip_addr);
 
-        if (result is null) return new List<Player>();
+        if (result is null) return [];
 
         return await result.GetPlayers();
     }

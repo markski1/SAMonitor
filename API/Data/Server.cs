@@ -11,7 +11,6 @@ namespace SAMonitor.Data;
 public class Server
 {
     private readonly System.Timers.Timer _queryTimer = new(); // 20 minute timer
-    private int _deadCount; // count for continued fails to reply to queries in a row.
     public int Id { get; set; }
     public bool Success { get; set; }
     public DateTime LastUpdated { get; set; }
@@ -149,16 +148,33 @@ public class Server
                     await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
                 }
 
+                TimeSpan downtime = DateTime.Now - LastUpdated;
 
-                // if the server has already been failing to reply to queries lately, let's save ourselves some resources and query once every hour instead.
-                if (_deadCount > 0)
+                if (downtime > TimeSpan.FromDays(30)) // if the server's been dead for a month, delete it.
                 {
+                    // TODO: Undecided on wether I want to do any permanent data deletion yet.
+                    // Ideally, remove server entry, and statistics entries.
+                    _queryTimer.Interval = 86400000;
+                }
+                else if (downtime > TimeSpan.FromDays(7)) // if the server's been dead over a week, only query once a day.
+                {
+                    _queryTimer.Interval = 86400000;
+                }
+                else if (downtime > TimeSpan.FromDays(1)) // if the server's been dead over a day, only query every 3 hours.
+                {
+                    _queryTimer.Interval = 10800000;
+                }
+                else if (downtime > TimeSpan.FromHours(3)) { // if the server's been dead for over 3 hours, only query every hour
                     _queryTimer.Interval = 3600000;
                 }
-
-                _deadCount++;
+                else // otherwise, always query every 20 minutes
+                {
+                    _queryTimer.Interval = 1200000;
+                }
             }
 
+            // Server objects are spawned on first query. If a server was never succesfully stored, then it'll die here.
+            // Timer is killed, nothing else contains this object, and the garbage collector takes it from here.
             if (Id == -1)
             {
                 _queryTimer.Stop();
@@ -167,8 +183,6 @@ public class Server
 
             return false;
         }
-
-        _deadCount = 0;
 
         Name = serverInfo.HostName;
         PlayersOnline = serverInfo.Players;
