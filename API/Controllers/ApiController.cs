@@ -123,7 +123,7 @@ public class ApiController : ControllerBase
             return "Please try again in a few seconds.";
         }
 
-        lastAddReq = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 3;
+        lastAddReq = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 1;
 
         ServerManager.ApiHits++;
 

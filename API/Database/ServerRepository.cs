@@ -2,6 +2,7 @@
 using SAMonitor.Data;
 using SAMonitor.Utils;
 using static Dapper.SqlMapper;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SAMonitor.Database
 {
