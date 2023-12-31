@@ -136,61 +136,32 @@ public class ServerFilterer
 
 
 // API Return classes.
-public class Player
+public class Player(ServerPlayer player)
 {
-    public int Id { get; set; }
-    public int Ping { get; set; }
-    public string Name { get; set; }
-    public int Score { get; set; }
-    public Player(ServerPlayer player)
-    {
-        Id = player.PlayerId;
-        Ping = player.PlayerPing;
-        Name = player.PlayerName ?? "Unknown";
-        Score = player.PlayerScore;
-    }
+    public int Id { get; set; } = player.PlayerId;
+    public int Ping { get; set; } = player.PlayerPing;
+    public string Name { get; set; } = player.PlayerName ?? "Unknown";
+    public int Score { get; set; } = player.PlayerScore;
 }
-public class GlobalMetrics
+public class GlobalMetrics(int players, int servers, int api_hits, DateTime time)
 {
-    public int Players { get; set; }
-    public int Servers { get; set; }
-    public int ApiHits { get; set; }
-    public DateTime Time { get; set; }
-
-    public GlobalMetrics(int players, int servers, int api_hits, DateTime time)
-    {
-        Players = players;
-        Servers = servers;
-        ApiHits = api_hits;
-        Time = time;
-    }
+    public int Players { get; set; } = players;
+    public int Servers { get; set; } = servers;
+    public int ApiHits { get; set; } = api_hits;
+    public DateTime Time { get; set; } = time;
 }
-public class ServerMetrics
+public class ServerMetrics(int players, DateTime time)
 {
-    public int Players { get; set; }
-    public DateTime Time { get; set; }
-
-    public ServerMetrics(int players, DateTime time)
-    {
-        Players = players;
-        Time = time;
-    }
+    public int Players { get; set; } = players;
+    public DateTime Time { get; set; } = time;
 }
 
-public class GlobalStats
+public class GlobalStats(int playersOnline, int serversTracked, int serversOnline, int serversOnlineOMP)
 {
-    public int PlayersOnline { get; set; }
-    public int ServersTracked { get; set; }
-    public int ServersOnline { get; set; }
-    public int ServersOnlineOMP { get; set; }
-
-    public GlobalStats(int playersOnline, int serversTracked, int serversOnline, int serversOnlineOMP)
-    {
-        PlayersOnline = playersOnline;
-        ServersTracked = serversTracked;
-        ServersOnline = serversOnline;
-        ServersOnlineOMP = serversOnlineOMP;
-    }
+    public int PlayersOnline { get; set; } = playersOnline;
+    public int ServersTracked { get; set; } = serversTracked;
+    public int ServersOnline { get; set; } = serversOnline;
+    public int ServersOnlineOMP { get; set; } = serversOnlineOMP;
 }
 
 public class CategoryStats

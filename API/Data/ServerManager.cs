@@ -2,6 +2,7 @@
 using MySqlConnector;
 using SAMonitor.Database;
 using SAMonitor.Utils;
+using System;
 using System.Timers;
 
 namespace SAMonitor.Data;
@@ -38,7 +39,7 @@ public static class ServerManager
     public static async Task<string> AddServer(string ipAddr)
     {
         if (IsBlacklisted(ipAddr)) return "IP Address is blacklisted.";
-        if (_servers.Any(x => x.IpAddr == ipAddr)) return "Server is already monitored.";
+        if (_servers.Any(x => x.IpAddr.Contains(ipAddr))) return "Server is already monitored.";
 
         var newServer = new Server(ipAddr);
 
@@ -149,6 +150,18 @@ public static class ServerManager
         });
 
         return newList;
+    }
+
+    public static string GetEveryIP()
+    {
+        string list = "";
+
+        _servers.ForEach(x =>
+        {
+            list += $"{x.IpAddr}\n";
+        });
+
+        return list;
     }
 
     public static int GetServerIdFromIp(string ipAddr)

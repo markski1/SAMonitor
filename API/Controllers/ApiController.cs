@@ -113,6 +113,12 @@ public class ApiController : ControllerBase
         return ServerManager.GetMasterlist(version);
     }
 
+    [HttpGet("GetEveryIP")]
+    public string GetEveryIP()
+    {
+        return ServerManager.GetEveryIP();
+    }
+
     private long lastAddReq;
 
     [HttpGet("AddServer")]
