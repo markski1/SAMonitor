@@ -10,7 +10,7 @@ public static class StatsManager
     private static readonly System.Timers.Timer ThreeMinuteTimer = new();
 
     // Public cached data references
-    public static GlobalStats GlobalStats { get; private set; } = new(0, 0, 0, 0);
+    public static GlobalStats GlobalStats { get; private set; } = new(0, 0, 0, 0, 0);
     public static GamemodeStats GamemodeStats { get; private set; } = new();
     public static LanguageStats LanguageStats { get; private set; } = new();
     private static List<GlobalMetrics> GlobalMetrics { get; set; } = new();
@@ -64,11 +64,13 @@ public static class StatsManager
 
         int playerCount = servers.Sum(x => x.PlayersOnline);
         int onlineServers = servers.Count;
+        int inhabitedServers = servers.Where(x => x.PlayersOnline > 0).Count();
         int onlineServersOmp = servers.Count(x => x.IsOpenMp);
 
         GlobalStats = new GlobalStats(
                 serversOnline: onlineServers,
                 serversTracked: allServers,
+                serversInhabited: inhabitedServers,
                 serversOnlineOMP: onlineServersOmp,
                 playersOnline: playerCount
             );

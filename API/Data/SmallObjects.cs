@@ -156,11 +156,12 @@ public class ServerMetrics(int players, DateTime time)
     public DateTime Time { get; set; } = time;
 }
 
-public class GlobalStats(int playersOnline, int serversTracked, int serversOnline, int serversOnlineOMP)
+public class GlobalStats(int playersOnline, int serversTracked, int serversInhabited, int serversOnline, int serversOnlineOMP)
 {
     public int PlayersOnline { get; set; } = playersOnline;
     public int ServersTracked { get; set; } = serversTracked;
     public int ServersOnline { get; set; } = serversOnline;
+    public int ServersInhabited { get; set; } = serversInhabited;
     public int ServersOnlineOMP { get; set; } = serversOnlineOMP;
 }
 
