@@ -13,7 +13,7 @@ Providing: A server browser, a public API and a Masterlist alternative.
   - [GetFilteredServers](#getfilteredservers)
   - [GetServerByIP](#getserverbyip)
   - [GetServerPlayers](#getserverplayers)
-  - [GetGlobalStats](#GetGlobalStats)
+  - [GetGlobalStats](#getglobalstats)
   - [GetGlobalMetrics](#getglobalmetrics)
   - [GetServerMetrics](#getservermetrics)
 - [Data schemas](#data-schemas)
@@ -39,30 +39,30 @@ If you wish to use SAMonitor's masterlist in SA-MP, check out [SA-MP Masterlist 
 
 ## API Endpoints
 
-All of these endpoints are located at `http://sam.markski.ar/api/`.
+All of these endpoints are located at `http://sam.markski.ar/api/`. All of them are GET.
 
 ### GetAllServers
 
-Return a collection with the latest information of every server SAMonitor tracks.
+Return a collection with the information for EVERY server in SAMonitor. This might include dead/offline servers.
 
 Try it: http://sam.markski.ar/api/GetAllServers
 
 ### GetFilteredServers
 
-Returns the list of servers, but with specified filtering.
+Return a collection with the information for EVERY ONLINE server in SAMonitor.
 
-By default, it'll omit severs with 0 players.
+By default, it won't include empty servers, but this can be changed.
 
-Parameters, all of which are optional: 
+All parameters:
 ```
   show_empty:
-   - Possible values: 0 or 1. If 1, it will include servers with 0 players.
+   - If specified 1, will show empty servers.
 
   order:
-   - Possible values: "none", "players", "ratio". If unspecified, "none".
+   - Possible values: "none", "players", "ratio". By default, "none".
 
   name, gamemode, version, language:
-   - Possible values: Any specified text. This is basically a search.
+   - They are a search filter. Specify text in any of them.
 
   hide_roleplay:
    - If specified 1, hide roleplay servers.
@@ -71,19 +71,18 @@ Parameters, all of which are optional:
    - If specified 1, only get servers where SAMPCAC is required.
   
   paging_size:
-   - Provide any number greater than 0 to do paging.
-     If specified, only this amount of entries will be returned.
+   - For paging. There is no paging by default.
+     If number is provided then it'll be the amount of returns per page.
 
   page:
-   - Provide any number greater or equal than 0.
-     Specifies the page, to be used along with paging_size.
+   - Specify the page number, if paging_size is used.
 ```
 
 Try it: http://sam.markski.ar/api/GetFilteredServers?name=Roleplay&order=player
 
 ### GetServerByIP
 
-Provided an IP address (optionaly with a specified port), returns information about it.
+Provide an IP address (optionaly with a specified port), returns information about it.
 
 If no port is provided and several servers are under that IP, the one at 7777 will be chosen.
 
@@ -97,17 +96,17 @@ Try it: http://sam.markski.ar/api/GetServerPlayers?ip_addr=51.68.204.178:7777
 
 ### GetGlobalStats
 
-Receive counts for amount of servers tracked, amount of servers online, and amount of players playing in them.
+Receive counts for amount of servers tracked, amount of servers online, servers that are inhabited, and global amount of players at the moment.
+
+Data updates every 5 minutes.
 
 Try it: http://sam.markski.ar/api/GetGlobalStats
 
-NOTE: `GetTotalPlayers` and `GetAmountServers` are deprecated and will be removed in the future.
-
 ### GetGlobalMetrics
 
-Providing an amount of hours, get metrics for global count of players and servers in the last given hours.
+Providing an amount of hours, get metrics for global count of players and servers in the last given hours. Default 6.
 
-If no hour is provided, defaults to 6.
+Updated every 30 minutes.
 
 Try it: http://sam.markski.ar/api/GetGlobalMetrics?hours=6
 
@@ -158,5 +157,6 @@ The API ***should*** never return any null values. Either '0' or "Unknown" would
 
 ## Add your server
 
-You may add your server through the option at the SAMonitor website.
-I'll be writing an 'announce.pwn' type thing in the future.
+You may add your server through the [add server page in SAMonitor](https://sam.markski.ar/add.php).
+
+You can also use the [Announce filterscript](https://github.com/markski1/SAMonitor/tree/main/Announce).
