@@ -203,6 +203,8 @@ public class Server
             return false;
         }
 
+        await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
+
         try
         {
             var serverRules = await server.GetServerRulesAsync();
@@ -231,6 +233,8 @@ public class Server
             GameMode = Utils.Helpers.BodgedEncodingFix(GameMode);
             MapName = Utils.Helpers.BodgedEncodingFix(MapName);
         }
+        
+        await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
 
         _ = Task.Run(() => IsOpenMp = server.GetServerIsOMP());
 
