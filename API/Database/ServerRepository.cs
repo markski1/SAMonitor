@@ -24,7 +24,7 @@ namespace SAMonitor.Database
         {
             var db = DbConnection();
 
-            const string sql = @"SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac FROM servers";
+            const string sql = @"SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor_until FROM servers";
 
             try
             {

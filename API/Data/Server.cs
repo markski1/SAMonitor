@@ -29,8 +29,9 @@ public class Server
     public string SampCac { get; set; }
     public bool RequiresPassword { get; set; }
     public int ShuffledOrder { get; set; }
+    public bool Sponsor { get; set; }
 
-    public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac)
+    public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, DateTime sponsor_until)
     {
         Id = id;
         Name = name;
@@ -50,6 +51,7 @@ public class Server
         Success = true;
         RequiresPassword = false;
         ShuffledOrder = 9999;
+        Sponsor = (sponsor_until > DateTime.UtcNow);
 
         CreateTimer();
     }
