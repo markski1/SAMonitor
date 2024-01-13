@@ -37,7 +37,11 @@ public class ApiController : ControllerBase
     [HttpGet("GetFilteredServers")]
     public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0, int show_passworded = 0, int only_openmp = 0)
     {
-        ServerManager.ApiHits++;
+        // Don't count search hits
+        if (name == "unspecified" && gamemode == "unspecified" && language == "any")
+        {
+            ServerManager.ApiHits++;
+        }
 
         ServerFilterer filterServers = new(
                 showEmpty: show_empty != 0,
