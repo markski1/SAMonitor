@@ -15,7 +15,6 @@ public static class StatsManager
     public static LanguageStats LanguageStats { get; private set; } = new();
     private static List<GlobalMetrics> GlobalMetrics { get; set; } = new();
 
-
     // Initializers
 
     public static void LoadStats()
@@ -27,7 +26,7 @@ public static class StatsManager
 
     public static List<GlobalMetrics> GetGlobalMetrics(int hours)
     {
-        DateTime requestTime = DateTime.Now - TimeSpan.FromHours(hours);
+        DateTime requestTime = DateTime.UtcNow - TimeSpan.FromHours(hours);
 
         return GlobalMetrics.Where(x => x.Time > requestTime).ToList();
     }
@@ -78,7 +77,7 @@ public static class StatsManager
 
     private static async void UpdateGlobalMetrics()
     {
-        DateTime requestTime = DateTime.Now - TimeSpan.FromDays(8);
+        DateTime requestTime = DateTime.UtcNow - TimeSpan.FromDays(8);
 
         var conn = new MySqlConnection(MySql.ConnectionString);
         var sql = @"SELECT players, servers, api_hits, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";

@@ -62,7 +62,7 @@ public class Server
         Id = -1;
         IpAddr = ipAddr;
         Name = "Unknown";
-        LastUpdated = DateTime.Now;
+        LastUpdated = DateTime.UtcNow;
         PlayersOnline = 0;
         MaxPlayers = 0;
         IsOpenMp = false;
@@ -77,6 +77,7 @@ public class Server
         Success = false;
         RequiresPassword = false;
         ShuffledOrder = 9999;
+        Sponsor = false;
 
         CreateTimer();
     }
@@ -150,7 +151,7 @@ public class Server
                     await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
                 }
 
-                TimeSpan downtime = DateTime.Now - LastUpdated;
+                TimeSpan downtime = DateTime.UtcNow - LastUpdated;
 
                 if (downtime > TimeSpan.FromDays(30)) // if the server's been dead for a month, delete it.
                 {
@@ -192,7 +193,7 @@ public class Server
         GameMode = serverInfo.GameMode ?? "Unknown";
         Language = serverInfo.Language ?? "Unknown";
         RequiresPassword = serverInfo.Password;
-        LastUpdated = DateTime.Now;
+        LastUpdated = DateTime.UtcNow;
 
         if (PlayersOnline > MaxPlayers)
         {

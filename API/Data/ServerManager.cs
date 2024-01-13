@@ -28,7 +28,7 @@ public static class ServerManager
         _servers = await Interface.GetAllServersAsync();
 
         UpdateBlacklist();
-        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
+        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
         UpdateMasterlist();
 
         CreateTimers();
@@ -195,7 +195,7 @@ public static class ServerManager
         UpdateBlacklist();
 
         // Update the current servers with only the ones which have responded in the last 6 hours
-        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.Now - TimeSpan.FromHours(6)).ToList();
+        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
 
         // Update the Masterlist accordingly.
         UpdateMasterlist();
@@ -226,7 +226,7 @@ public static class ServerManager
     private static void UpdateMasterlist()
     {
         Random rng = new();
-        // To keep things somewhat fair, shuffle the position of all servers
+        // To keep things somewhat fair, shuffle the position of all servers every 30 minutes
 
         int n = _currentServers.Count;
         while (n > 1)
@@ -235,6 +235,9 @@ public static class ServerManager
             int k = rng.Next(n + 1);
             (_currentServers[n], _currentServers[k]) = (_currentServers[k], _currentServers[n]);
         }
+
+        // Sponsor servers should stay at the top, however
+        _currentServers.Sort((a, b) => b.Sponsor.CompareTo(a.Sponsor));
 
         _masterListGlobal = "";
         _masterList037 = "";
@@ -257,6 +260,8 @@ public static class ServerManager
                 _masterList03Dl += $"{server.IpAddr}\n";
             }
         }
+
+
     }
 
     private static async void UpdateBlacklist()
