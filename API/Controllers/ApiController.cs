@@ -44,17 +44,17 @@ public class ApiController : ControllerBase
         }
 
         ServerFilterer filterServers = new(
-                showEmpty: show_empty != 0,
-                showPassworded: show_passworded != 0,
-                hideRoleplay: hide_roleplay != 0,
-                requireSampCac: require_sampcac != 0,
-                onlyOpenMp: only_openmp != 0,
-                order: order,
-                name: name.ToLower(),
-                gamemode: gamemode.ToLower(),
-                language: language.ToLower(),
-                version: version.ToLower()
-            );
+            showEmpty: show_empty != 0,
+            showPassworded: show_passworded != 0,
+            hideRoleplay: hide_roleplay != 0,
+            requireSampCac: require_sampcac != 0,
+            onlyOpenMp: only_openmp != 0,
+            order: order,
+            name: name.ToLower(),
+            gamemode: gamemode.ToLower(),
+            language: language.ToLower(),
+            version: version.ToLower()
+        );
 
         List<Server> orderedServers = filterServers.GetFilteredServers();
 
