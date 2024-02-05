@@ -21,8 +21,6 @@ public static class ServerManager
 
     private static readonly ServerRepository Interface = new();
 
-    public static int ApiHits { get; set; }
-
     public static async Task<bool> LoadServers()
     {
         _servers = await Interface.GetAllServersAsync();
@@ -211,16 +209,14 @@ public static class ServerManager
         {
             var conn = new MySqlConnection(MySql.ConnectionString);
 
-            var sql = @"INSERT INTO metrics_global (players, servers, api_hits) VALUES(@_players, @_servers, @ApiHits)";
+            var sql = @"INSERT INTO metrics_global (players, servers) VALUES(@_players, @_servers)";
 
             int servers = _currentServers.Count;
 
             int players = _currentServers.Sum(x => x.PlayersOnline);
 
-            await conn.ExecuteAsync(sql, new { _players = players, _servers = servers, ApiHits });
+            await conn.ExecuteAsync(sql, new { _players = players, _servers = servers });
         }
-
-        ApiHits = 0;
     }
 
     private static void UpdateMasterlist()

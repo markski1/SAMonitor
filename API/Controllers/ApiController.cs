@@ -20,7 +20,6 @@ public class ApiController : ControllerBase
     [HttpGet("GetServerByIP")]
     public Server? GetServerByIp(string ip_addr)
     {
-        ServerManager.ApiHits++;
         var result = ServerManager.ServerByIp(ip_addr);
 
         return result;
@@ -29,20 +28,12 @@ public class ApiController : ControllerBase
     [HttpGet("GetAllServers")]
     public IEnumerable<Server> GetAllServers()
     {
-        ServerManager.ApiHits++;
-
         return ServerManager.GetServers();
     }
 
     [HttpGet("GetFilteredServers")]
     public List<Server> GetFilteredServers(int show_empty = 0, string order = "none", string name = "unspecified", string gamemode = "unspecified", int hide_roleplay = 0, int paging_size = 0, int page = 0, string version = "any", string language = "any", int require_sampcac = 0, int show_passworded = 0, int only_openmp = 0)
     {
-        // Don't count search hits
-        if (name == "unspecified" && gamemode == "unspecified" && language == "any")
-        {
-            ServerManager.ApiHits++;
-        }
-
         ServerFilterer filterServers = new(
             showEmpty: show_empty != 0,
             showPassworded: show_passworded != 0,
@@ -76,8 +67,6 @@ public class ApiController : ControllerBase
     [HttpGet("GetServerPlayers")]
     public async Task<List<Player>> GetServerPlayers(string ip_addr)
     {
-        ServerManager.ApiHits++;
-
         var result = ServerManager.ServerByIp(ip_addr);
 
         if (result is null) return [];
@@ -112,8 +101,6 @@ public class ApiController : ControllerBase
     [HttpGet("GetMasterlist")]
     public string GetMasterlist(string version = "any")
     {
-        ServerManager.ApiHits++;
-
         return ServerManager.GetMasterlist(version);
     }
 
@@ -135,8 +122,6 @@ public class ApiController : ControllerBase
 
         lastAddReq = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 1;
 
-        ServerManager.ApiHits++;
-
         ip_addr = ip_addr.Trim();
         string validIP = Helpers.ValidateIPv4(ip_addr);
         if (validIP != "invalid")
@@ -148,8 +133,6 @@ public class ApiController : ControllerBase
     [HttpGet("GetServerMetrics")]
     public async Task<dynamic> GetServerMetrics(string ip_addr = "none", int hours = 6, int include_misses = 0)
     {
-        ServerManager.ApiHits++;
-
         DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
         int Id = ServerManager.GetServerIdFromIp(ip_addr);

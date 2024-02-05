@@ -143,11 +143,10 @@ public class Player(ServerPlayer player)
     public string Name { get; set; } = player.PlayerName ?? "Unknown";
     public int Score { get; set; } = player.PlayerScore;
 }
-public class GlobalMetrics(int players, int servers, int api_hits, DateTime time)
+public class GlobalMetrics(int players, int servers, DateTime time)
 {
     public int Players { get; set; } = players;
     public int Servers { get; set; } = servers;
-    public int ApiHits { get; set; } = api_hits;
     public DateTime Time { get; set; } = time;
 }
 public class ServerMetrics(int players, DateTime time)
