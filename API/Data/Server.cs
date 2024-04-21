@@ -8,7 +8,7 @@ using MySqlConnector;
 
 namespace SAMonitor.Data;
 
-public class Server
+public class Server : IDisposable
 {
     private readonly System.Timers.Timer _queryTimer = new(); // 20 minute timer
     public int Id { get; set; }
@@ -129,11 +129,6 @@ public class Server
             if (serverInfo.HostName is null)
             {
                 Console.WriteLine($"Server replied to query but response makes no sense: {IpAddr}");
-                if (Id == -1)
-                {
-                    _queryTimer.Stop();
-                    _queryTimer.Dispose();
-                }
                 return false;
             }
         }
@@ -180,8 +175,7 @@ public class Server
             // Timer is killed, nothing else contains this object, and the garbage collector takes it from here.
             if (Id == -1)
             {
-                _queryTimer.Stop();
-                _queryTimer.Dispose();
+                this.Dispose();
             }
 
             return false;
@@ -197,12 +191,6 @@ public class Server
 
         if (PlayersOnline > MaxPlayers)
         {
-            if (Id == -1)
-            {
-                _queryTimer.Stop();
-                _queryTimer.Dispose();
-            }
-
             return false;
         }
 
@@ -279,5 +267,34 @@ public class Server
         }
 
         return players;
+    }
+
+    private bool _disposed = false;
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                // Dispose managed resources
+                _queryTimer.Dispose();
+            }
+
+            // Dispose unmanaged resources
+
+            _disposed = true;
+        }
+    }
+
+    ~Server()
+    {
+        Dispose(false);
     }
 }

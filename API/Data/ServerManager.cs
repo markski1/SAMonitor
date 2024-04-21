@@ -43,11 +43,13 @@ public static class ServerManager
 
         if (!await newServer.Query(false))
         {
+            newServer.Dispose();
             return "Server did not respond to query.";
         }
 
         if (newServer.Version.ToLower().Contains("cr"))
         {
+            newServer.Dispose();
             return "CR-MP servers are currently unsupported.";
         }
 
@@ -59,6 +61,7 @@ public static class ServerManager
 
         if (copies.Any())
         {
+            newServer.Dispose();
             return "Server is already monitored. Be advised: Sneaking in repeated IPs for the same server is a motive for blacklisting.";
         }
         else
@@ -86,6 +89,7 @@ public static class ServerManager
         }
         else
         {
+            newServer.Dispose();
             return "Sorry, there was an error adding your server to SAMonitor.";
         }
     }
@@ -256,9 +260,7 @@ public static class ServerManager
                 _masterList03Dl += $"{server.IpAddr}\n";
             }
         }
-
-
-    }
+}
 
     private static async void UpdateBlacklist()
     {
