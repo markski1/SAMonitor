@@ -1,5 +1,4 @@
-﻿using MySqlConnector;
-using SAMonitor.Data;
+﻿using SAMonitor.Data;
 using SAMonitor.Database;
 using System.Timers;
 
@@ -7,7 +6,7 @@ namespace SAMonitor.Utils
 {
     public static class ServerUpdater
     {
-        private static readonly List<Server> UpdateQueue = new();
+        private static readonly List<Server> UpdateQueue = [];
 
         private static readonly System.Timers.Timer UpdateQueueTimer = new();
 
@@ -52,11 +51,9 @@ namespace SAMonitor.Utils
                 var currentQueue = new List<Server>(UpdateQueue);
                 UpdateQueue.Clear();
 
-                MySqlConnection db = new(MySql.ConnectionString);
-
                 foreach (var server in currentQueue)
                 {
-                    await Interface.UpdateServer(server, db);
+                    await Interface.UpdateServer(server);
                 }
             }
             catch (Exception ex)

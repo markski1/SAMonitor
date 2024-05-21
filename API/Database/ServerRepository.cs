@@ -2,7 +2,6 @@
 using SAMonitor.Data;
 using SAMonitor.Utils;
 using static Dapper.SqlMapper;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SAMonitor.Database
 {
@@ -15,9 +14,17 @@ namespace SAMonitor.Database
     }
     public class ServerRepository
     {
+        private static MySqlConnection db = new(MySql.ConnectionString);
+
         private static MySqlConnection DbConnection()
         {
-            return new MySqlConnection(MySql.ConnectionString);
+            if (db.State == System.Data.ConnectionState.Closed || db.State == System.Data.ConnectionState.Broken)
+            {
+                db.Dispose();
+                db = new MySqlConnection(MySql.ConnectionString);
+            }
+
+            return db;
         }
 
         public async Task<List<Server>> GetAllServersAsync()

@@ -2,7 +2,6 @@
 using MySqlConnector;
 using SAMonitor.Database;
 using SAMonitor.Utils;
-using System;
 using System.Timers;
 
 namespace SAMonitor.Data;
