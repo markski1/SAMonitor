@@ -1,7 +1,6 @@
-﻿using Dapper;
-using Microsoft.AspNetCore.Mvc;
-using MySqlConnector;
+﻿using Microsoft.AspNetCore.Mvc;
 using SAMonitor.Data;
+using SAMonitor.Database;
 using SAMonitor.Utils;
 // ReSharper disable InconsistentNaming
 
@@ -11,6 +10,8 @@ namespace SAMonitor.Controllers;
 [Route("api")]
 public class ApiController : ControllerBase
 {
+    private static readonly ServerRepository Interface = new();
+
     [HttpGet("CheckAlive")]
     public string CheckAlive()
     {
@@ -131,27 +132,12 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetServerMetrics")]
-    public async Task<dynamic> GetServerMetrics(string ip_addr = "none", int hours = 6, int include_misses = 0)
+    public async Task<List<ServerMetrics>> GetServerMetrics(string ip_addr = "none", int hours = 6, int include_misses = 0)
     {
         DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
 
         int Id = ServerManager.GetServerIdFromIp(ip_addr);
 
-        var conn = new MySqlConnection(MySql.ConnectionString);
-
-        string sql;
-
-        // "Misses" are times where the server was down at the time of being queried. This is recorded as having -1 players online.
-        // This data might be misleading or undesired, as such, we don't include it unless explicitly requested.
-        if (include_misses > 0)
-        {
-            sql = @"SELECT players, time FROM metrics_server WHERE time > @RequestTime AND server_id = @Id ORDER BY time DESC";
-        }
-        else
-        {
-            sql = @"SELECT players, time FROM metrics_server WHERE time > @RequestTime AND server_id = @Id AND players >= 0 ORDER BY time DESC";
-        }
-
-        return (await conn.QueryAsync<ServerMetrics>(sql, new { RequestTime, Id })).ToList();
+        return await Interface.GetServerMetrics(Id, RequestTime, include_misses);
     }
 }

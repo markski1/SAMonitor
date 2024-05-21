@@ -3,13 +3,14 @@
 using SAMonitor.Utils;
 using SAMPQuery;
 using System.Timers;
-using Dapper;
-using MySqlConnector;
+using SAMonitor.Database;
 
 namespace SAMonitor.Data;
 
 public class Server : IDisposable
 {
+    private static readonly ServerRepository Interface = new();
+
     private readonly System.Timers.Timer _queryTimer = new(); // 20 minute timer
     public int Id { get; set; }
     public bool Success { get; set; }
@@ -139,11 +140,7 @@ public class Server : IDisposable
                 if (!Global.IsDevelopment)
                 {
                     // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
-                    var conn = new MySqlConnection(MySql.ConnectionString);
-
-                    const string sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @NoPlayers)";
-
-                    await conn.ExecuteAsync(sql, new { Id, NoPlayers = -1 });
+                    await Interface.InsertServerMetrics(Id, -1);
                 }
 
                 TimeSpan downtime = DateTime.UtcNow - LastUpdated;

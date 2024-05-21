@@ -24,7 +24,9 @@ public static class ServerManager
     {
         _servers = await Interface.GetAllServersAsync();
 
-        UpdateBlacklist();
+        var conn = new MySqlConnection(MySql.ConnectionString);
+
+        UpdateBlacklist(conn);
         _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
         UpdateMasterlist();
 
@@ -192,8 +194,10 @@ public static class ServerManager
 
     private static void TimedActions()
     {
+        var conn = new MySqlConnection(MySql.ConnectionString);
+
         // Update the Blacklist.
-        UpdateBlacklist();
+        UpdateBlacklist(conn);
 
         // Update the current servers with only the ones which have responded in the last 6 hours
         _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
@@ -202,16 +206,14 @@ public static class ServerManager
         UpdateMasterlist();
 
         // Last of all, save the metrics.
-        SaveMetrics();
+        SaveMetrics(conn);
     }
 
-    private static async void SaveMetrics()
+    private static async void SaveMetrics(MySqlConnection conn)
     {
         // don't save metrics unless in production
         if (!Global.IsDevelopment)
         {
-            var conn = new MySqlConnection(MySql.ConnectionString);
-
             var sql = @"INSERT INTO metrics_global (players, servers) VALUES(@_players, @_servers)";
 
             int servers = _currentServers.Count;
@@ -261,10 +263,8 @@ public static class ServerManager
         }
 }
 
-    private static async void UpdateBlacklist()
+    private static async void UpdateBlacklist(MySqlConnection conn)
     {
-        var conn = new MySqlConnection(MySql.ConnectionString);
-
         var sql = @"SELECT ip_addr FROM blacklist";
 
         _blacklist = (await conn.QueryAsync<string>(sql)).ToList();

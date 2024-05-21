@@ -14,17 +14,46 @@ namespace SAMonitor.Database
     }
     public class ServerRepository
     {
-        private static MySqlConnection db = new(MySql.ConnectionString);
+        private static readonly List<MySqlConnection> _databasePool = [];
+        private static readonly object _lock = new object();
 
         private static MySqlConnection DbConnection()
         {
-            if (db.State == System.Data.ConnectionState.Closed || db.State == System.Data.ConnectionState.Broken)
+            lock (_lock)
             {
-                db.Dispose();
-                db = new MySqlConnection(MySql.ConnectionString);
-            }
+                List<MySqlConnection> removal = [];
 
-            return db;
+                MySqlConnection? connection = null;
+
+                foreach (MySqlConnection conn in _databasePool)
+                {
+                    if (conn.State == System.Data.ConnectionState.Open)
+                    {
+                        connection = conn;
+                        break;
+                    }
+                    if (conn.State == System.Data.ConnectionState.Closed || conn.State == System.Data.ConnectionState.Broken)
+                    {
+                        removal.Add(conn);
+                    }
+                }
+
+                foreach (MySqlConnection conn in removal)
+                {
+                    _databasePool.Remove(conn);
+                    conn.Dispose();
+                }
+
+                if (connection != null)
+                {
+                    return connection;
+                }
+
+                var newConn = new MySqlConnection(MySql.ConnectionString);
+                _databasePool.Add(newConn);
+
+                return newConn;
+            }
         }
 
         public async Task<List<Server>> GetAllServersAsync()
@@ -65,7 +94,7 @@ namespace SAMonitor.Database
         {
             var db = DbConnection();
 
-            var sql = @"INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
+            string sql = @"INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
                         VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
 
             try
@@ -94,9 +123,18 @@ namespace SAMonitor.Database
             }
         }
 
-        public async Task<bool> UpdateServer(Server server, MySqlConnection? db = null)
+        public async Task<int> InsertServerMetrics(int server_id, int player_amount)
         {
-            db ??= DbConnection();
+            var db = DbConnection();
+
+            string sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@server_id, @player_amount)";
+
+            return await db.ExecuteAsync(sql, new { server_id, player_amount });
+        }
+
+        public async Task<bool> UpdateServer(Server server)
+        {
+            var db = DbConnection();
 
             var sql = @"UPDATE servers
                         SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
@@ -137,6 +175,24 @@ namespace SAMonitor.Database
             await db.ExecuteAsync(sql, new { server.Id, server.PlayersOnline });
 
             return success;
+        }
+
+        public async Task<List<ServerMetrics>> GetServerMetrics(int id, DateTime requestTime, int include_misses = 0)
+        {
+            var db = DbConnection();
+
+            string sql;
+
+            if (include_misses > 0)
+            {
+                sql = @"SELECT players, time FROM metrics_server WHERE time > @requestTime AND server_id = @id ORDER BY time DESC";
+            }
+            else
+            {
+                sql = @"SELECT players, time FROM metrics_server WHERE time > @requestTime AND server_id = @id AND players >= 0 ORDER BY time DESC";
+            }
+
+            return (await db.QueryAsync<ServerMetrics>(sql, new { requestTime, id })).ToList();
         }
     }
 }
