@@ -24,9 +24,7 @@ public static class ServerManager
     {
         _servers = await Interface.GetAllServersAsync();
 
-        var conn = new MySqlConnection(MySql.ConnectionString);
-
-        UpdateBlacklist(conn);
+        UpdateBlacklist();
         _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
         UpdateMasterlist();
 
@@ -197,23 +195,31 @@ public static class ServerManager
         var conn = new MySqlConnection(MySql.ConnectionString);
 
         // Update the Blacklist.
-        UpdateBlacklist(conn);
+        UpdateBlacklist();
 
         // Update the current servers with only the ones which have responded in the last 6 hours
         _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
+
+        if (_currentServers.Count <= 0)
+        {
+            _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
+        }
 
         // Update the Masterlist accordingly.
         UpdateMasterlist();
 
         // Last of all, save the metrics.
-        SaveMetrics(conn);
+        SaveMetrics();
     }
 
-    private static async void SaveMetrics(MySqlConnection conn)
+    private static async void SaveMetrics()
     {
         // don't save metrics unless in production
         if (!Global.IsDevelopment)
         {
+            using var getConn = DatabasePool.GetConnection();
+            var conn = getConn.db;
+
             var sql = @"INSERT INTO metrics_global (players, servers) VALUES(@_players, @_servers)";
 
             int servers = _currentServers.Count;
@@ -263,8 +269,11 @@ public static class ServerManager
         }
 }
 
-    private static async void UpdateBlacklist(MySqlConnection conn)
+    private static async void UpdateBlacklist()
     {
+        using var getConn = DatabasePool.GetConnection();
+        var conn = getConn.db;
+
         var sql = @"SELECT ip_addr FROM blacklist";
 
         _blacklist = (await conn.QueryAsync<string>(sql)).ToList();

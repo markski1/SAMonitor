@@ -1,5 +1,4 @@
-﻿using SAMonitor.Database;
-using SAMonitor.Data;
+﻿using SAMonitor.Data;
 using SAMonitor.Utils;
 using static Dapper.SqlMapper;
 
