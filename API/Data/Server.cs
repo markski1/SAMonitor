@@ -4,6 +4,7 @@ using SAMonitor.Utils;
 using SAMPQuery;
 using System.Timers;
 using SAMonitor.Database;
+using Microsoft.AspNetCore.Hosting.Server;
 
 namespace SAMonitor.Data;
 
@@ -31,6 +32,8 @@ public class Server : IDisposable
     public bool RequiresPassword { get; set; }
     public int ShuffledOrder { get; set; }
     public bool Sponsor { get; set; }
+
+    private SampQuery? _query = null;
 
     public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, DateTime sponsor_until)
     {
@@ -110,22 +113,23 @@ public class Server : IDisposable
 
     public async Task<bool> Query(bool doUpdate = true)
     {
-        SampQuery server;
-
-        try
+        if (_query is null)
         {
-            server = new(IpAddr);
+            try
+            {
+                _query = new(IpAddr);
+            }
+            catch
+            {
+                return false;
+            }
         }
-        catch
-        {
-            return false;
-        }
-
+        
         ServerInfo serverInfo;
 
         try
         {
-            serverInfo = await server.GetServerInfoAsync();
+            serverInfo = await _query.GetServerInfoAsync();
 
             if (serverInfo.HostName is null)
             {
@@ -195,7 +199,7 @@ public class Server : IDisposable
 
         try
         {
-            var serverRules = await server.GetServerRulesAsync();
+            var serverRules = await _query.GetServerRulesAsync();
 
             Version = serverRules.Version ?? "Unknown";
             MapName = serverRules.MapName ?? "Unknown";
@@ -229,7 +233,7 @@ public class Server : IDisposable
         else
         {
             await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
-            _ = Task.Run(() => IsOpenMp = server.GetServerIsOMP());
+            _ = Task.Run(() => IsOpenMp = _query.GetServerIsOMP());
         }
         
         if (doUpdate)
@@ -244,11 +248,14 @@ public class Server : IDisposable
     {
         List<Player> players = new();
 
-        var server = new SampQuery(IpAddr);
+        if (_query is null)
+        {
+            return players;
+        }
 
         try
         {
-            var serverPlayersTask = server.GetServerPlayersAsync();
+            var serverPlayersTask = _query.GetServerPlayersAsync();
             // Timeout at 1.5 seconds.
             if (await Task.WhenAny(serverPlayersTask, Task.Delay(1500)) == serverPlayersTask)
             {
