@@ -16,4 +16,3 @@ def index():
 
 if __name__ == "__main__":
     app.run(host=app_host, port=app_port, debug=app_debug)
-    
