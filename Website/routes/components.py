@@ -14,20 +14,18 @@ def components_index():
 
 @components_bp.get("/server-list")
 def server_list():
-    options = request.json()
+    options = request.args
 
     name = options.get("name", None),
     gamemode = options.get("gamemode", None),
     language = options.get("language", None)
     page = options.get("page", 0)
 
-    filters = (
-        f"hide_empty={options.get('hide_empty', 0)}",
-        f"&hide_roleplay={options.get('hide_roleplay', 0)}",
-        f"&require_sampcac={options.get('require_sampcac', 0)}",
-        f"&order={options.get("order", "none")}",
-        f"&page={options.get("page", 0)}",
-    )
+    filters = f"hide_empty={options.get('hide_empty', 0)}"
+    filters += f"&hide_roleplay={options.get('hide_roleplay', 0)}"
+    filters += f"&require_sampcac={options.get('require_sampcac', 0)}"
+    filters += f"&order={options.get("order", "none")}"
+    filters += f"&page={options.get("page", 0)}"
 
     if name:
         filters += f"&name={name}"
@@ -49,6 +47,8 @@ def server_list():
             </center>
         """
 
+    print(len(result))
+
     return render_template("components/server-list.html", servers=result, filters=filters, page=page,
                            render_server=render_server)
 
@@ -67,7 +67,7 @@ def server_details(show_type, server_ip):
 
 @components_bp.get("/graph/<string:server_ip>")
 def server_graph(server_ip):
-    hours = request.json.get("hours", 24)
+    hours = request.args.get("hours", 24)
 
     try:
         result = requests.get(f"http://127.0.0.1:42069/api/GetServerMetrics?hours={hours}&ip_addr={server_ip}").json()
