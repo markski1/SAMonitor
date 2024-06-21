@@ -15,17 +15,21 @@ def render_server(server, details=False):
         case _:
             lag_comp = "Disabled"
 
-    last_updated = datetime.datetime.strptime(server['lastUpdated'])
+    last_updated = datetime.datetime.strptime(server['lastUpdated'], "%Y-%m-%dT%H:%M:%S.%fZ")
 
-    # If detailed, show as normal, else make it a clickable to show more details.
-    if details:
-        list_contents = '<div hx-swap="outerHTML" hx-target="this" class="server">'
+    if last_updated.hour > 0:
+        if last_updated.hour == 1:
+            last_updated_str = f"{last_updated.hour} hour ago"
+        else:
+            last_updated_str = f"{last_updated.hour} hours ago"
     else:
-        list_contents = (f'<div hx-swap="outerHTML" hx-target="this"'
-                         f'hx-get="./components/server/detailed/{server["ipAddr"]}" class="server server_clickable">')
+        if last_updated.minute == 1:
+            last_updated_str = f"{last_updated.minute} minute ago"
+        else:
+            last_updated_str = f"{last_updated.minute} minutes ago"
 
     server_name = server["name"].trim()
 
-    return render_template("/components/server.html",
-                           name=server_name, website=website, lag_comp = lag_comp, last_updated = last_updated,
-                           detailed=details)
+    return render_template("components/server-snippet.html",
+                           server=server, name=server_name, website=website, lag_comp=lag_comp,
+                           last_updated=last_updated_str, detailed=details, minutes_ago=last_updated)

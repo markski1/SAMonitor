@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
-{% block title %}San Andreas Multiplayer server monitor, for GTA SA-MP and open.mp{% endblock %}
+{% block title %}Home{% endblock %}
+{% block description %}San Andreas Multiplayer server monitor, for GTA SA-MP and open.mp{% endblock %}
 
 <div style="width: 100%; max-width: 70rem">
     <form class="filterBox" hx-get="./component/server-list" hx-target="#server-list" hx-trigger="keyup, change, delay:0.5s">
@@ -8,7 +9,7 @@
             <fieldset style="flex: 1 1;" class="flexBox">
                 <table style="margin-top: .66rem;">
                     <tr>
-                        <td><label for="name">Name:</label></td><td><input type="text" id="name" name="name" <?php if (isset($_GET['name'])) echo 'value="{}"'?>></td>
+                        <td><label for="name">Name:</label></td><td><input type="text" id="name" name="name"></td>
                     </tr>
                     <tr>
                         <td><label for="gamemode">Gamemode:</label></td><td><input type="text" id="gamemode" name="gamemode"></td>

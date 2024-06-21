@@ -2,18 +2,16 @@ import requests
 
 from utilities.component_funcs import render_server
 from flask import Blueprint, render_template, request
-from flask_login import login_required
 
 components_bp = Blueprint("components", __name__, url_prefix="/components")
 
 
 @components_bp.route("/")
-def login_prompt():
+def components_index():
     return "SAMonitor component endpoint"
 
 
 @components_bp.get("/server-list")
-@login_required
 def server_list():
     options = request.json()
 
@@ -52,3 +50,15 @@ def server_list():
 
     return render_template("components/server-list.html", servers=result, filters=filters, page=page,
                            render_server=render_server)
+
+
+@components_bp.get("/server/<string:show_type>/<string:server_ip>")
+def server_details(show_type, server_ip):
+    if "detailed" in show_type:
+        details = True
+    else:
+        details = False
+
+    server_data = requests.get(f"https://sam.markski.ar/api/GetServerByIP?ip_addr={server_ip}").json()
+
+    return render_server(server_data, details)

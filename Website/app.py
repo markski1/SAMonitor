@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 
 from config import app_host, app_port, app_debug
+from routes.root import root_bp
 
 app = Flask(
         __name__,
@@ -8,11 +9,7 @@ app = Flask(
         template_folder="web/templates"
     )
 
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
+app.register_blueprint(root_bp)
 
 if __name__ == "__main__":
     app.run(host=app_host, port=app_port, debug=app_debug)
