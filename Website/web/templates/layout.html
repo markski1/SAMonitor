@@ -41,10 +41,10 @@
 
 
     <script>
-        var lastUsedCopyButton;
+        let lastUsedCopyButton;
 
         function CopyAddress(ipID, buttonID) {
-            var copyText = document.getElementById(ipID);
+            let copyText = document.getElementById(ipID);
             navigator.clipboard.writeText(copyText.innerText);
             lastUsedCopyButton = document.getElementById(buttonID)
             lastUsedCopyButton.innerHTML = "IP Copied!";

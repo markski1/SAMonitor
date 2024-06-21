@@ -1,0 +1,9 @@
+{% for server in servers %}
+    {render_server(server)}
+{% endfor %}
+
+{% if server_count == 20 %}
+    <div hx-target="this" style="margin: 3rem; width: 80%; text-align: center">
+        <button hx-trigger="click" hx-get="./component/server-list?{{ filters }}&page={{ page + 1 }}" hx-swap="outerHTML">Load more</button>
+    </div>
+{% endif %}
