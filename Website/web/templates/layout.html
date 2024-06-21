@@ -35,6 +35,10 @@
             </header>
             <main id="main" class="opacity-trans">
                 {% block main %} {% endblock %}
+                <script>
+                    document.title = "SAMonitor - {% block title %}{% endblock %}";
+                    window.scrollTo(0, 0);
+                </script>
             </main>
         </body>
     </html>

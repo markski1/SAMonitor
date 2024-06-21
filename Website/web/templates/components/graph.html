@@ -1,0 +1,26 @@
+<canvas id='globalPlayersChart' style='width: 100%'></canvas>
+<p>The highest player count was <span style='color: green'>{{ highest }}</span> at {{ highest_time }}, and the lowest was <span style='color: red'>{{ lowest }}</span> at {{ lowest_time }}</p>
+
+<script>
+    new Chart(document.getElementById('globalPlayersChart'), {
+        type: 'line',
+        options: {
+            responsive: false,
+            scales: {
+                y: {
+                    min: 0
+                }
+            }
+        },
+        data: {
+            labels: [{{ time_set }}],
+            datasets: [
+                {
+                    label: 'Players online',
+                    data: [{{ player_set }}],
+                    borderWidth: 1
+                }
+            ]
+        }
+    })
+</script>

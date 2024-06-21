@@ -1,4 +1,5 @@
 import requests
+import datetime
 
 from utilities.component_funcs import render_server
 from flask import Blueprint, render_template, request
@@ -62,3 +63,56 @@ def server_details(show_type, server_ip):
     server_data = requests.get(f"https://sam.markski.ar/api/GetServerByIP?ip_addr={server_ip}").json()
 
     return render_server(server_data, details)
+
+
+@components_bp.get("/graph/<int:hours>/<string:server_ip>")
+def server_graph(hours, server_ip):
+    try:
+        result = requests.get(f"http://127.0.0.1:42069/api/GetServerMetrics?hours={hours}&ip_addr={server_ip}").json()
+    except:
+        return "<p>Error obtaining server metrics to build graph.</p>"
+
+    if len(result) < 3:
+        return "<p>Not enough data for the activity graph, please check later.</p>"
+
+    # Sets to feed the graph
+    player_set = ""
+    time_set = ""
+    is_first = True
+
+    server_metrics = list(reversed(result.reverse))
+
+    # Minimums and maximums
+    lowest = 69420
+    lowest_time = None
+    highest = -1
+    highest_time = None
+
+    for instant in server_metrics:
+        instant_time = datetime.datetime.strptime(instant['time'], "%Y-%m-%dT%H:%M:%S.%fZ")
+
+        if hours > 24:
+            human_time = instant_time.strftime("j/m H:i")
+        else:
+            human_time = instant_time.strftime("H:i")
+
+        if instant['players'] < 0:
+            instant['players'] = 0
+
+        if instant['players'] > highest:
+            highest = instant['players']
+            highest_time = human_time
+
+        if instant['players'] < lowest:
+            lowest = instant['players']
+            lowest_time = human_time
+
+        if is_first:
+            player_set += instant['players']
+            time_set += f"'{human_time}'"
+        else:
+            player_set += f", {instant['players']}"
+            time_set += f", '{human_time}'"
+
+    render_template("components/graph.html", highest=highest, highest_time=highest_time,
+                    lowest=lowest, lowest_time=lowest_time, time_set=time_set, player_set=player_set)
