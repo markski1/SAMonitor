@@ -1,4 +1,11 @@
-<!DOCTYPE html>
+{% if htmx %}
+    {% block main %} {% endblock %}
+    <script>
+        document.title = "SAMonitor - {{ self.title() }}";
+        window.scrollTo(0, 0);
+    </script>
+{% else %}
+    <!DOCTYPE html>
     <html lang="en">
         <head>
             <title>SAMonitor - {% block title %}{% endblock %}</title>
@@ -8,7 +15,7 @@
             <meta charset="utf-8">
             <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
             <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
-            <meta name="title" content="SAMonitor - {% block title %}{% endblock %}">
+            <meta name="title" content="SAMonitor - {{ self.title() }}">
             <meta name="description" content="{% block description %}{% endblock %}">
             <meta name="keywords" content="SA-MP, SAMP, open.mp, openmp, omp, SACNR, Monitor, GTA, Multiplayer">
 
@@ -34,11 +41,7 @@
                 </div>
             </header>
             <main id="main" class="opacity-trans">
-                {% block main %} {% endblock %}
-                <script>
-                    document.title = "SAMonitor - {% block title %}{% endblock %}";
-                    window.scrollTo(0, 0);
-                </script>
+                {{ self.main() }}
             </main>
         </body>
     </html>
@@ -57,3 +60,4 @@
             }, 3000);
         }
     </script>
+{% endif %}
