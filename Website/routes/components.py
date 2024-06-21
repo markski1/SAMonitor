@@ -65,8 +65,10 @@ def server_details(show_type, server_ip):
     return render_server(server_data, details)
 
 
-@components_bp.get("/graph/<int:hours>/<string:server_ip>")
-def server_graph(hours, server_ip):
+@components_bp.get("/graph/<string:server_ip>")
+def server_graph(server_ip):
+    hours = request.json.get("hours", 24)
+
     try:
         result = requests.get(f"http://127.0.0.1:42069/api/GetServerMetrics?hours={hours}&ip_addr={server_ip}").json()
     except:
@@ -116,3 +118,24 @@ def server_graph(hours, server_ip):
 
     render_template("components/graph.html", highest=highest, highest_time=highest_time,
                     lowest=lowest, lowest_time=lowest_time, time_set=time_set, player_set=player_set)
+
+
+@components_bp.get("/player-list/<string:server_ip>/<int:players>")
+def players_list(server_ip, num_players):
+    if num_players > 100:
+        return ("<p>There's more than 100 players in the server. "
+                "Due to a SA-MP limitation, the player list cannot be fetched.</p>")
+
+    elif num_players < 1:
+        return "<p>No one is playing at the moment.</p>"
+
+    try:
+        result = requests.get(f"http://127.0.0.1:42069/api/GetServerPlayers?ip_addr={server_ip}").json()
+    except:
+        return "<p>Error fetching players.</p>"
+
+    if len(result) > 0:
+        render_template("components/player-list.html", players=result)
+    else:
+        return ("<p>Could not fetch players. Server might be empty, "
+                "or SAMonitor might have difficulty querying it at the moment.</p>")
