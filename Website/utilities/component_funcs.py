@@ -4,6 +4,14 @@ from flask import render_template
 
 
 def render_server(server, details=False):
+    server_data = parse_server_data(server)
+
+    return render_template("components/server-snippet.html",
+                           server=server, name=server_data['name'], website=server_data['website'],
+                           lag_comp=server_data['lag_comp'], last_updated=server_data['last_updated'], detailed=details)
+
+
+def parse_server_data(server):
     if server["website"] != "Unknown":
         website = f"<a href='{server["website"]}'>{server['website']}</a>"
     else:
@@ -30,9 +38,18 @@ def render_server(server, details=False):
 
     server_name = server["name"].strip()
 
-    return render_template("components/server-snippet.html",
-                           server=server, name=server_name, website=website, lag_comp=lag_comp,
-                           last_updated=last_updated_str, detailed=details, minutes_ago=last_updated)
+    if server['isOpenMp'] == 1:
+        software = "open.mp"
+    else:
+        software = "SA-MP"
+
+    return {
+        "name": server_name,
+        "website": website,
+        "last_updated": last_updated_str,
+        "lag_comp": lag_comp,
+        "software": software
+    }
 
 
 def parse_datetime(datetime_str):

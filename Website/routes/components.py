@@ -1,7 +1,7 @@
 import requests
 import datetime
 
-from utilities.component_funcs import render_server
+from utilities.component_funcs import render_server, parse_datetime
 from flask import Blueprint, render_template, request
 
 components_bp = Blueprint("components", __name__, url_prefix="/components")
@@ -98,7 +98,7 @@ def server_graph(server_ip):
     time_set = ""
     is_first = True
 
-    server_metrics = list(reversed(result.reverse))
+    server_metrics = list(reversed(result))
 
     # Minimums and maximums
     lowest = 69420
@@ -107,7 +107,7 @@ def server_graph(server_ip):
     highest_time = None
 
     for instant in server_metrics:
-        instant_time = datetime.datetime.strptime(instant['time'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        instant_time = parse_datetime(instant['time'])
 
         if hours > 24:
             human_time = instant_time.strftime("j/m H:i")
@@ -126,13 +126,13 @@ def server_graph(server_ip):
             lowest_time = human_time
 
         if is_first:
-            player_set += instant['players']
+            player_set += f"{instant['players']}"
             time_set += f"'{human_time}'"
         else:
             player_set += f", {instant['players']}"
             time_set += f", '{human_time}'"
 
-    render_template("components/graph.html", highest=highest, highest_time=highest_time,
+    return render_template("components/graph.html", highest=highest, highest_time=highest_time,
                     lowest=lowest, lowest_time=lowest_time, time_set=time_set, player_set=player_set)
 
 
