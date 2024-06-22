@@ -52,6 +52,23 @@ def server_list():
                            next_page=str(page + 1), render_server=render_server, server_count=len(result))
 
 
+@components_bp.get("/current-stats")
+def current_stats():
+    try:
+        result = requests.get("http://127.0.0.1:42069/api/GetGlobalStats").json()
+    except:
+        return "<p>Failed to load stats.</p>"
+
+    return f"""
+        <p>
+            <b>{result['serversOnline']}</b> servers online (<b>{result['serversTracked']}</b> total)<br>
+            <b>{result['serversInhabited']}</b> servers have players, 
+            <b>{result['serversOnlineOMP']}</b> have open.mp.<br>
+            <b>{result['playersOnline']}</b> are playing right now!
+        </p>
+    """
+
+
 @components_bp.get("/server/<string:show_type>/<string:server_ip>")
 def server_details(show_type, server_ip):
     if "detailed" in show_type:
