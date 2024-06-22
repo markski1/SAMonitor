@@ -16,16 +16,16 @@ def components_index():
 def server_list():
     options = request.args
 
-    name = options.get("name", None),
-    gamemode = options.get("gamemode", None),
+    name = options.get("name", None)
+    gamemode = options.get("gamemode", None)
     language = options.get("language", None)
-    page = options.get("page", 0)
+    page = int(options.get("page", 0))
 
     filters = f"hide_empty={options.get('hide_empty', 0)}"
     filters += f"&hide_roleplay={options.get('hide_roleplay', 0)}"
     filters += f"&require_sampcac={options.get('require_sampcac', 0)}"
     filters += f"&order={options.get("order", "none")}"
-    filters += f"&page={options.get("page", 0)}"
+    filters += "&paging_size=20"
 
     if name:
         filters += f"&name={name}"
@@ -35,7 +35,8 @@ def server_list():
         filters += f"&language={language}"
 
     try:
-        result = requests.get(f"http://127.0.0.1:42069/api/GetFilteredServers?{filters}").json()
+        result = (requests.get(f"http://127.0.0.1:42069/api/GetFilteredServers?{filters}&page={options.get("page", 0)}")
+                  .json())
     except:
         return """
             <center>
@@ -47,10 +48,8 @@ def server_list():
             </center>
         """
 
-    print(len(result))
-
-    return render_template("components/server-list.html", servers=result, filters=filters, page=page,
-                           render_server=render_server)
+    return render_template("components/server-list.html", servers=result, filters=filters,
+                           next_page=str(page + 1), render_server=render_server, server_count=len(result))
 
 
 @components_bp.get("/server/<string:show_type>/<string:server_ip>")
