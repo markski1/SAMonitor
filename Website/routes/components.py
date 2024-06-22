@@ -76,7 +76,7 @@ def server_details(show_type, server_ip):
     else:
         details = False
 
-    server_data = requests.get(f"https://sam.markski.ar/api/GetServerByIP?ip_addr={server_ip}").json()
+    server_data = requests.get(f"http://127.0.0.1:42069/api/GetServerByIP?ip_addr={server_ip}").json()
 
     return render_server(server_data, details)
 

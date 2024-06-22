@@ -11,19 +11,19 @@
     </div>
     <div style="clear: both;"></div>
     <div style="float: left;">
-        <p><span class="ipAddr" id="ipAddr{{ server['id'] }}"><{{ server['ipAddr'] }}</span></p>
+        <p><span class="ipAddr" id="ipAddr{{ server['id'] }}">{{ server['ipAddr'] }}</span></p>
     </div>
     <div style="text-align: right; float: right;">
         <span><b>Lang:</b> {{ server['language'] }}</span>
     </div>
-    {% if details %}
+    {% if detailed %}
         <div style="margin-bottom: 0.75rem;">
             <table class="serverDetailsTable">
                 <tr>
                     <td><b>Gamemode</b></td><td>{{ server['gameMode'] }}</td>
                 </tr>
                 <tr>
-                    <td><b>Website</b></td><td>{{ website }}</td>
+                    <td><b>Website</b></td><td>{{ website|safe }}</td>
                 </tr>
                 <tr>
                     <td><b>Lag compensation</b></td><td>{{ lag_comp }}</td>
