@@ -149,13 +149,7 @@ public class Server : IDisposable
 
                 TimeSpan downtime = DateTime.UtcNow - LastUpdated;
 
-                if (downtime > TimeSpan.FromDays(30)) // if the server's been dead for a month, delete it.
-                {
-                    // TODO: Undecided on wether I want to do any permanent data deletion yet.
-                    // Ideally, remove server entry, and statistics entries.
-                    _queryTimer.Interval = 86400000;
-                }
-                else if (downtime > TimeSpan.FromDays(7)) // if the server's been dead over a week, only query once a day.
+                if (downtime > TimeSpan.FromDays(7)) // if the server's been dead over a week, only query once a day.
                 {
                     _queryTimer.Interval = 86400000;
                 }

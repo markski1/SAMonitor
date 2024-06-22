@@ -19,8 +19,8 @@
             <meta name="description" content="{% block description %}{% endblock %}">
             <meta name="keywords" content="SA-MP, SAMP, open.mp, openmp, omp, SACNR, Monitor, GTA, Multiplayer">
 
-            <meta name="og:title" content="SAMonitor - <?=$title?>">
-            <meta property="og:description" content="<?=$showDescription?>">
+            <meta name="og:title" content="SAMonitor - {{ self.title() }}">
+            <meta property="og:description" content="{{ self.description() }}">
 
             <script src="{{ url_for('static', filename='chart.js') }}"></script>
             <script defer src="{{ url_for('static', filename='htmx.min.js') }}"></script>

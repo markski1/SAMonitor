@@ -63,8 +63,6 @@ def server_page(is_htmx, server_ip):
     if server_data.status_code == 204:  # Resource does not exist
         return "<p>IP Address does not correspond to a server in SAMonitor.</p>"
 
-
-
     # 2. Measure uptime and average players.
     total_reqs = len(metrics)
     missed_reqs = 0
