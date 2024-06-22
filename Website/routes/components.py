@@ -83,7 +83,7 @@ def server_details(show_type, server_ip):
 
 @components_bp.get("/graph/<string:server_ip>")
 def server_graph(server_ip):
-    hours = request.args.get("hours", 24)
+    hours = int(request.args.get("hours", 24))
 
     try:
         result = requests.get(f"http://127.0.0.1:42069/api/GetServerMetrics?hours={hours}&ip_addr={server_ip}").json()
@@ -110,9 +110,9 @@ def server_graph(server_ip):
         instant_time = parse_datetime(instant['time'])
 
         if hours > 24:
-            human_time = instant_time.strftime("j/m H:i")
+            human_time = instant_time.strftime("%d/%m %H:%M")
         else:
-            human_time = instant_time.strftime("H:i")
+            human_time = instant_time.strftime("%H:%M")
 
         if instant['players'] < 0:
             instant['players'] = 0
@@ -128,15 +128,16 @@ def server_graph(server_ip):
         if is_first:
             player_set += f"{instant['players']}"
             time_set += f"'{human_time}'"
+            is_first = False
         else:
             player_set += f", {instant['players']}"
             time_set += f", '{human_time}'"
 
     return render_template("components/graph.html", highest=highest, highest_time=highest_time,
-                    lowest=lowest, lowest_time=lowest_time, time_set=time_set, player_set=player_set)
+                           lowest=lowest, lowest_time=lowest_time, time_set=time_set, player_set=player_set)
 
 
-@components_bp.get("/player-list/<string:server_ip>/<int:players>")
+@components_bp.get("/player-list/<string:server_ip>/<int:num_players>")
 def players_list(server_ip, num_players):
     if num_players > 100:
         return ("<p>There's more than 100 players in the server. "
@@ -151,7 +152,7 @@ def players_list(server_ip, num_players):
         return "<p>Error fetching players.</p>"
 
     if len(result) > 0:
-        render_template("components/player-list.html", players=result)
+        return render_template("components/player-list.html", players=result)
     else:
         return ("<p>Could not fetch players. Server might be empty, "
                 "or SAMonitor might have difficulty querying it at the moment.</p>")

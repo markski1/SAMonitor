@@ -6,12 +6,12 @@
     "id": "ar.markski.sam",
     "icons": [
         {
-            "src": "assets/logo256.webp",
+            "src": "logo256.webp",
             "type": "image/webp",
             "sizes": "256x256"
         },
         {
-            "src": "assets/logo512.webp",
+            "src": "logo512.webp",
             "type": "image/webp",
             "sizes": "512x512"
         }
