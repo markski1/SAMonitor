@@ -47,8 +47,20 @@ def server_list():
             </center>
         """
 
-    return render_template("components/server-list.html", servers=result, filters=filters,
-                           next_page=str(page + 1), render_server=render_server, server_count=len(result))
+    result_buffer = ""
+
+    for server in result:
+        result_buffer += render_server(server)
+
+    # "Show more" button if there's more results left.
+    if len(result) == 20:
+        result_buffer += f"""
+            <div hx-target="this" style="margin: 3rem; width: 80%; text-align: center">
+                <button hx-trigger="click" hx-get="./components/server-list?{filters}&page={page + 1}" hx-swap="outerHTML">Load more</button>
+            </div>
+        """
+
+    return result_buffer
 
 
 @components_bp.get("/current-stats")
@@ -151,7 +163,32 @@ def players_list(server_ip, num_players):
         return "<p>Error fetching players.</p>"
 
     if len(result) > 0:
-        return render_template("components/player-list.html", players=result)
+        # Open a table, and it's header.
+        result_buffer = """
+            <table style="width: 100%; border: 0;">
+                <tr style="border: 1px rgb(128, 128, 128) solid">
+                    <td><b>Id</b></td>
+                    <td><b>Name</b></td>
+                    <td><b>Score</b></td>
+                    <td><b>Ping</b></td>
+                </tr>
+        """
+
+        # Add a row per each player
+        for player in result:
+            result_buffer += f"""
+                <tr>
+                    <td style='width: 100px'>{player['id']}</td>
+                    <td>{player['name']}</td>
+                    <td>{player['score']}</td>
+                    <td>{player['ping']}</td>
+                </tr>
+            """
+
+        # Close the table, and return.
+        result_buffer += "</table>"
+        return result_buffer
+
     else:
         return ("<p>Could not fetch players. Server might be empty, "
                 "or SAMonitor might have difficulty querying it at the moment.</p>")
