@@ -1,51 +1,12 @@
-from functools import wraps
-
 import requests
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template
 
-from utilities.component_funcs import parse_server_data
+from utilities.miscfuncs import parse_server_data, htmx_check
 
-root_bp = Blueprint("root", __name__, url_prefix="/")
-
-
-# IS HTMX Decorator
+server_bp = Blueprint("server", __name__, url_prefix="/")
 
 
-def htmx_check(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if 'HX-Request' in request.headers:
-            is_htmx = True
-        else:
-            is_htmx = False
-
-        return func(is_htmx, *args, **kwargs)
-
-    return wrapper
-
-
-# Routes
-
-
-@root_bp.route("/")
-@htmx_check
-def index(is_htmx):
-    return render_template("index.html", htmx=is_htmx)
-
-
-@root_bp.route("/about")
-@htmx_check
-def about(is_htmx):
-    return render_template("about.html", htmx=is_htmx)
-
-
-@root_bp.route("/blacklist")
-@htmx_check
-def blacklist(is_htmx):
-    return render_template("blacklist.html", htmx=is_htmx)
-
-
-@root_bp.route("/server/<string:server_ip>")
+@server_bp.route("/server/<string:server_ip>")
 @htmx_check
 def server_page(is_htmx, server_ip):
     # 1. Obtain server data and metrics.

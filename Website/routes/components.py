@@ -1,7 +1,6 @@
 import requests
-import datetime
 
-from utilities.component_funcs import render_server, parse_datetime
+from utilities.miscfuncs import render_server, parse_datetime
 from flask import Blueprint, render_template, request
 
 components_bp = Blueprint("components", __name__, url_prefix="/components")

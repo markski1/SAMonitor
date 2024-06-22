@@ -1,6 +1,20 @@
 import datetime
+from functools import wraps
 
-from flask import render_template
+from flask import render_template, request
+
+
+def htmx_check(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if 'HX-Request' in request.headers:
+            is_htmx = True
+        else:
+            is_htmx = False
+
+        return func(is_htmx, *args, **kwargs)
+
+    return wrapper
 
 
 def render_server(server, details=False):
