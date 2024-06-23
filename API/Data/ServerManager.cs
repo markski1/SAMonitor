@@ -26,6 +26,7 @@ public static class ServerManager
 
         UpdateBlacklist();
         _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
+        _currentServers = _servers.Where(x => x.Name.Length > 0).ToList();
         UpdateMasterlist();
 
         CreateTimers();
@@ -204,6 +205,8 @@ public static class ServerManager
         {
             _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
         }
+
+        _currentServers = _servers.Where(x => x.Name.Length > 0).ToList();
 
         // Update the Masterlist accordingly.
         UpdateMasterlist();

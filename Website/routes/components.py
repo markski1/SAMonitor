@@ -67,7 +67,10 @@ def server_list():
     if len(result) == 20:
         result_buffer += f"""
             <div hx-target="this" style="margin: 3rem; width: 80%; text-align: center">
-                <button hx-trigger="click" hx-get="./components/server-list?{filters}&page={page + 1}" hx-swap="outerHTML">Load more</button>
+                <button 
+                    hx-trigger="click" 
+                    hx-get="./components/server-list?{filters}&page={page + 1}" 
+                    hx-swap="outerHTML">Load more</button>
             </div>
         """
 
@@ -156,7 +159,8 @@ def server_graph(server_ip):
             time_set += f", '{human_time}'"
 
     return render_template("components/graph.html", highest=highest, highest_time=highest_time,
-                           lowest=lowest, lowest_time=lowest_time, time_set=time_set, player_set=player_set)
+                           lowest=lowest, lowest_time=lowest_time, time_set=time_set, data_set=player_set,
+                           dataset_name="Players online", minimum=0)
 
 
 @components_bp.get("/player-list/<string:server_ip>/<int:num_players>")

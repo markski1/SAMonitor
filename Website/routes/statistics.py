@@ -91,7 +91,7 @@ def graph():
     minimum = int(lowest / 3)
     minimum = minimum - (minimum % 10)
 
-    return render_template("components/server-graph.html", data_set=data_set, time_set=time_set,
+    return render_template("components/graph.html", data_set=data_set, time_set=time_set,
                            minimum=minimum, dataset_name=dataset_name, highest=highest, lowest=lowest,
                            highest_time=highest_time, lowest_time=lowest_time)
 
