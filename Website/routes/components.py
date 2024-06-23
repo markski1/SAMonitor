@@ -31,6 +31,9 @@ def server_list():
     if "require_sampcac" in options:
         filters += "&require_sampcac=1"
 
+    if "order" in options:
+        filters += f"&order={options.get('order', 'none')}"
+
     if name:
         filters += f"&name={name}"
     if gamemode:
@@ -41,8 +44,6 @@ def server_list():
     # Remove first ampersand for whichever option did get chosen
     if len(filters) > 0:
         filters = filters[1:]
-
-    print(filters)
 
     try:
         result = (requests.get(f"http://127.0.0.1:42069/api/GetFilteredServers?{filters}&page={page}&paging_size=20")

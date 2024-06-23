@@ -41,14 +41,11 @@
                 </fieldset>
             </div>
         </form>
-        <div class="announce-banner" hx-get="./components/current-stats" hx-trigger="load" hx-target="this">
-            <p>Loading current stats...</p>
+        <div class="announce-banner">
+            {{ current_stats()|safe }}
         </div>
-        <div id="server-list" hx-get="./components/server-list" hx-trigger="load">
-            <div style="text-align: center">
-                <h1>Loading servers!</h1>
-                <p>Please wait.</p><p>If you're using NoScript, you'll need to disable it.</p>
-            </div>
+        <div id="server-list">
+            {{ server_list()|safe }}
         </div>
     </div>
 {% endblock %}

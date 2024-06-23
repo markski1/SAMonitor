@@ -27,7 +27,7 @@ def render_server(server, details=False):
 
 def parse_server_data(server):
     if server["website"] != "Unknown":
-        website = f"<a href='{server["website"]}'>{server['website']}</a>"
+        website = f"<a href='{server['website']}'>{server['website']}</a>"
     else:
         website = "No website specified."
 
