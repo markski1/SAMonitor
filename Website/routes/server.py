@@ -48,7 +48,6 @@ def server_page(is_htmx, server_ip):
             avg_players = total_players_m / req_success
 
     # 3. Parse server information.
-
     server_data = parse_server_data(server)
 
     return render_template("server.html", htmx=is_htmx, server=server,

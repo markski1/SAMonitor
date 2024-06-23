@@ -20,11 +20,16 @@ def server_list():
     language = options.get("language", None)
     page = int(options.get("page", 0))
 
-    filters = f"hide_empty={options.get('hide_empty', 0)}"
-    filters += f"&hide_roleplay={options.get('hide_roleplay', 0)}"
-    filters += f"&require_sampcac={options.get('require_sampcac', 0)}"
-    filters += f"&order={options.get("order", "none")}"
-    filters += "&paging_size=20"
+    filters = ""
+
+    if "show_empty" in options:
+        filters += "&show_empty=1"
+
+    if "hide_roleplay" in options:
+        filters += "&hide_roleplay=1"
+
+    if "require_sampcac" in options:
+        filters += "&require_sampcac=1"
 
     if name:
         filters += f"&name={name}"
@@ -33,8 +38,14 @@ def server_list():
     if language:
         filters += f"&language={language}"
 
+    # Remove first ampersand for whichever option did get chosen
+    if len(filters) > 0:
+        filters = filters[1:]
+
+    print(filters)
+
     try:
-        result = (requests.get(f"http://127.0.0.1:42069/api/GetFilteredServers?{filters}&page={options.get("page", 0)}")
+        result = (requests.get(f"http://127.0.0.1:42069/api/GetFilteredServers?{filters}&page={page}&paging_size=20")
                   .json())
     except:
         return """
@@ -72,10 +83,10 @@ def current_stats():
 
     return f"""
         <p>
-            <b>{result['serversOnline']}</b> servers online (<b>{result['serversTracked']}</b> total)<br>
-            <b>{result['serversInhabited']}</b> servers have players, 
-            <b>{result['serversOnlineOMP']}</b> have open.mp.<br>
-            <b>{result['playersOnline']}</b> are playing right now!
+            <b>{"{:,}".format(result['serversOnline'])}</b> servers online (<b>{"{:,}".format(result['serversTracked'])}</b> total)<br>
+            <b>{"{:,}".format(result['serversInhabited'])}</b> servers have players, 
+            <b>{"{:,}".format(result['serversOnlineOMP'])}</b> have open.mp.<br>
+            <b>{"{:,}".format(result['playersOnline'])}</b> are playing right now!
         </p>
     """
 
