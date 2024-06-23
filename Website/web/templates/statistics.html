@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block title %}Statistics{% endblock %}
+{% block description %}Statistics about SA-MP and open.mp servers{% endblock %}
+
+{% block main %}
+    <div>
+        <h2>Statistics</h2>
+        <p>SAMonitor accounts for the total amount of servers and players a few times every hour, of every day.</p>
+        <div>
+            <div class="innerContent" hx-get="../stats/main" hx-trigger="load" hx-swap="outerHTML">
+                <h3>Loading statistics</h3>
+                <p>Please wait.</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

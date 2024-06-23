@@ -33,3 +33,9 @@ def masterlist(is_htmx):
 @htmx_check
 def add(is_htmx):
     return render_template("add.html", htmx=is_htmx)
+
+
+@basic_bp.route("/statistics")
+@htmx_check
+def stats(is_htmx):
+    return render_template("statistics.html", htmx=is_htmx)
