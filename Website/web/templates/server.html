@@ -59,8 +59,8 @@
                     </div>
                 </div>
                 <div class="innerContent flexBox">
-                    <h3>Player activity |
-                        <select hx-target="#graph-cnt" name="hours" hx-get="../components/graph/{{ server['ipAddr'] }}">
+                    <h3><label for="time-sector">Player activity</label> |
+                        <select id="time-sector" hx-target="#graph-cnt" name="hours" hx-get="../components/graph/{{ server['ipAddr'] }}">
                             <option value=24>Last 24 hours</option>
                             <option value=72>Last 72 hours</option>
                             <option value=168>Last week</option>
