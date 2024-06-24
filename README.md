@@ -25,6 +25,8 @@ The server browser is available at https://sam.markski.ar
 
 It consumes the public API endpoints listed below.
 
+The source code for the server browser is at https://github.com/markski1/SAMonitor-browser
+
 ## Masterlist
 
 We offer a masterlist alternative, at `http://sam.markski.ar/api/GetMasterlist`.
