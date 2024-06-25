@@ -176,6 +176,8 @@ public class Server : IDisposable
             return false;
         }
 
+        _queryTimer.Interval = 1200000;
+
         Name = serverInfo.HostName;
         PlayersOnline = serverInfo.Players;
         MaxPlayers = serverInfo.MaxPlayers;
