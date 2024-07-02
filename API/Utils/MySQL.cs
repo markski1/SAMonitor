@@ -12,7 +12,7 @@ namespace SAMonitor.Utils
 
             try
             {
-                dynamic? data = JsonConvert.DeserializeObject(File.ReadAllText($"/home/markski/sam/mysql.txt"));
+                dynamic? data = JsonConvert.DeserializeObject(File.ReadAllText($"/home/markski/samonitor/api/mysql.txt"));
 
                 if (data is null)
                     return false;
