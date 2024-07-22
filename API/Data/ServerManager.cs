@@ -14,6 +14,8 @@ public static class ServerManager
 
     private static List<string> _blacklist = new();
 
+    private static List<string> _failedAddresses = new();
+
     private static string _masterListGlobal = "";
     private static string _masterList037 = "";
     private static string _masterList03Dl = "";
@@ -38,18 +40,21 @@ public static class ServerManager
     {
         if (IsBlacklisted(ipAddr)) return "IP Address is blacklisted.";
         if (_servers.Any(x => x.IpAddr.Contains(ipAddr))) return "Server is already monitored.";
+        if (_failedAddresses.Contains(ipAddr)) return "This IP address failed last time it was queried. Please try again in an hour.";
 
         var newServer = new Server(ipAddr);
 
         if (!await newServer.Query(false))
         {
             newServer.Dispose();
+            _failedAddresses.Add(ipAddr);
             return "Server did not respond to query.";
         }
 
         if (newServer.Version.ToLower().Contains("cr"))
         {
             newServer.Dispose();
+            _failedAddresses.Add(ipAddr);
             return "CR-MP servers are currently unsupported.";
         }
 
@@ -62,6 +67,7 @@ public static class ServerManager
         if (copies.Any())
         {
             newServer.Dispose();
+            _failedAddresses.Add(ipAddr);
             return "Server is already monitored. Be advised: Sneaking in repeated IPs for the same server is a motive for blacklisting.";
         }
         else
@@ -197,6 +203,9 @@ public static class ServerManager
 
         // Update the Blacklist.
         UpdateBlacklist();
+
+        // Clean list of "recently attempted" IP addresses.
+        _failedAddresses.Clear();
 
         // Update the current servers with only the ones which have responded in the last 6 hours
         _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();

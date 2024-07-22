@@ -111,18 +111,9 @@ public class ApiController : ControllerBase
         return ServerManager.GetEveryIP();
     }
 
-    private long lastAddReq;
-
     [HttpGet("AddServer")]
     public async Task<string> AddServer(string ip_addr)
     {
-        if (lastAddReq >= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-        {
-            return "Please try again in a few seconds.";
-        }
-
-        lastAddReq = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 1;
-
         ip_addr = ip_addr.Trim();
         string validIP = Helpers.ValidateIPv4(ip_addr);
         if (validIP != "invalid")
