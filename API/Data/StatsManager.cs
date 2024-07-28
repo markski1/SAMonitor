@@ -80,7 +80,7 @@ public static class StatsManager
         DateTime requestTime = DateTime.UtcNow - TimeSpan.FromDays(8);
 
         var conn = new MySqlConnection(MySql.ConnectionString);
-        var sql = @"SELECT players, servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
+        var sql = @"SELECT players, servers, omp_servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
 
         GlobalMetrics = (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime = requestTime })).ToList();
     }

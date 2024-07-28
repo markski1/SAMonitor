@@ -28,7 +28,7 @@ public static class ServerManager
 
         UpdateBlacklist();
         _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
-        _currentServers = _servers.Where(x => x.Name.Length > 0).ToList();
+        _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
         UpdateMasterlist();
 
         CreateTimers();
@@ -207,15 +207,10 @@ public static class ServerManager
         // Clean list of "recently attempted" IP addresses.
         _failedAddresses.Clear();
 
-        // Update the current servers with only the ones which have responded in the last 6 hours
-        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
+        // Update the current servers with only the ones which have responded in the last 12 hours
+        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
 
-        if (_currentServers.Count <= 0)
-        {
-            _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
-        }
-
-        _currentServers = _servers.Where(x => x.Name.Length > 0).ToList();
+        _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
 
         // Update the Masterlist accordingly.
         UpdateMasterlist();
@@ -232,13 +227,15 @@ public static class ServerManager
             using var getConn = DatabasePool.GetConnection();
             var conn = getConn.db;
 
-            var sql = @"INSERT INTO metrics_global (players, servers) VALUES(@_players, @_servers)";
+            var sql = @"INSERT INTO metrics_global (players, servers, omp_servers) VALUES(@_players, @_servers, @_omp_servers)";
 
             int servers = _currentServers.Count;
 
             int players = _currentServers.Sum(x => x.PlayersOnline);
 
-            await conn.ExecuteAsync(sql, new { _players = players, _servers = servers });
+            int omp_servers = _currentServers.Count(x => x.IsOpenMp);
+
+            await conn.ExecuteAsync(sql, new { _players = players, _servers = servers, _omp_servers = omp_servers });
         }
     }
 

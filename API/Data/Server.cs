@@ -240,33 +240,43 @@ public class Server : IDisposable
         return true;
     }
 
+    private List<Player> _playerListCache = [];
+    private DateTime _playerListTime = DateTime.MinValue;
+
     public async Task<List<Player>> GetPlayers()
     {
-        List<Player> players = new();
+        List<Player> players = [];
 
         if (_query is null)
         {
             return players;
         }
 
-        try
+        if (DateTime.UtcNow - _playerListTime > TimeSpan.FromMinutes(3))
         {
-            var serverPlayersTask = _query.GetServerPlayersAsync();
-            // Timeout at 1.5 seconds.
-            if (await Task.WhenAny(serverPlayersTask, Task.Delay(1500)) == serverPlayersTask)
+            try
             {
-                await serverPlayersTask;
-                var serverPlayers = serverPlayersTask.Result;
-                // we pass it as a different type of object for API compatibility reasons.
-                players.AddRange(serverPlayers.Select(player => new Player(player)));
+                var serverPlayersTask = _query.GetServerPlayersAsync();
+                // Timeout at 2 seconds.
+                if (await Task.WhenAny(serverPlayersTask, Task.Delay(2000)) == serverPlayersTask)
+                {
+                    await serverPlayersTask;
+                    var serverPlayers = serverPlayersTask.Result;
+                    // we pass it as a different type of object for API compatibility reasons.
+                    _playerListCache.Clear();
+                    _playerListCache.AddRange(serverPlayers.Select(player => new Player(player)));
+                }
             }
-        }
-        catch
-        {
-            // nothing to handle, this happens if server has >100 players and is a SA-MP issue.
-        }
+            catch
+            {
+                // nothing to handle, this happens if server has >100 players and is a SA-MP issue.
+            }
 
-        return players;
+            _playerListCache = players;
+            _playerListTime = DateTime.UtcNow;
+        }
+        
+        return _playerListCache;
     }
 
     private bool _disposed = false;
