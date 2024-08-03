@@ -4,13 +4,6 @@ using static Dapper.SqlMapper;
 
 namespace SAMonitor.Database;
 
-public interface IServerRepository
-{
-    Task<List<Server>> GetAllServersAsync();
-    Task<int> GetServerId(string ipAddr);
-    Task<bool> InsertServer(Server server);
-    Task<bool> UpdateServer(Server server);
-}
 public class ServerRepository
 {
     public async Task<List<Server>> GetAllServersAsync()
