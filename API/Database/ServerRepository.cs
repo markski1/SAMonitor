@@ -20,7 +20,7 @@ public class ServerRepository
         catch (Exception ex)
         {
             Console.WriteLine($"[db_err] Could not get servers from database \n {ex}");
-            return new List<Server>();
+            return [];
         }
     }
 
@@ -92,8 +92,8 @@ public class ServerRepository
         var db = getConn.db;
 
         var sql = @"UPDATE servers
-                        SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
-                        WHERE ip_addr = @IpAddr";
+                    SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
+                    WHERE ip_addr = @IpAddr";
 
         bool success;
 

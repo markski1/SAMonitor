@@ -8,13 +8,13 @@ namespace SAMonitor.Data;
 
 public static class ServerManager
 {
-    private static List<Server> _servers = new();
+    private static List<Server> _servers = [];
 
-    private static List<Server> _currentServers = new();
+    private static List<Server> _currentServers = [];
 
-    private static List<string> _blacklist = new();
+    private static List<string> _blacklist = [];
 
-    private static List<string> _failedAddresses = new();
+    private static List<string> _failedAddresses = [];
 
     private static string _masterListGlobal = "";
     private static string _masterList037 = "";
@@ -62,8 +62,6 @@ public static class ServerManager
         //                                                                                                      so a little flexibility on this one
         var copies = _currentServers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
 
-        var conn = new MySqlConnection(MySql.ConnectionString);
-
         if (copies.Any())
         {
             newServer.Dispose();
@@ -78,6 +76,7 @@ public static class ServerManager
             var enumerable = copies as Server[] ?? copies.ToArray();
             foreach (var server in enumerable)
             {
+                var conn = new MySqlConnection(MySql.ConnectionString);
                 const string sql = "DELETE FROM servers WHERE id = @Id";
                 await conn.QueryAsync(sql, new { server.Id });
             }

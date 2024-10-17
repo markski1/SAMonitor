@@ -8,7 +8,7 @@ namespace SAMonitor.Utils
         public static string? ConnectionString { get; private set; }
         public static bool MySqlSetup()
         {
-            MySqlConnectionStringBuilder builder = new();
+            MySqlConnectionStringBuilder builder = [];
 
             try
             {
