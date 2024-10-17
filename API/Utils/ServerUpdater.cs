@@ -7,9 +7,8 @@ namespace SAMonitor.Utils
     public static class ServerUpdater
     {
         private static readonly List<Server> UpdateQueue = [];
-
+        private static readonly object _lock = new();
         private static readonly System.Timers.Timer UpdateQueueTimer = new();
-
         private static readonly ServerRepository Interface = new();
 
         public static void Initialize()
@@ -22,7 +21,10 @@ namespace SAMonitor.Utils
 
         public static void Queue(Server server)
         {
-            UpdateQueue.Add(server);
+            lock (_lock)
+            {
+                UpdateQueue.Add(server);
+            }
         }
 
         private static void TimedRun(object? sender, ElapsedEventArgs e)
@@ -48,9 +50,14 @@ namespace SAMonitor.Utils
 
             try
             {
-                var currentQueue = new List<Server>(UpdateQueue);
-                UpdateQueue.Clear();
+                List<Server> currentQueue;
 
+                lock (_lock)
+                {
+                    currentQueue = new List<Server>(UpdateQueue);
+                    UpdateQueue.Clear();
+                }
+                
                 foreach (var server in currentQueue)
                 {
                     await Interface.UpdateServer(server);
@@ -58,7 +65,7 @@ namespace SAMonitor.Utils
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing the server updating queue: {ex}");
+                Console.WriteLine($"Error processing the server updating queue: {ex}.");
             }
         }
     }
