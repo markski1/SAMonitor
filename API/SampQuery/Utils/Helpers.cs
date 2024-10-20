@@ -1,7 +1,8 @@
+using System;
 using System.Globalization;
 using System.Reflection;
 
-namespace SAMPQuery
+namespace SAMPQuery.Utils 
 {
     internal static class Helpers
     {
@@ -9,30 +10,28 @@ namespace SAMPQuery
         {
             if (value == null)
                 throw new ArgumentNullException(parameterName);
-
+        
             if (value.Length == 0)
                 throw new ArgumentException("Empty value not allowed", parameterName);
         }
 
-        public static Uri ParseWeburl(string value)
+        public static Uri ParseWebUrl(string value)
         {
-            Uri.TryCreate(value, UriKind.Absolute, out Uri? parsedUri);
+            if (Uri.TryCreate(value, UriKind.Absolute, out var parsedUri))
+            {
+                return parsedUri;
+            }
 
-            if (parsedUri is null)
-                Uri.TryCreate("http://" + value, UriKind.Absolute, out parsedUri);
-
-            parsedUri ??= new Uri("http://sa-mp.com/", UriKind.Absolute);
-
-            return parsedUri;
+            return Uri.TryCreate(value, UriKind.Absolute, out parsedUri) ? parsedUri : new Uri("http://sa-mp.com/", UriKind.Absolute);
         }
 
         public static DateTime ParseTime(string value)
         {
-            bool success = TimeSpan.TryParse(value, out TimeSpan parsedTime);
-            if (!success)
+            if (!TimeSpan.TryParse(value, out var parsedTime))
             {
                 parsedTime = TimeSpan.FromHours(0);
             }
+
             return DateTime.Today.Add(parsedTime);
         }
 

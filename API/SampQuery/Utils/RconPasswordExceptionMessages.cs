@@ -12,6 +12,6 @@ namespace SAMPQuery
         /// <summary>
         /// Error message for RconPasswordException, when RCON password is incorrect
         /// </summary>
-        public const string INVALD_RCON_PASSWORD = "Invalid RCON password";
+        public const string INVALD_RCON_PASSWORD = "Invalid RCON password"; 
     }
 }

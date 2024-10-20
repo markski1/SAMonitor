@@ -1,4 +1,4 @@
-namespace SAMPQuery
+namespace SAMPQuery 
 {
     /// <summary>
     /// Player Information
@@ -13,7 +13,7 @@ namespace SAMPQuery
         /// <summary>
         /// Player Name. 
         /// </summary>
-        public string? PlayerName { get; set; }
+        public string PlayerName { get; set; } = "UNKNOWN";
 
         /// <summary>
         /// Player Score. 

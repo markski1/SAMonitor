@@ -1,7 +1,14 @@
-﻿using System.Net;
+﻿using System;
+using System.IO;
+using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
+using System.Collections.Generic;
 using System.Text;
+using System.Reflection;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
+using SAMPQuery.Utils;
 
 namespace SAMPQuery
 {
@@ -37,10 +44,10 @@ namespace SAMPQuery
 
             IPAddress? getAddr = null;
 
+            // if the given 'host' cannot be parsed as an IP Address, it might be a domain/hostname.
             if (!IPAddress.TryParse(host, out getAddr))
             {
-                serverIp = Dns.GetHostEntry(host).AddressList
-                    .First(a => a.AddressFamily == AddressFamily.InterNetwork);
+                serverIp = Dns.GetHostEntry(host).AddressList.First(a => a.AddressFamily == AddressFamily.InterNetwork);
             }
             else
             {
@@ -91,7 +98,7 @@ namespace SAMPQuery
         /// <param name="port">Server port</param>
         /// <param name="password">Server password</param>
         /// <returns>SampQuery instance</returns>
-        public SampQuery(IPAddress ip, ushort port, string password) : this(ip.ToString(), port, password) { }
+        public SampQuery(IPAddress ip, ushort port, string password) : this(ip.ToString(), port, password) {}
 
         private static ushort GetPortFromStringOrDefault(string ip)
         {
@@ -99,13 +106,13 @@ namespace SAMPQuery
             return parts.Length > 1 ? (string.IsNullOrWhiteSpace(parts[1]) ? DefaultServerPort : ushort.Parse(parts[1])) : DefaultServerPort;
         }
 
-        private async Task<byte[]> SendSocketToServerAsync(char packetType, string? cmd = null)
+        private async Task<byte[]> SendSocketToServerAsync(char packetType, string cmd = "")
         {
             this.serverSocket = new Socket(this.serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
-            using (var stream = new MemoryStream())
+            using(var stream = new MemoryStream())
             {
-                using (var writer = new BinaryWriter(stream))
+                using(var writer = new BinaryWriter(stream))
                 {
                     string[] splitIp = this.serverIpString.Split('.');
 
@@ -119,8 +126,7 @@ namespace SAMPQuery
                     writer.Write(this.serverPort);
                     writer.Write(packetType);
 
-                    if (packetType == ServerPacketTypes.Rcon && cmd is not null)
-                    {
+                    if (packetType == ServerPacketTypes.Rcon) {
                         writer.Write((ushort)this.password.Length);
                         writer.Write(this.password.ToCharArray());
 
@@ -149,7 +155,7 @@ namespace SAMPQuery
             }
 
         }
-        private byte[] SendSocketToServer(char packetType, string? cmd = null)
+        private byte[] SendSocketToServer(char packetType, string cmd = "")
         {
             this.serverSocket = new Socket(this.serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
             {
@@ -157,42 +163,45 @@ namespace SAMPQuery
                 ReceiveTimeout = this.timeoutMilliseconds
             };
 
-            using var stream = new MemoryStream();
-            using var writer = new BinaryWriter(stream);
-
-            string[] splitIp = this.serverIpString.Split('.');
-
-            writer.Write(this.socketHeader);
-
-            for (sbyte i = 0; i < splitIp.Length; i++)
+            using (var stream = new MemoryStream())
             {
-                writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
+                using (var writer = new BinaryWriter(stream))
+                {
+                    string[] splitIp = this.serverIpString.Split('.');
+
+                    writer.Write(this.socketHeader);
+
+                    for (sbyte i = 0; i < splitIp.Length; i++)
+                    {
+                        writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
+                    }
+
+                    writer.Write(this.serverPort);
+                    writer.Write(packetType);
+
+                    if (packetType == ServerPacketTypes.Rcon) {
+                        writer.Write((ushort)this.password.Length);
+                        writer.Write(this.password.ToCharArray());
+
+                        writer.Write((ushort)cmd.Length);
+                        writer.Write(cmd.ToCharArray());
+                    }
+
+                    this.transmitMS = DateTime.Now;
+
+                    this.serverSocket.SendTo(stream.ToArray(), SocketFlags.None, this.serverEndPoint);
+
+                    EndPoint rawPoint = this.serverEndPoint;
+                    var szReceive = new byte[this.receiveArraySize];
+
+                    this.serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
+
+                    this.serverSocket.Close();
+                    return szReceive;
+                }
+
             }
 
-            writer.Write(this.serverPort);
-            writer.Write(packetType);
-
-            if (packetType == ServerPacketTypes.Rcon && cmd is not null)
-            {
-                writer.Write((ushort)this.password.Length);
-                writer.Write(this.password.ToCharArray());
-
-                writer.Write((ushort)cmd.Length);
-                writer.Write(cmd.ToCharArray());
-            }
-
-            this.transmitMS = DateTime.Now;
-
-            this.serverSocket.SendTo(stream.ToArray(), SocketFlags.None, this.serverEndPoint);
-
-            EndPoint rawPoint = this.serverEndPoint;
-            var szReceive = new byte[this.receiveArraySize];
-
-            this.serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
-
-            this.serverSocket.Close();
-
-            return szReceive;
         }
         /// <summary>
         /// Execute RCON command
@@ -287,30 +296,25 @@ namespace SAMPQuery
                 using var stream = new MemoryStream();
                 using var writer = new BinaryWriter(stream);
 
-                string[] splitIp = this.serverIpString.Split('.');
-
                 writer.Write(this.socketHeader);
 
-                for (sbyte i = 0; i < splitIp.Length; i++)
+                foreach (var ipPart in this.serverIpString.Split('.'))
                 {
-                    writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
+                    writer.Write(Convert.ToByte(Convert.ToInt16(ipPart)));
                 }
 
                 writer.Write(this.serverPort);
-                for (int i = 0; i < 5; i++)
-                {
-                    writer.Write('o');
-                }
+                // Write 5 'o' characters to follow the protocol
+                writer.Write(new string('o', 5).ToCharArray());
 
                 this.transmitMS = DateTime.Now;
 
                 this.serverSocket.SendTo(stream.ToArray(), SocketFlags.None, this.serverEndPoint);
 
-                EndPoint rawPoint = this.serverEndPoint;
-                var szReceive = new byte[this.receiveArraySize];
+                var receiveBuffer = new byte[this.receiveArraySize];
+                EndPoint remoteEndPoint = this.serverEndPoint;
 
-                this.serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
-
+                this.serverSocket.ReceiveFrom(receiveBuffer, SocketFlags.None, ref remoteEndPoint);
                 this.serverSocket.Close();
 
                 return true;
@@ -352,6 +356,7 @@ namespace SAMPQuery
             byte[] data = SendSocketToServer(ServerPacketTypes.Rules);
             return CollectServerRulesFromByteArray(data);
         }
+        
         private string CollectRconAnswerFromByteArray(byte[] data)
         {
             string result = string.Empty;
@@ -370,6 +375,7 @@ namespace SAMPQuery
                 }
             }
         }
+
         private IEnumerable<ServerPlayer> CollectServerPlayersInfoFromByteArray(byte[] data)
         {
             List<ServerPlayer> returnData = new List<ServerPlayer>();
@@ -396,6 +402,7 @@ namespace SAMPQuery
 
             return returnData;
         }
+        
         private ServerInfo CollectServerInfoFromByteArray(byte[] data)
         {
             using (var stream = new MemoryStream(data))
@@ -420,6 +427,7 @@ namespace SAMPQuery
                 }
             }
         }
+        
         private ServerRules CollectServerRulesFromByteArray(byte[] data)
         {
             var sampServerRulesData = new ServerRules();
@@ -442,7 +450,7 @@ namespace SAMPQuery
                         if (property != null)
                         {
                             if (property.PropertyType == typeof(bool)) val = value == "On";
-                            else if (property.PropertyType == typeof(Uri)) val = Helpers.ParseWeburl(value);
+                            else if (property.PropertyType == typeof(Uri)) val = Helpers.ParseWebUrl(value);
                             else if (property.PropertyType == typeof(DateTime)) val = Helpers.ParseTime(value);
                             else val = Helpers.TryParseByte(value, property);
 
