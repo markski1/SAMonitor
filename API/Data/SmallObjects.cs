@@ -1,4 +1,4 @@
-﻿using SAMPQuery;
+﻿using SAMonitor.SampQuery.Types;
 
 namespace SAMonitor.Data;
 

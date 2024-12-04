@@ -21,7 +21,7 @@ public static class WebServer
 
         var app = builder.Build();
 
-        Global.IsDevelopment = app.Environment.IsDevelopment();
+        Helpers.IsDevelopment = app.Environment.IsDevelopment();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())

@@ -1,10 +1,9 @@
 ﻿// ReSharper disable RedundantUsingDirective
 // ReSharper disable InconsistentNaming
 using SAMonitor.Utils;
-using SAMPQuery;
 using System.Timers;
 using SAMonitor.Database;
-using Microsoft.AspNetCore.Hosting.Server;
+using SAMonitor.SampQuery.Types;
 
 namespace SAMonitor.Data;
 
@@ -33,7 +32,7 @@ public class Server : IDisposable
     public int ShuffledOrder { get; set; }
     public bool Sponsor { get; set; }
 
-    private SampQuery? _query = null;
+    private SampQuery.SampQuery? _query = null;
 
     public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, DateTime sponsor_until)
     {
@@ -141,7 +140,7 @@ public class Server : IDisposable
         {
             if (doUpdate)
             {
-                if (!Global.IsDevelopment)
+                if (!Helpers.IsDevelopment)
                 {
                     // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
                     await Interface.InsertServerMetrics(Id, -1);
@@ -216,10 +215,10 @@ public class Server : IDisposable
         // So, if the server doesn't seem russian, we replace certain known ones.
         if (Language.ToLower().Contains("ru") == false && Language.ToLower().Contains("ру") == false)
         {
-            Name = Utils.Helpers.BodgedEncodingFix(Name);
-            Language = Utils.Helpers.BodgedEncodingFix(Language);
-            GameMode = Utils.Helpers.BodgedEncodingFix(GameMode);
-            MapName = Utils.Helpers.BodgedEncodingFix(MapName);
+            Name = Helpers.BodgedEncodingFix(Name);
+            Language = Helpers.BodgedEncodingFix(Language);
+            GameMode = Helpers.BodgedEncodingFix(GameMode);
+            MapName = Helpers.BodgedEncodingFix(MapName);
         }
 
         if (Version.Contains("omp"))

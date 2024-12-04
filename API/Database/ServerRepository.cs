@@ -123,7 +123,7 @@ public class ServerRepository
 
         // then add a metric entry. ONLY IF IN PRODUCTION.
 
-        if (Global.IsDevelopment)
+        if (Helpers.IsDevelopment)
         {
             return success;
         }

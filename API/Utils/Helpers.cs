@@ -4,6 +4,8 @@ namespace SAMonitor.Utils
 {
     public static class Helpers
     {
+        public static bool IsDevelopment = false;
+
         public static string ValidateIPv4(string ipAddr)
         {
             bool needsResolving = false;

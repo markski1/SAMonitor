@@ -4,6 +4,11 @@ A free and open source server monitor, tracking over a thousand SA-MP and open.m
 
 Providing: A server browser, a public API and a Masterlist alternative.
 
+## Attributions
+
+- Thanks to iAmir from open.mp for help with a few matters. 
+- Thanks to JustMavi for the "SampQuery" library.
+
 ## Contents
 
 - [Server browser](#server-browser)

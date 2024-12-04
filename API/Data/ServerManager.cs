@@ -221,7 +221,7 @@ public static class ServerManager
     private static async void SaveMetrics()
     {
         // don't save metrics unless in production
-        if (!Global.IsDevelopment)
+        if (!Helpers.IsDevelopment)
         {
             using var getConn = DatabasePool.GetConnection();
             var conn = getConn.db;
