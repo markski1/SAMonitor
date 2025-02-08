@@ -2,51 +2,55 @@
 using SAMonitor.Database;
 using System.Timers;
 
-namespace SAMonitor.Utils
+namespace SAMonitor.Utils;
+
+public static class ServerUpdater
 {
-    public static class ServerUpdater
+    private static readonly List<Server> UpdateQueue = [];
+    private static readonly Lock Lock = new();
+    private static readonly System.Timers.Timer UpdateQueueTimer = new();
+    private static readonly ServerRepository Interface = new();
+
+    public static void Initialize()
     {
-        private static readonly List<Server> UpdateQueue = [];
-        private static readonly Lock _lock = new();
-        private static readonly System.Timers.Timer UpdateQueueTimer = new();
-        private static readonly ServerRepository Interface = new();
+        UpdateQueueTimer.Elapsed += TimedRun;
+        UpdateQueueTimer.AutoReset = true;
+        UpdateQueueTimer.Interval = 15000;
+        UpdateQueueTimer.Enabled = true;
+    }
 
-        public static void Initialize()
+    public static void Queue(Server server)
+    {
+        lock (Lock)
         {
-            UpdateQueueTimer.Elapsed += TimedRun;
-            UpdateQueueTimer.AutoReset = true;
-            UpdateQueueTimer.Interval = 15000;
-            UpdateQueueTimer.Enabled = true;
+            UpdateQueue.Add(server);
         }
+    }
 
-        public static void Queue(Server server)
-        {
-            lock (_lock)
-            {
-                UpdateQueue.Add(server);
-            }
-        }
+    private static void TimedRun(object? sender, ElapsedEventArgs e)
+    {
+        Thread timedActions = new(ProcessQueue);
+        timedActions.Start();
+    }
 
-        private static void TimedRun(object? sender, ElapsedEventArgs e)
-        {
-            Thread timedActions = new(ProcessQueue);
-            timedActions.Start();
-        }
-
-        private static async void ProcessQueue()
+    private static async void ProcessQueue()
+    {
+        try
         {
             List<Server> currentQueue;
-
-            lock (_lock)
+            lock (Lock)
             {
                 currentQueue = new List<Server>(UpdateQueue);
                 UpdateQueue.Clear();
             }
-                
             foreach (var server in currentQueue)
             {
                 await Interface.UpdateServer(server);
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error committing db changes: {ex.Message}");
         }
     }
 }

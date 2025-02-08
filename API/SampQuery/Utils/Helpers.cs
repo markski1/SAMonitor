@@ -17,7 +17,7 @@ namespace SAMPQuery.Utils
 
         public static Uri ParseWebUrl(string value)
         {
-            if (Uri.TryCreate(value, UriKind.Absolute, out var parsedUri))
+            if (Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var parsedUri))
             {
                 return parsedUri;
             }

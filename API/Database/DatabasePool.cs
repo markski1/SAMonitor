@@ -5,20 +5,20 @@ namespace SAMonitor.Database;
 
 public static class DatabasePool
 {
-    private static readonly List<MySqlConnection> _availableConnections = [];
+    private static readonly List<MySqlConnection> AvailableConnections = [];
 
-    private static readonly object _lock = new();
+    private static readonly Lock Lock = new();
 
     public static DbConnectionWrapper GetConnection()
     {
-        lock (_lock)
+        lock (Lock)
         {
             List<MySqlConnection> removal = [];
 
             MySqlConnection? connection = null;
 
             // Get an open connection from the available connection pool.
-            foreach (MySqlConnection conn in _availableConnections)
+            foreach (MySqlConnection conn in AvailableConnections)
             {
                 // If a connection is open, or has been closed normally, it can be used.
                 if (conn.State == System.Data.ConnectionState.Open || conn.State == System.Data.ConnectionState.Closed)
@@ -38,14 +38,14 @@ public static class DatabasePool
             // Remove all connections in the removal list, if any.
             foreach (MySqlConnection conn in removal)
             {
-                _availableConnections.Remove(conn);
+                AvailableConnections.Remove(conn);
                 conn.Dispose();
             }
 
             // If a connection was found, remove it from the available list and return it.
             if (connection != null)
             {
-                _availableConnections.Remove(connection);
+                AvailableConnections.Remove(connection);
                 return new DbConnectionWrapper(connection);
             }
 
@@ -58,20 +58,20 @@ public static class DatabasePool
 
     public static void ReturnConnection(MySqlConnection connection)
     {
-        lock (_lock)
+        lock (Lock)
         {
-            _availableConnections.Add(connection);
+            AvailableConnections.Add(connection);
         }
     }
 }
 
 public class DbConnectionWrapper(MySqlConnection connection) : IDisposable
 {
-    public MySqlConnection db = connection;
+    public readonly MySqlConnection Db = connection;
 
     public void Dispose()
     {
-        DatabasePool.ReturnConnection(db);
+        DatabasePool.ReturnConnection(Db);
         GC.SuppressFinalize(this);
     }
 }

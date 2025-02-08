@@ -2,7 +2,7 @@
 
 public static class WebServer
 {
-    private static string[] _args = Array.Empty<string>();
+    private static string[] _args = [];
     private static Thread? _webServerThread;
 
     public static void Initialize(string[] args)

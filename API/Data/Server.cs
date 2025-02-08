@@ -7,13 +7,13 @@ using SAMonitor.SampQuery.Types;
 
 namespace SAMonitor.Data;
 
-public class Server : IDisposable
+public sealed class Server : IDisposable
 {
     private static readonly ServerRepository Interface = new();
 
     private readonly System.Timers.Timer _queryTimer = new(); // 20 minute timer
     public int Id { get; set; }
-    public bool Success { get; set; }
+    public bool Success { get; init; }
     public DateTime LastUpdated { get; set; }
     public DateTime WorldTime { get; set; }
     public int PlayersOnline { get; set; }
@@ -22,7 +22,7 @@ public class Server : IDisposable
     public bool LagComp { get; set; }
     public string Name { get; set; }
     public string GameMode { get; set; }
-    public string IpAddr { get; set; }
+    public string IpAddr { get; init; }
     public string MapName { get; set; }
     public string Website { get; set; }
     public string Version { get; set; }
@@ -30,9 +30,9 @@ public class Server : IDisposable
     public string SampCac { get; set; }
     public bool RequiresPassword { get; set; }
     public int ShuffledOrder { get; set; }
-    public bool Sponsor { get; set; }
+    public bool Sponsor { get; init; }
 
-    private SampQuery.SampQuery? _query = null;
+    private SampQuery.SampQuery? _query;
 
     public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, DateTime sponsor_until)
     {
@@ -129,12 +129,6 @@ public class Server : IDisposable
         try
         {
             serverInfo = await _query.GetServerInfoAsync();
-
-            if (serverInfo.HostName is null)
-            {
-                Console.WriteLine($"Server replied to query but response makes no sense: {IpAddr}");
-                return false;
-            }
         }
         catch
         {
@@ -165,7 +159,7 @@ public class Server : IDisposable
                 }
             }
 
-            // Server objects are spawned on first query. If a server was never succesfully stored, then it'll die here.
+            // Server objects are spawned on first query. If a server was never successfully stored, then it'll die here.
             // Timer is killed, nothing else contains this object, and the garbage collector takes it from here.
             if (Id == -1)
             {
@@ -180,8 +174,8 @@ public class Server : IDisposable
         Name = serverInfo.HostName;
         PlayersOnline = serverInfo.Players;
         MaxPlayers = serverInfo.MaxPlayers;
-        GameMode = serverInfo.GameMode ?? "Unknown";
-        Language = serverInfo.Language ?? "Unknown";
+        GameMode = serverInfo.GameMode;
+        Language = serverInfo.Language;
         RequiresPassword = serverInfo.Password;
         LastUpdated = DateTime.UtcNow;
 
@@ -213,7 +207,7 @@ public class Server : IDisposable
 
         // SAMP encodes certain special latin characters as if they were Cyrillic.
         // So, if the server doesn't seem russian, we replace certain known ones.
-        if (Language.ToLower().Contains("ru") == false && Language.ToLower().Contains("ру") == false)
+        if (Language.Contains("ru", StringComparison.CurrentCultureIgnoreCase) == false && Language.Contains("ру", StringComparison.CurrentCultureIgnoreCase) == false)
         {
             Name = Helpers.BodgedEncodingFix(Name);
             Language = Helpers.BodgedEncodingFix(Language);
@@ -286,7 +280,7 @@ public class Server : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (!_disposed)
         {

@@ -9,7 +9,7 @@ public class ServerRepository
     public async Task<List<Server>> GetAllServersAsync()
     {
         using var getConn = DatabasePool.GetConnection();
-        var db = getConn.db;
+        var db = getConn.Db;
 
         const string sql = @"SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor_until FROM servers";
 
@@ -27,7 +27,7 @@ public class ServerRepository
     public async Task<int> GetServerId(string ipAddr)
     {
         using var getConn = DatabasePool.GetConnection();
-        var db = getConn.db;
+        var db = getConn.Db;
 
         var sql = @"SELECT id FROM servers WHERE ip_addr=@IpAddr";
 
@@ -45,7 +45,7 @@ public class ServerRepository
     public async Task<bool> InsertServer(Server server)
     {
         using var getConn = DatabasePool.GetConnection();
-        var db = getConn.db;
+        var db = getConn.Db;
 
         string sql = @"INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
                         VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
@@ -79,7 +79,7 @@ public class ServerRepository
     public async Task<int> InsertServerMetrics(int server_id, int player_amount)
     {
         using var getConn = DatabasePool.GetConnection();
-        var db = getConn.db;
+        var db = getConn.Db;
 
         string sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@server_id, @player_amount)";
 
@@ -89,7 +89,7 @@ public class ServerRepository
     public async Task<bool> UpdateServer(Server server)
     {
         using var getConn = DatabasePool.GetConnection();
-        var db = getConn.db;
+        var db = getConn.Db;
 
         var sql = @"UPDATE servers
                     SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
@@ -138,7 +138,7 @@ public class ServerRepository
     public async Task<List<ServerMetrics>> GetServerMetrics(int id, DateTime requestTime, int include_misses = 0)
     {
         using var getConn = DatabasePool.GetConnection();
-        var db = getConn.db;
+        var db = getConn.Db;
 
         string sql;
 

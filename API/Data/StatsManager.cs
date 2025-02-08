@@ -63,26 +63,34 @@ public static class StatsManager
 
         int playerCount = servers.Sum(x => x.PlayersOnline);
         int onlineServers = servers.Count;
-        int inhabitedServers = servers.Where(x => x.PlayersOnline > 0).Count();
+        int inhabitedServers = servers.Count(x => x.PlayersOnline > 0);
         int onlineServersOmp = servers.Count(x => x.IsOpenMp);
 
         GlobalStats = new GlobalStats(
                 serversOnline: onlineServers,
                 serversTracked: allServers,
                 serversInhabited: inhabitedServers,
-                serversOnlineOMP: onlineServersOmp,
+                serversOnlineOmp: onlineServersOmp,
                 playersOnline: playerCount
             );
     }
 
     private static async void UpdateGlobalMetrics()
     {
-        DateTime requestTime = DateTime.UtcNow - TimeSpan.FromDays(8);
+        try
+        {
+            DateTime requestTime = DateTime.UtcNow - TimeSpan.FromDays(8);
 
-        var conn = new MySqlConnection(MySql.ConnectionString);
-        var sql = @"SELECT players, servers, omp_servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
+            var conn = new MySqlConnection(MySql.ConnectionString);
+            var sql =
+                @"SELECT players, servers, omp_servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
 
-        GlobalMetrics = (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime = requestTime })).ToList();
+            GlobalMetrics = (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime = requestTime })).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating global metrics. - {ex.Message}");
+        }
     }
 
     private static void UpdateLanguageStats(IEnumerable<Server> servers)
@@ -155,7 +163,7 @@ public static class StatsManager
 
             if (gm.Contains("cnr") || gm.Contains("cop") || name.Contains("cnr"))
             {
-                GamemodeStats.CNR.Add(server);
+                GamemodeStats.Cnr.Add(server);
                 continue;
             }
 

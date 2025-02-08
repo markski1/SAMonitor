@@ -140,29 +140,29 @@ public class Player(ServerPlayer player)
 {
     public int Id { get; set; } = player.PlayerId;
     public int Ping { get; set; } = player.PlayerPing;
-    public string Name { get; set; } = player.PlayerName ?? "Unknown";
+    public string Name { get; set; } = player.PlayerName;
     public int Score { get; set; } = player.PlayerScore;
 }
 public class GlobalMetrics(int players, int servers, int omp_servers, DateTime time)
 {
-    public int Players { get; set; } = players;
-    public int Servers { get; set; } = servers;
-    public int OmpServers { get; set; } = omp_servers;
-    public DateTime Time { get; set; } = time;
+    public int Players { get; init; } = players;
+    public int Servers { get; init; } = servers;
+    public int OmpServers { get; init; } = omp_servers;
+    public DateTime Time { get; init; } = time;
 }
 public class ServerMetrics(int players, DateTime time)
 {
-    public int Players { get; set; } = players;
-    public DateTime Time { get; set; } = time;
+    public int Players { get; init; } = players;
+    public DateTime Time { get; init; } = time;
 }
 
-public class GlobalStats(int playersOnline, int serversTracked, int serversInhabited, int serversOnline, int serversOnlineOMP)
+public class GlobalStats(int playersOnline, int serversTracked, int serversInhabited, int serversOnline, int serversOnlineOmp)
 {
     public int PlayersOnline { get; set; } = playersOnline;
     public int ServersTracked { get; set; } = serversTracked;
     public int ServersOnline { get; set; } = serversOnline;
     public int ServersInhabited { get; set; } = serversInhabited;
-    public int ServersOnlineOMP { get; set; } = serversOnlineOMP;
+    public int ServersOnlineOmp { get; set; } = serversOnlineOmp;
 }
 
 public class CategoryStats
@@ -214,7 +214,7 @@ public class GamemodeStats
     public CategoryStats Deathmatch { get; set; }
     public CategoryStats Roleplay { get; set; }
     public CategoryStats RaceStunt { get; set; }
-    public CategoryStats CNR { get; set; }
+    public CategoryStats Cnr { get; set; }
     public CategoryStats FreeRoam { get; set; }
     public CategoryStats Survival { get; set; }
     public CategoryStats VehSim { get; set; }
@@ -225,7 +225,7 @@ public class GamemodeStats
         Deathmatch = new();
         Roleplay = new();
         RaceStunt = new();
-        CNR = new();
+        Cnr = new();
         FreeRoam = new();
         Survival = new();
         VehSim = new();

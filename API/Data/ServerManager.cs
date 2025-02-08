@@ -224,7 +224,7 @@ public static class ServerManager
         if (!Helpers.IsDevelopment)
         {
             using var getConn = DatabasePool.GetConnection();
-            var conn = getConn.db;
+            var conn = getConn.Db;
 
             var sql = @"INSERT INTO metrics_global (players, servers, omp_servers) VALUES(@_players, @_servers, @_omp_servers)";
 
@@ -280,7 +280,7 @@ public static class ServerManager
     private static async void UpdateBlacklist()
     {
         using var getConn = DatabasePool.GetConnection();
-        var conn = getConn.db;
+        var conn = getConn.Db;
 
         var sql = @"SELECT ip_addr FROM blacklist";
 
