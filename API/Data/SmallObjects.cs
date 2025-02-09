@@ -162,7 +162,7 @@ public class GlobalStats(int playersOnline, int serversTracked, int serversInhab
     public int ServersTracked { get; set; } = serversTracked;
     public int ServersOnline { get; set; } = serversOnline;
     public int ServersInhabited { get; set; } = serversInhabited;
-    public int ServersOnlineOmp { get; set; } = serversOnlineOmp;
+    public int serversOnlineOMP { get; set; } = serversOnlineOmp;
 }
 
 public class CategoryStats
