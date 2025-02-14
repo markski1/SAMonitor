@@ -6,12 +6,12 @@ namespace SAMonitor.Database;
 
 public class ServerRepository
 {
-    public async Task<List<Server>> GetAllServersAsync()
+    public static async Task<List<Server>> GetAllServersAsync()
     {
         using var getConn = DatabasePool.GetConnection();
         var db = getConn.Db;
 
-        const string sql = @"SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor_until FROM servers";
+        const string sql = "SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor_until FROM servers";
 
         try
         {
@@ -24,12 +24,12 @@ public class ServerRepository
         }
     }
 
-    public async Task<int> GetServerId(string ipAddr)
+    public static async Task<int> GetServerId(string ipAddr)
     {
         using var getConn = DatabasePool.GetConnection();
         var db = getConn.Db;
 
-        var sql = @"SELECT id FROM servers WHERE ip_addr=@IpAddr";
+        const string sql = "SELECT id FROM servers WHERE ip_addr=@IpAddr";
 
         try
         {
@@ -42,13 +42,15 @@ public class ServerRepository
         }
     }
 
-    public async Task<bool> InsertServer(Server server)
+    public static async Task<bool> InsertServer(Server server)
     {
         using var getConn = DatabasePool.GetConnection();
         var db = getConn.Db;
 
-        string sql = @"INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
-                        VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)";
+        const string sql = """
+                           INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
+                           VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)
+                           """;
 
         try
         {
@@ -76,30 +78,32 @@ public class ServerRepository
         }
     }
 
-    public async Task<int> InsertServerMetrics(int server_id, int player_amount)
+    public static async Task<int> InsertServerMetrics(int serverId, int playerAmount)
     {
         using var getConn = DatabasePool.GetConnection();
         var db = getConn.Db;
 
-        string sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@server_id, @player_amount)";
+        const string sql = "INSERT INTO metrics_server (server_id, players) VALUES (@server_id, @player_amount)";
 
-        return await db.ExecuteAsync(sql, new { server_id, player_amount });
+        return await db.ExecuteAsync(sql, new { server_id = serverId, player_amount = playerAmount });
     }
 
-    public async Task<bool> UpdateServer(Server server)
+    public static async Task<bool> UpdateServer(Server server)
     {
         using var getConn = DatabasePool.GetConnection();
         var db = getConn.Db;
 
-        var sql = @"UPDATE servers
-                    SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
-                    WHERE ip_addr = @IpAddr";
+        string sql = """
+                     UPDATE servers
+                     SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
+                     WHERE ip_addr = @IpAddr
+                     """;
 
         bool success;
 
         try
         {
-            success = (await db.ExecuteAsync(sql, new
+            success = await db.ExecuteAsync(sql, new
             {
                 server.IpAddr,
                 server.Name,
@@ -114,7 +118,7 @@ public class ServerRepository
                 server.Version,
                 server.Language,
                 server.SampCac
-            })) > 0;
+            }) > 0;
         }
         catch
         {
@@ -128,14 +132,14 @@ public class ServerRepository
             return success;
         }
         
-        sql = @"INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
+        sql = "INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
 
         await db.ExecuteAsync(sql, new { server.Id, server.PlayersOnline });
 
         return success;
     }
 
-    public async Task<List<ServerMetrics>> GetServerMetrics(int id, DateTime requestTime, int include_misses = 0)
+    public static async Task<List<ServerMetrics>> GetServerMetrics(int id, DateTime requestTime, int include_misses = 0)
     {
         using var getConn = DatabasePool.GetConnection();
         var db = getConn.Db;
@@ -144,11 +148,11 @@ public class ServerRepository
 
         if (include_misses > 0)
         {
-            sql = @"SELECT players, time FROM metrics_server WHERE time > @requestTime AND server_id = @id ORDER BY time DESC";
+            sql = "SELECT players, time FROM metrics_server WHERE time > @requestTime AND server_id = @id ORDER BY time DESC";
         }
         else
         {
-            sql = @"SELECT players, time FROM metrics_server WHERE time > @requestTime AND server_id = @id AND players >= 0 ORDER BY time DESC";
+            sql = "SELECT players, time FROM metrics_server WHERE time > @requestTime AND server_id = @id AND players >= 0 ORDER BY time DESC";
         }
 
         return (await db.QueryAsync<ServerMetrics>(sql, new { requestTime, id })).ToList();

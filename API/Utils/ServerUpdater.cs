@@ -9,7 +9,6 @@ public static class ServerUpdater
     private static readonly List<Server> UpdateQueue = [];
     private static readonly Lock Lock = new();
     private static readonly System.Timers.Timer UpdateQueueTimer = new();
-    private static readonly ServerRepository Interface = new();
 
     public static void Initialize()
     {
@@ -45,7 +44,7 @@ public static class ServerUpdater
             }
             foreach (var server in currentQueue)
             {
-                await Interface.UpdateServer(server);
+                await ServerRepository.UpdateServer(server);
             }
         }
         catch (Exception ex)

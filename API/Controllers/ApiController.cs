@@ -108,7 +108,7 @@ public class ApiController : ControllerBase
     [HttpGet("GetEveryIP")]
     public string GetEveryIP()
     {
-        return ServerManager.GetEveryIP();
+        return ServerManager.GetEveryIp();
     }
 
     [HttpGet("AddServer")]
@@ -116,10 +116,11 @@ public class ApiController : ControllerBase
     {
         ip_addr = ip_addr.Trim();
         string validIP = Helpers.ValidateIPv4(ip_addr);
+        
         if (validIP != "invalid")
-            return (await ServerManager.AddServer(validIP));
-        else
-            return "Entered IP address or hostname is invalid or failing to resolve.";
+            return await ServerManager.AddServer(validIP);
+        
+        return "Entered IP address or hostname is invalid or failing to resolve.";
     }
 
     [HttpGet("GetServerMetrics")]
@@ -129,6 +130,6 @@ public class ApiController : ControllerBase
 
         int Id = ServerManager.GetServerIdFromIp(ip_addr);
 
-        return await Interface.GetServerMetrics(Id, RequestTime, include_misses);
+        return await ServerRepository.GetServerMetrics(Id, RequestTime, include_misses);
     }
 }

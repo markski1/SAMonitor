@@ -21,7 +21,7 @@ public static class DatabasePool
             foreach (MySqlConnection conn in AvailableConnections)
             {
                 // If a connection is open, or has been closed normally, it can be used.
-                if (conn.State == System.Data.ConnectionState.Open || conn.State == System.Data.ConnectionState.Closed)
+                if (conn.State is System.Data.ConnectionState.Open or System.Data.ConnectionState.Closed)
                 {
                     connection = conn;
                     break;

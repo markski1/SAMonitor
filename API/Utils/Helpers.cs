@@ -1,64 +1,63 @@
 ﻿using System.Net;
 
-namespace SAMonitor.Utils
+namespace SAMonitor.Utils;
+
+public static class Helpers
 {
-    public static class Helpers
+    public static bool IsDevelopment = false;
+
+    public static string ValidateIPv4(string ipAddr)
     {
-        public static bool IsDevelopment = false;
-
-        public static string ValidateIPv4(string ipAddr)
+        bool needsResolving = false;
+        var items = ipAddr.Split('.');
+        if (items.Length != 4 || ipAddr.Any(char.IsLetter))
         {
-            bool needsResolving = false;
-            var items = ipAddr.Split('.');
-            if (items.Length != 4 || ipAddr.Any(char.IsLetter))
+            // if it doesn't look like a valid IP address, check it has any dots at all.
+            if (items.Length <= 0)
             {
-                // if it doesn't look like a valid IP address, check it has any dots at all.
-                if (items.Length <= 0)
-                {
-                    return "invalid";
-                }
-                // if it does, then assume it's a hostname and must be resolved.
-                needsResolving = true;
+                return "invalid";
             }
-
-            // separate by port, if any.
-            items = ipAddr.Split(':');
-
-            // if we need to resolve, items[0] will be the hostname.
-            if (needsResolving)
-            {
-                try
-                {
-                    // resolve hostname to ip address and assign
-                    var hostEntry = Dns.GetHostEntry(items[0]);
-                    ipAddr = hostEntry.AddressList[0].ToString();
-                    // fill in the port if provided, else 7777
-                    ipAddr = items.Length != 2 ? $"{ipAddr}:7777" : $"{ipAddr}:{items[1]}";
-                }
-                catch
-                {
-                    return "invalid";
-                }
-            }
-            // if we don't need to resolve, then just make sure there's a port.
-            else if (items.Length != 2)
-            {
-                ipAddr = $"{ipAddr}:7777";
-            }
-
-            return ipAddr;
+            // if it does, then assume it's a hostname and must be resolved.
+            needsResolving = true;
         }
 
-        public static string BodgedEncodingFix(string text)
-        {
+        // separate by port, if any.
+        items = ipAddr.Split(':');
 
-            text = text.Replace('с', 'ñ');
-            text = text.Replace('к', 'ê');
-            text = text.Replace('Ў', '¡');
-            text = text.Replace('У', 'Ó');
-            text = text.Replace('у', 'ó');
-            text = text.Replace('б', 'á');
-            return text;
+        // if we need to resolve, items[0] will be the hostname.
+        if (needsResolving)
+        {
+            try
+            {
+                // resolve hostname to ip address and assign
+                var hostEntry = Dns.GetHostEntry(items[0]);
+                ipAddr = hostEntry.AddressList[0].ToString();
+                // fill in the port if provided, else 7777
+                ipAddr = items.Length != 2 ? $"{ipAddr}:7777" : $"{ipAddr}:{items[1]}";
+            }
+            catch
+            {
+                return "invalid";
+            }
         }
+        // if we don't need to resolve, then just make sure there's a port.
+        else if (items.Length != 2)
+        {
+            ipAddr = $"{ipAddr}:7777";
+        }
+
+        return ipAddr;
+    }
+
+    public static string BodgedEncodingFix(string text)
+    {
+
+        text = text.Replace('с', 'ñ');
+        text = text.Replace('к', 'ê');
+        text = text.Replace('Ў', '¡');
+        text = text.Replace('У', 'Ó');
+        text = text.Replace('у', 'ó');
+        text = text.Replace('б', 'á');
+        return text;
     }
 }
