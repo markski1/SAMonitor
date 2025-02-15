@@ -9,8 +9,6 @@ namespace SAMonitor.Data;
 
 public sealed class Server : IDisposable
 {
-    private static readonly ServerRepository Interface = new();
-
     private readonly System.Timers.Timer _queryTimer = new(); // 20 minute timer
     public int Id { get; set; }
     public bool Success { get; init; }
@@ -41,8 +39,8 @@ public sealed class Server : IDisposable
         LastUpdated = last_updated;
         PlayersOnline = players_online;
         MaxPlayers = max_players;
-        IsOpenMp = (is_open_mp == 1);
-        LagComp = (lag_comp == 1);
+        IsOpenMp = is_open_mp == 1;
+        LagComp = lag_comp == 1;
         MapName = map_name;
         GameMode = gamemode;
         IpAddr = ip_addr;
@@ -54,7 +52,7 @@ public sealed class Server : IDisposable
         Success = true;
         RequiresPassword = false;
         ShuffledOrder = 9999;
-        Sponsor = (sponsor_until > DateTime.UtcNow);
+        Sponsor = sponsor_until > DateTime.UtcNow;
 
         CreateTimer();
     }
@@ -137,7 +135,7 @@ public sealed class Server : IDisposable
                 if (!Helpers.IsDevelopment)
                 {
                     // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
-                    await Interface.InsertServerMetrics(Id, -1);
+                    await ServerRepository.InsertServerMetrics(Id, -1);
                 }
 
                 TimeSpan downtime = DateTime.UtcNow - LastUpdated;
@@ -163,7 +161,7 @@ public sealed class Server : IDisposable
             // Timer is killed, nothing else contains this object, and the garbage collector takes it from here.
             if (Id == -1)
             {
-                this.Dispose();
+                Dispose();
             }
 
             return false;
@@ -245,34 +243,33 @@ public sealed class Server : IDisposable
             return players;
         }
 
-        if (DateTime.UtcNow - _playerListTime > TimeSpan.FromMinutes(3))
-        {
-            try
-            {
-                var serverPlayersTask = _query.GetServerPlayersAsync();
-                // Timeout at 2 seconds.
-                if (await Task.WhenAny(serverPlayersTask, Task.Delay(2000)) == serverPlayersTask)
-                {
-                    await serverPlayersTask;
-                    var serverPlayers = serverPlayersTask.Result;
-                    // we pass it as a different type of object for API compatibility reasons.
-                    _playerListCache.Clear();
-                    _playerListCache.AddRange(serverPlayers.Select(player => new Player(player)));
-                }
-            }
-            catch
-            {
-                // nothing to handle, this happens if server has >100 players and is a SA-MP issue.
-            }
-
-            _playerListCache = players;
-            _playerListTime = DateTime.UtcNow;
-        }
+        if (DateTime.UtcNow - _playerListTime <= TimeSpan.FromMinutes(3)) return _playerListCache;
         
+        try
+        {
+            var serverPlayersTask = _query.GetServerPlayersAsync();
+            // Timeout at 2 seconds.
+            if (await Task.WhenAny(serverPlayersTask, Task.Delay(2000)) == serverPlayersTask)
+            {
+                await serverPlayersTask;
+                var serverPlayers = serverPlayersTask.Result;
+                // we pass it as a different type of object for API compatibility reasons.
+                _playerListCache.Clear();
+                _playerListCache.AddRange(serverPlayers.Select(player => new Player(player)));
+            }
+        }
+        catch
+        {
+            // nothing to handle, this happens if server has >100 players and is a SA-MP issue.
+        }
+
+        _playerListCache = players;
+        _playerListTime = DateTime.UtcNow;
+
         return _playerListCache;
     }
 
-    private bool _disposed = false;
+    private bool _disposed;
 
     public void Dispose()
     {
@@ -282,18 +279,17 @@ public sealed class Server : IDisposable
 
     private void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if (_disposed) return;
+        
+        if (disposing)
         {
-            if (disposing)
-            {
-                // Dispose managed resources
-                _queryTimer.Dispose();
-            }
-
-            // Dispose unmanaged resources
-
-            _disposed = true;
+            // Dispose managed resources
+            _queryTimer.Dispose();
         }
+
+        // Dispose unmanaged resources
+
+        _disposed = true;
     }
 
     ~Server()

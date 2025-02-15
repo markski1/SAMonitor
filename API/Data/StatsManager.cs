@@ -13,7 +13,7 @@ public static class StatsManager
     public static GlobalStats GlobalStats { get; private set; } = new(0, 0, 0, 0, 0);
     public static GamemodeStats GamemodeStats { get; private set; } = new();
     public static LanguageStats LanguageStats { get; private set; } = new();
-    private static List<GlobalMetrics> GlobalMetrics { get; set; } = new();
+    private static List<GlobalMetrics> GlobalMetrics { get; set; } = [];
 
     // Initializers
 
@@ -82,8 +82,7 @@ public static class StatsManager
             DateTime requestTime = DateTime.UtcNow - TimeSpan.FromDays(8);
 
             var conn = new MySqlConnection(MySql.ConnectionString);
-            var sql =
-                @"SELECT players, servers, omp_servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
+            const string sql = "SELECT players, servers, omp_servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
 
             GlobalMetrics = (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime = requestTime })).ToList();
         }
