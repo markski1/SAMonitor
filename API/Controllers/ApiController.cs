@@ -94,9 +94,9 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("GetGlobalMetrics")]
-    public List<GlobalMetrics> GetGlobalMetrics(int hours = 6)
+    public List<GlobalMetrics> GetGlobalMetrics(int hours = 6, bool skip_trimming = false)
     {
-        return StatsManager.GetGlobalMetrics(hours);
+        return StatsManager.GetGlobalMetrics(hours, skip_trimming);
     }
 
     [HttpGet("GetMasterlist")]

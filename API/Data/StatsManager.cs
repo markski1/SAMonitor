@@ -24,11 +24,34 @@ public static class StatsManager
         CreateTimers();
     }
 
-    public static List<GlobalMetrics> GetGlobalMetrics(int hours)
+    public static List<GlobalMetrics> GetGlobalMetrics(int hours, bool skip_trimming = false)
     {
         DateTime requestTime = DateTime.UtcNow - TimeSpan.FromHours(hours);
 
-        return GlobalMetrics.Where(x => x.Time > requestTime).ToList();
+        var result = GlobalMetrics.Where(x => x.Time > requestTime);
+
+        // By default, GlobalMetrics has data per every 30 minutes.
+        // If the 'trim' parameter is enabled, we'll trim it down to hourly, 3-hourly and 6-hourly
+        // as the data scope increases. This facilitates showing the data in a graph, for example.
+        if (!skip_trimming)
+        {
+            int count = result.Count();
+
+            if (count >= 4320)
+            {
+                result = result.Where((_, index) => index % 12 == 0);
+            }
+            else if (count >= 1440)
+            {
+                result = result.Where((_, index) => index % 6 == 0);
+            }
+            else if (count >= 335)
+            {
+                result = result.Where((_, index) => index % 2 == 0);
+            }
+        }
+
+        return [.. result];
     }
 
     private static void CreateTimers()
@@ -79,7 +102,7 @@ public static class StatsManager
     {
         try
         {
-            DateTime requestTime = DateTime.UtcNow - TimeSpan.FromDays(8);
+            DateTime requestTime = DateTime.UtcNow - TimeSpan.FromDays(366);
 
             var conn = new MySqlConnection(MySql.ConnectionString);
             const string sql = "SELECT players, servers, omp_servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
