@@ -28,11 +28,12 @@ public sealed class Server : IDisposable
     public string SampCac { get; set; }
     public bool RequiresPassword { get; set; }
     public int ShuffledOrder { get; set; }
+    public int Weather { get; set; }
     public bool Sponsor { get; init; }
 
     private SampQuery.SampQuery? _query;
 
-    public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, DateTime sponsor_until)
+    public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, DateTime sponsor_until, int weather)
     {
         Id = id;
         Name = name;
@@ -55,6 +56,7 @@ public sealed class Server : IDisposable
         Sponsor = sponsor_until > DateTime.UtcNow;
 
         CreateTimer();
+        Weather = weather;
     }
 
     // Add constructor
@@ -79,6 +81,7 @@ public sealed class Server : IDisposable
         RequiresPassword = false;
         ShuffledOrder = 9999;
         Sponsor = false;
+        Weather = -1;
 
         CreateTimer();
     }
@@ -194,6 +197,7 @@ public sealed class Server : IDisposable
             LagComp = serverRules.Lagcomp;
             Website = serverRules.Weburl is null ? "Unknown" : serverRules.Weburl.ToString();
             WorldTime = serverRules.WorldTime;
+            Weather = serverRules.Weather;
         }
         catch (Exception ex)
         {
