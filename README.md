@@ -155,6 +155,7 @@ The server schema is likely to change as SAMonitor is fairly in-development. How
   ipAddr:        String
   mapName:       String
   website:       String
+  weather:       Integer
   version:       String
   language:      String
   sampCac:       String (Version of SAMPCAC required. "Not required" otherwise.)
