@@ -11,7 +11,7 @@ public class ServerRepository
         using var getConn = DatabasePool.GetConnection();
         var db = getConn.Db;
 
-        const string sql = "SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor_until FROM servers";
+        const string sql = "SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor_until, weather FROM servers";
 
         try
         {
@@ -48,8 +48,8 @@ public class ServerRepository
         var db = getConn.Db;
 
         const string sql = """
-                           INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac)
-                           VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac)
+                           INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, weather)
+                           VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac, @Weather)
                            """;
 
         try
@@ -68,7 +68,8 @@ public class ServerRepository
                 server.Website,
                 server.Version,
                 server.Language,
-                server.SampCac
+                server.SampCac,
+                server.Weather
             })) > 0;
         }
         catch (Exception ex)
@@ -95,7 +96,7 @@ public class ServerRepository
 
         string sql = """
                      UPDATE servers
-                     SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac
+                     SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac, weather=@Weather
                      WHERE ip_addr = @IpAddr
                      """;
 
@@ -117,7 +118,8 @@ public class ServerRepository
                 server.Website,
                 server.Version,
                 server.Language,
-                server.SampCac
+                server.SampCac,
+                server.Weather
             }) > 0;
         }
         catch
