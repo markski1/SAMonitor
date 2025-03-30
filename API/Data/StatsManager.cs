@@ -28,30 +28,37 @@ public static class StatsManager
     {
         DateTime requestTime = DateTime.UtcNow - TimeSpan.FromHours(hours);
 
-        var result = GlobalMetrics.Where(x => x.Time > requestTime);
+        IEnumerable<GlobalMetrics> result = GlobalMetrics.Where(x => x.Time > requestTime);
 
-        // By default, GlobalMetrics has data per every 30 minutes.
-        // If the 'trim' parameter is enabled, we'll trim it down to hourly, 3-hourly and 6-hourly
-        // as the data scope increases. This facilitates showing the data in a graph, for example.
-        if (!skip_trimming)
+        // By default, GlobalMetrics has data recorded every 30 minutes. If "trimming" is skipped, return it all.
+        // Likewise, if the amount of entries is below 500, just return everything as well.
+
+        if (skip_trimming) return [.. result];
+
+        int count = result.Count();
+
+        if (count < 500)
         {
-            int count = result.Count();
-
-            if (count >= 4320)
-            {
-                result = result.Where((_, index) => index % 12 == 0);
-            }
-            else if (count >= 1440)
-            {
-                result = result.Where((_, index) => index % 6 == 0);
-            }
-            else if (count >= 335)
-            {
-                result = result.Where((_, index) => index % 2 == 0);
-            }
+            return [.. result];
         }
 
-        return [.. result];
+        // Otherwise, we "fuse" entries together by grouping them by time and doing averages.
+        // i.e if there's 1500 entries, they get "fused" into groups of 3, so every one and a half hours worth of
+        // data are made into a single entry of their average.
+
+        int avgSet = Math.Max(1, 2 * (count / 500));
+
+        // We take whatever amount decided above, and group those entries down to smaller averages.
+        return [
+                .. result.Select((item, index) => new { item, index })
+                .GroupBy(x => x.index / avgSet)
+                .Select(g => new GlobalMetrics(
+                    players: (int)g.Average(x => x.item.Players),
+                    servers: (int)g.Average(x => x.item.Servers),
+                    omp_servers: (int)g.Average(x => x.item.OmpServers),
+                    time: g.First().item.Time // Use the first entries' timestamp
+                ))
+               ];
     }
 
     private static void CreateTimers()
@@ -102,12 +109,10 @@ public static class StatsManager
     {
         try
         {
-            DateTime requestTime = DateTime.UtcNow - TimeSpan.FromDays(366);
-
             var conn = new MySqlConnection(MySql.ConnectionString);
-            const string sql = "SELECT players, servers, omp_servers, time FROM metrics_global WHERE time > @RequestTime ORDER BY time DESC";
+            const string sql = "SELECT players, servers, omp_servers, time FROM metrics_global ORDER BY time DESC";
 
-            GlobalMetrics = (await conn.QueryAsync<GlobalMetrics>(sql, new { RequestTime = requestTime })).ToList();
+            GlobalMetrics = [.. await conn.QueryAsync<GlobalMetrics>(sql)];
         }
         catch (Exception ex)
         {
