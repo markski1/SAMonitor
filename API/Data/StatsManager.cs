@@ -31,34 +31,33 @@ public static class StatsManager
         IEnumerable<GlobalMetrics> result = GlobalMetrics.Where(x => x.Time > requestTime);
 
         // By default, GlobalMetrics has data recorded every 30 minutes. If "trimming" is skipped, return it all.
-        // Likewise, if the amount of entries is below 500, just return everything as well.
+        // Likewise, if the amount of entries is below 750, just return everything as well.
 
         if (skip_trimming) return [.. result];
 
         int count = result.Count();
 
-        if (count < 500)
+        if (count < 750)
         {
             return [.. result];
         }
 
         // Otherwise, we "fuse" entries together by grouping them by time and doing averages.
-        // i.e if there's 1500 entries, they get "fused" into groups of 3, so every one and a half hours worth of
-        // data are made into a single entry of their average.
+        // We want as close to 500 entries as possible at a max.
 
-        int avgSet = Math.Max(1, 2 * (count / 500));
+        int avgSet = count / 500;
 
         // We take whatever amount decided above, and group those entries down to smaller averages.
         return [
                 .. result.Select((item, index) => new { item, index })
-                .GroupBy(x => x.index / avgSet)
-                .Select(g => new GlobalMetrics(
-                    players: (int)g.Average(x => x.item.Players),
-                    servers: (int)g.Average(x => x.item.Servers),
-                    omp_servers: (int)g.Average(x => x.item.OmpServers),
-                    time: g.First().item.Time // Use the first entries' timestamp
-                ))
-               ];
+            .GroupBy(x => x.index / avgSet)
+            .Select(g => new GlobalMetrics(
+                players: (int)g.Average(x => x.item.Players),
+                servers: (int)g.Average(x => x.item.Servers),
+                omp_servers: (int)g.Average(x => x.item.OmpServers),
+                time: g.First().item.Time // Use the first entries' timestamp
+            ))
+        ];
     }
 
     private static void CreateTimers()
