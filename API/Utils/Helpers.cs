@@ -6,7 +6,7 @@ public static class Helpers
 {
     public static bool IsDevelopment = false;
 
-    public static string ValidateIPv4(string ipAddr)
+    public static async Task<string> ValidateIPv4(string ipAddr)
     {
         bool needsResolving = false;
         var items = ipAddr.Split('.');
@@ -30,7 +30,7 @@ public static class Helpers
             try
             {
                 // resolve hostname to ip address and assign
-                var hostEntry = Dns.GetHostEntry(items[0]);
+                var hostEntry = await Dns.GetHostEntryAsync(items[0]);
                 ipAddr = hostEntry.AddressList[0].ToString();
                 // fill in the port if provided, else 7777
                 ipAddr = items.Length != 2 ? $"{ipAddr}:7777" : $"{ipAddr}:{items[1]}";

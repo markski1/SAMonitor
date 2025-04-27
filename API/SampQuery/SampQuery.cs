@@ -189,7 +189,7 @@ public class SampQuery
     {
         try
         {
-            SendSocketToServer('o');
+            SendSocketToServer(ServerPacketTypes.Omp);
             return true;
         }
         catch

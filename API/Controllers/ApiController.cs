@@ -10,8 +10,6 @@ namespace SAMonitor.Controllers;
 [Route("api")]
 public class ApiController : ControllerBase
 {
-    private static readonly ServerRepository Interface = new();
-
     [HttpGet("CheckAlive")]
     public string CheckAlive()
     {
@@ -115,7 +113,7 @@ public class ApiController : ControllerBase
     public async Task<string> AddServer(string ip_addr)
     {
         ip_addr = ip_addr.Trim();
-        string validIP = Helpers.ValidateIPv4(ip_addr);
+        string validIP = await Helpers.ValidateIPv4(ip_addr);
         
         if (validIP != "invalid")
             return await ServerManager.AddServer(validIP);

@@ -8,6 +8,6 @@ namespace SAMPQuery
 
         public static char Players => 'd';
 
-        public static char OMP => 'o';
+        public static char Omp => 'o';
     }
 }
