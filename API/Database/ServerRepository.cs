@@ -141,14 +141,14 @@ public class ServerRepository
         return success;
     }
 
-    public static async Task<List<ServerMetrics>> GetServerMetrics(int id, DateTime requestTime, int include_misses = 0)
+    public static async Task<List<ServerMetrics>> GetServerMetrics(int id, DateTime requestTime, int includeMisses = 0)
     {
         using var getConn = DatabasePool.GetConnection();
         var db = getConn.Db;
 
         string sql;
 
-        if (include_misses > 0)
+        if (includeMisses > 0)
         {
             sql = "SELECT players, time FROM metrics_server WHERE time > @requestTime AND server_id = @id ORDER BY time DESC";
         }

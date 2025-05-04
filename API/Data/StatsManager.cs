@@ -24,16 +24,16 @@ public static class StatsManager
         CreateTimers();
     }
 
-    public static List<GlobalMetrics> GetGlobalMetrics(int hours, bool skip_trimming = false)
+    public static List<GlobalMetrics> GetGlobalMetrics(int hours, bool skipTrimming = false)
     {
         DateTime requestTime = DateTime.UtcNow - TimeSpan.FromHours(hours);
 
         IEnumerable<GlobalMetrics> result = GlobalMetrics.Where(x => x.Time > requestTime);
 
         // By default, GlobalMetrics has data recorded every 30 minutes. If "trimming" is skipped, return it all.
-        // Likewise, if the amount of entries is below 750, just return everything as well.
+        // Likewise, if the number of entries is below 750, return everything as well.
 
-        if (skip_trimming) return [.. result];
+        if (skipTrimming) return [.. result];
 
         int count = result.Count();
 
@@ -54,7 +54,7 @@ public static class StatsManager
             .Select(g => new GlobalMetrics(
                 players: (int)g.Average(x => x.item.Players),
                 servers: (int)g.Average(x => x.item.Servers),
-                omp_servers: (int)g.Average(x => x.item.OmpServers),
+                ompServers: (int)g.Average(x => x.item.OmpServers),
                 time: g.First().item.Time // Use the first entries' timestamp
             ))
         ];
@@ -109,7 +109,7 @@ public static class StatsManager
         try
         {
             var conn = new MySqlConnection(MySql.ConnectionString);
-            const string sql = "SELECT players, servers, omp_servers, time FROM metrics_global ORDER BY time DESC";
+            const string sql = "SELECT players, servers, omp_servers AS ompServers, time FROM metrics_global ORDER BY time DESC";
 
             GlobalMetrics = [.. await conn.QueryAsync<GlobalMetrics>(sql)];
         }

@@ -9,7 +9,6 @@ namespace SAMonitor.Data;
 
 public sealed class Server : IDisposable
 {
-    private readonly System.Timers.Timer _queryTimer = new(); // 20 minute timer
     public int Id { get; set; }
     public bool Success { get; init; }
     public DateTime LastUpdated { get; set; }
@@ -32,6 +31,7 @@ public sealed class Server : IDisposable
     public bool Sponsor { get; init; }
 
     private SampQuery.SampQuery? _query;
+    private readonly System.Timers.Timer _queryTimer = new(); // 20 minute timer
 
     public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, DateTime sponsor_until, int weather)
     {
@@ -137,7 +137,7 @@ public sealed class Server : IDisposable
             {
                 if (!Helpers.IsDevelopment)
                 {
-                    // server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
+                    // Server failed to respond. As such, in metrics, we store -1 players. Because having -1 players is not possible, this indicates downtime.
                     await ServerRepository.InsertServerMetrics(Id, -1);
                 }
 
@@ -160,7 +160,7 @@ public sealed class Server : IDisposable
                 }
             }
 
-            // Server objects are spawned on first query. If a server was never successfully stored, then it'll die here.
+            // Server objects are spawned on the first query. If a server was never successfully stored, then it'll die here.
             // Timer is killed, nothing else contains this object, and the garbage collector takes it from here.
             if (Id == -1)
             {
@@ -180,10 +180,7 @@ public sealed class Server : IDisposable
         RequiresPassword = serverInfo.Password;
         LastUpdated = DateTime.UtcNow;
 
-        if (PlayersOnline > MaxPlayers)
-        {
-            return false;
-        }
+        if (PlayersOnline > MaxPlayers) return false;
 
         await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
 
@@ -227,10 +224,7 @@ public sealed class Server : IDisposable
             _ = Task.Run(() => IsOpenMp = _query.GetServerIsOMP());
         }
         
-        if (doUpdate)
-        {
-            ServerUpdater.Queue(this);
-        }
+        if (doUpdate) ServerUpdater.Queue(this);
 
         return true;
     }
@@ -242,10 +236,7 @@ public sealed class Server : IDisposable
     {
         List<Player> players = [];
 
-        if (_query is null)
-        {
-            return players;
-        }
+        if (_query is null) return players;
 
         if (DateTime.UtcNow - _playerListTime <= TimeSpan.FromMinutes(3)) return _playerListCache;
         
@@ -284,16 +275,10 @@ public sealed class Server : IDisposable
     private void Dispose(bool disposing)
     {
         if (_disposed) return;
-        
-        if (disposing)
-        {
-            // Dispose managed resources
-            _queryTimer.Dispose();
-        }
-
-        // Dispose unmanaged resources
-
         _disposed = true;
+
+        // Dispose managed resources, just the query timer.
+        if (disposing) _queryTimer.Dispose();
     }
 
     ~Server()

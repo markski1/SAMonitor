@@ -35,7 +35,7 @@ public static class WebServer
         app.UseCors(x => x
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    .SetIsOriginAllowed(origin => true)
+                    .SetIsOriginAllowed(_ => true)
                     .AllowCredentials());
 
         app.Run();

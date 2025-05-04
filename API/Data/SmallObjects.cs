@@ -1,4 +1,5 @@
-﻿using SAMonitor.SampQuery.Types;
+﻿using System.Text.Json.Serialization;
+using SAMonitor.SampQuery.Types;
 
 namespace SAMonitor.Data;
 
@@ -105,7 +106,7 @@ public class ServerFilterer
             {
                 servers = servers.OrderByDescending(x => x.PlayersOnline).ToList();
             }
-            // by player count over max player ratio.
+            // by player count over the max player ratio.
             else
             {
                 // show_empty=0 guarantees PlayersOnline will never be zero.
@@ -126,7 +127,7 @@ public class ServerFilterer
         }
         else
         {
-            // if "none", then order by the ShuffleOrder which gets shuffled every 30 minutes.
+            // if "none", then order by the ShuffleOrder, which gets shuffled every 30 minutes.
             servers = servers.OrderBy(x => x.ShuffledOrder).ToList();
         }
 
@@ -143,11 +144,11 @@ public class Player(ServerPlayer player)
     public string Name { get; set; } = player.PlayerName;
     public int Score { get; set; } = player.PlayerScore;
 }
-public class GlobalMetrics(int players, int servers, int omp_servers, DateTime time)
+public class GlobalMetrics(int players, int servers, int ompServers, DateTime time)
 {
     public int Players { get; init; } = players;
     public int Servers { get; init; } = servers;
-    public int OmpServers { get; init; } = omp_servers;
+    public int OmpServers { get; init; } = ompServers;
     public DateTime Time { get; init; } = time;
 }
 public class ServerMetrics(int players, DateTime time)
@@ -162,19 +163,14 @@ public class GlobalStats(int playersOnline, int serversTracked, int serversInhab
     public int ServersTracked { get; set; } = serversTracked;
     public int ServersOnline { get; set; } = serversOnline;
     public int ServersInhabited { get; set; } = serversInhabited;
-    public int serversOnlineOMP { get; set; } = serversOnlineOmp;
+    [JsonPropertyName("serversOnlineOMP")] // Unfortunately mistakes were made. This is the published name in the API and compat cannot be broken.
+    public int ServersOnlineOmp { get; set; } = serversOnlineOmp;
 }
 
 public class CategoryStats
 {
-    public int Amount { get; set; }
-    public int Players { get; set; }
-
-    public CategoryStats()
-    {
-        Amount = 0;
-        Players = 0;
-    }
+    public int Amount { get; set; } = 0;
+    public int Players { get; set; } = 0;
 
     public void Add(Server server)
     {
@@ -185,50 +181,25 @@ public class CategoryStats
 
 public class LanguageStats
 {
-    public CategoryStats Spanish { get; set; }
-    public CategoryStats Russian { get; set; }
-    public CategoryStats English { get; set; }
-    public CategoryStats Romanian { get; set; }
-    public CategoryStats Portuguese { get; set; }
-    public CategoryStats Asia { get; set; }
-    public CategoryStats EastEuro { get; set; }
-    public CategoryStats WestEuro { get; set; }
-    public CategoryStats Other { get; set; }
-
-    public LanguageStats()
-    {
-        Spanish = new();
-        Russian = new();
-        English = new();
-        Romanian = new();
-        Portuguese = new();
-        Asia = new();
-        EastEuro = new();
-        WestEuro = new();
-        Other = new();
-    }
+    public CategoryStats Spanish { get; set; } = new();
+    public CategoryStats Russian { get; set; } = new();
+    public CategoryStats English { get; set; } = new();
+    public CategoryStats Romanian { get; set; } = new();
+    public CategoryStats Portuguese { get; set; } = new();
+    public CategoryStats Asia { get; set; } = new();
+    public CategoryStats EastEuro { get; set; } = new();
+    public CategoryStats WestEuro { get; set; } = new();
+    public CategoryStats Other { get; set; } = new();
 }
 
 public class GamemodeStats
 {
-    public CategoryStats Deathmatch { get; set; }
-    public CategoryStats Roleplay { get; set; }
-    public CategoryStats RaceStunt { get; set; }
-    public CategoryStats Cnr { get; set; }
-    public CategoryStats FreeRoam { get; set; }
-    public CategoryStats Survival { get; set; }
-    public CategoryStats VehSim { get; set; }
-    public CategoryStats Other { get; set; }
-
-    public GamemodeStats()
-    {
-        Deathmatch = new();
-        Roleplay = new();
-        RaceStunt = new();
-        Cnr = new();
-        FreeRoam = new();
-        Survival = new();
-        VehSim = new();
-        Other = new();
-    }
+    public CategoryStats Deathmatch { get; set; } = new();
+    public CategoryStats Roleplay { get; set; } = new();
+    public CategoryStats RaceStunt { get; set; } = new();
+    public CategoryStats Cnr { get; set; } = new();
+    public CategoryStats FreeRoam { get; set; } = new();
+    public CategoryStats Survival { get; set; } = new();
+    public CategoryStats VehSim { get; set; } = new();
+    public CategoryStats Other { get; set; } = new();
 }

@@ -53,10 +53,17 @@ public static class ServerManager
             FailedAddresses.Add(ipAddr);
             return "CR-MP servers are currently unsupported.";
         }
+        
+        // Extract to avoid 'disposed at outer scope' false(?) positive in JetBrains.
+        string newName = newServer.Name;
+        string newLang = newServer.Language;
+        string newWebsite = newServer.Website;
 
-        // check for copies                                                                                     they usually try to get smart by slightly modifying the gamemode string;
-        //                                                                                                      so a little flexibility on this one
-        var copies = _currentServers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
+        // check for copies
+        var copies = _currentServers.Where(x => 
+            x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) && 
+            x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) && 
+            x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase));
 
         if (copies.Any())
         {
@@ -66,7 +73,10 @@ public static class ServerManager
         }
 
         // if there's an 'old' dead version of this, then delete it.
-        copies = _servers.Where(x => x.Name == newServer.Name && x.Language == newServer.Language && (x.GameMode == newServer.GameMode || x.Website == newServer.Website));
+        copies = _servers.Where(x => 
+            x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) && 
+            x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) && 
+            x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase));
 
         var enumerable = copies as Server[] ?? copies.ToArray();
         foreach (var server in enumerable)
@@ -78,17 +88,17 @@ public static class ServerManager
 
         _servers.RemoveAll(x => enumerable.Contains(x));
 
-        if (await ServerRepository.InsertServer(newServer))
+        if (!await ServerRepository.InsertServer(newServer))
         {
-            newServer.Id = await ServerRepository.GetServerId(ipAddr);
-            _servers.Add(newServer);
-            _currentServers.Add(newServer);
-
-            return "Server added to SAMonitor.";
+            newServer.Dispose();
+            return "Sorry, there was an error adding your server to SAMonitor.";
         }
+        
+        newServer.Id = await ServerRepository.GetServerId(ipAddr);
+        _servers.Add(newServer);
+        _currentServers.Add(newServer);
 
-        newServer.Dispose();
-        return "Sorry, there was an error adding your server to SAMonitor.";
+        return "Server added to SAMonitor.";
     }
 
     private static bool IsBlacklisted(string ipAddr)
