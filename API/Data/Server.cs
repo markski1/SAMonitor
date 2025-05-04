@@ -3,7 +3,6 @@
 using SAMonitor.Utils;
 using System.Timers;
 using SAMonitor.Database;
-using SAMonitor.SampQuery.Types;
 
 namespace SAMonitor.Data;
 
@@ -30,7 +29,7 @@ public sealed class Server : IDisposable
     public int Weather { get; set; }
     public bool Sponsor { get; init; }
 
-    private SampQuery.SampQuery? _query;
+    private SampQuery? _query;
     private readonly System.Timers.Timer _queryTimer = new(); // 20 minute timer
 
     public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, DateTime sponsor_until, int weather)
@@ -190,9 +189,9 @@ public sealed class Server : IDisposable
 
             Version = serverRules.Version ?? "Unknown";
             MapName = serverRules.MapName ?? "Unknown";
-            SampCac = serverRules.SAMPCAC_Version ?? "Not required";
-            LagComp = serverRules.Lagcomp;
-            Website = serverRules.Weburl is null ? "Unknown" : serverRules.Weburl.ToString();
+            SampCac = serverRules.SampcacVersion ?? "Not required";
+            LagComp = serverRules.LagComp;
+            Website = serverRules.WebUrl is null ? "Unknown" : serverRules.WebUrl.ToString();
             WorldTime = serverRules.WorldTime;
             Weather = serverRules.Weather;
         }
@@ -221,7 +220,7 @@ public sealed class Server : IDisposable
         else
         {
             await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
-            _ = Task.Run(() => IsOpenMp = _query.GetServerIsOMP());
+            _ = Task.Run(() => IsOpenMp = _query.GetServerIsOmp());
         }
         
         if (doUpdate) ServerUpdater.Queue(this);

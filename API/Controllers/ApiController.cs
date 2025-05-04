@@ -57,7 +57,7 @@ public class ApiController : ControllerBase
         }
         catch
         {
-            // nothing, just return the full list. this just protects from malicious pagingSize or page values.
+            // return the full list. this just protects from malicious pagingSize or page values.
         }
 
         return orderedServers;

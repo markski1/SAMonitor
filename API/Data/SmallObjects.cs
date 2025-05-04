@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using SAMonitor.SampQuery.Types;
+using SAMonitor.Utils;
 
 namespace SAMonitor.Data;
 
@@ -144,6 +144,7 @@ public class Player(ServerPlayer player)
     public string Name { get; set; } = player.PlayerName;
     public int Score { get; set; } = player.PlayerScore;
 }
+
 public class GlobalMetrics(int players, int servers, int ompServers, DateTime time)
 {
     public int Players { get; init; } = players;
