@@ -51,7 +51,6 @@ public static class Helpers
 
     public static string BodgedEncodingFix(string text)
     {
-
         text = text.Replace('с', 'ñ');
         text = text.Replace('к', 'ê');
         text = text.Replace('Ў', '¡');
@@ -59,5 +58,18 @@ public static class Helpers
         text = text.Replace('у', 'ó');
         text = text.Replace('б', 'á');
         return text;
+    }
+
+    public static void LogError(string context, Exception ex)
+    {
+        try
+        {
+            Console.WriteLine($"[err] {context} \n {ex}");
+            File.AppendAllText("log.txt", $"[err] {context} \n {ex}");
+        }
+        catch (Exception logEx)
+        {
+            Console.WriteLine($"[log error] Failed to write to log.txt: {logEx.Message}");
+        }
     }
 }

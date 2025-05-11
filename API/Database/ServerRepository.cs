@@ -4,7 +4,7 @@ using static Dapper.SqlMapper;
 
 namespace SAMonitor.Database;
 
-public class ServerRepository
+public static class ServerRepository
 {
     public static async Task<List<Server>> GetAllServersAsync()
     {
@@ -54,7 +54,7 @@ public class ServerRepository
 
         try
         {
-            return (await db.ExecuteAsync(sql, new
+            return await db.ExecuteAsync(sql, new
             {
                 server.IpAddr,
                 server.Name,
@@ -70,7 +70,7 @@ public class ServerRepository
                 server.Language,
                 server.SampCac,
                 server.Weather
-            })) > 0;
+            }) > 0;
         }
         catch (Exception ex)
         {

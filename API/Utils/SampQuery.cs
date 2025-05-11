@@ -134,7 +134,7 @@ public class SampQuery
     /// </summary>
     /// <returns>An asynchronous task that completes with the collection of ServerPlayer instances</returns>
     /// <exception cref="SocketException">Thrown when operation timed out</exception>
-    public async Task<IEnumerable<ServerPlayer>> GetServerPlayersAsync()
+    public async Task<List<ServerPlayer>> GetServerPlayersAsync()
     {
         byte[] data = await SendSocketToServerAsync('d');
         return CollectServerPlayersInfoFromByteArray(data);
@@ -180,7 +180,7 @@ public class SampQuery
         return CollectServerRulesFromByteArray(data);
     }
 
-    private static IEnumerable<ServerPlayer> CollectServerPlayersInfoFromByteArray(byte[] data)
+    private static List<ServerPlayer> CollectServerPlayersInfoFromByteArray(byte[] data)
     {
         List<ServerPlayer> returnData = [];
 
@@ -220,7 +220,7 @@ public class SampQuery
             GameMode = new string(read.ReadChars(read.ReadInt32())),
             Language = new string(read.ReadChars(read.ReadInt32())),
 
-            ServerPing = DateTime.Now.Subtract(_transmitMs).Milliseconds,
+            ServerPing = DateTime.Now.Subtract(_transmitMs).Milliseconds
         };
     }
 

@@ -35,11 +35,12 @@ public static class StatsManager
 
         if (skipTrimming) return [.. result];
 
-        int count = result.Count();
+        var globalMetricsEnumerable = result as GlobalMetrics[] ?? result.ToArray();
+        int count = globalMetricsEnumerable.Length;
 
         if (count < 750)
         {
-            return [.. result];
+            return [.. globalMetricsEnumerable];
         }
 
         // Otherwise, we "fuse" entries together by grouping them by time and doing averages.
@@ -49,7 +50,7 @@ public static class StatsManager
 
         // We take whatever amount decided above, and group those entries down to smaller averages.
         return [
-                .. result.Select((item, index) => new { item, index })
+                .. globalMetricsEnumerable.Select((item, index) => new { item, index })
             .GroupBy(x => x.index / avgSet)
             .Select(g => new GlobalMetrics(
                 players: (int)g.Average(x => x.item.Players),

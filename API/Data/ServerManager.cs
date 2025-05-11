@@ -103,33 +103,30 @@ public static class ServerManager
 
     private static bool IsBlacklisted(string ipAddr)
     {
-        foreach (var addr in _blacklist)
-        {
-            if (ipAddr.Contains(addr))
-                return true;
-        }
-        return false;
+        return _blacklist.Any(ipAddr.Contains);
     }
 
     public static Server? ServerByIp(string ip)
     {
         var result = _servers.Where(x => x.IpAddr.Contains(ip)).ToList();
 
-        if (result.Count < 1)
+        switch (result.Count)
         {
-            return null;
-        }
-
-        if (result.Count > 1)
-        {
-            var newFind = result.Where(x => x.IpAddr.Contains("7777")).ToList();
-
-            if (newFind.Count > 0)
+            case < 1:
+                return null;
+            case > 1:
             {
-                return newFind.FirstOrDefault();
+                var newFind = result.Where(x => x.IpAddr.Contains("7777")).ToList();
+
+                if (newFind.Count > 0)
+                {
+                    return newFind.FirstOrDefault();
+                }
+
+                break;
             }
         }
-
+        
         return result.FirstOrDefault();
     }
 
@@ -178,8 +175,8 @@ public static class ServerManager
         var server = ServerByIp(ipAddr);
         if (server is not null)
             return server.Id;
-        else
-            return -1;
+
+        return -1;
     }
 
     private static readonly System.Timers.Timer ThirtyMinuteTimer = new();
@@ -287,7 +284,7 @@ public static class ServerManager
 
         foreach (var blockedAddr in _blacklist)
         {
-            sql = @"DELETE FROM servers WHERE ip_addr LIKE @BlockedAddr";
+            sql = "DELETE FROM servers WHERE ip_addr LIKE @BlockedAddr";
             await conn.ExecuteAsync(sql, new { BlockedAddr = $"%{blockedAddr}%" });
         }
 

@@ -241,20 +241,15 @@ public sealed class Server : IDisposable
         
         try
         {
-            var serverPlayersTask = _query.GetServerPlayersAsync();
-            // Timeout at 2 seconds.
-            if (await Task.WhenAny(serverPlayersTask, Task.Delay(2000)) == serverPlayersTask)
-            {
-                await serverPlayersTask;
-                var serverPlayers = serverPlayersTask.Result;
-                // we pass it as a different type of object for API compatibility reasons.
-                _playerListCache.Clear();
-                _playerListCache.AddRange(serverPlayers.Select(player => new Player(player)));
-            }
+            var serverPlayers = await _query.GetServerPlayersAsync();
+            // we pass it as a different type of object for API compatibility reasons.
+            _playerListCache.Clear();
+            _playerListCache.AddRange(serverPlayers.Select(player => new Player(player)));
         }
-        catch
+        catch (Exception Ex)
         {
-            // nothing to handle, this happens if server has >100 players and is a SA-MP issue.
+            Helpers.LogError($"get-players-{Id}", Ex);
+            // nothing to handle, this happens, usually, if the server has >100 players and is a SA-MP issue.
         }
 
         _playerListCache = players;
