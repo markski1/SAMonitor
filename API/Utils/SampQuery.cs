@@ -2,7 +2,7 @@
  * THE FOLLOWING IS A SINGLE-FILE BESPOKE MODIFICATION OF SampQuery.
  *
  * This is not very good, I modified it a bunch specifically for SAMonitor.
- * !!!   and YOU should never use this for any other project, ever   !!!
+ * !!!   And YOU should never use this for any other project, ever!
  *
  * If you wish to use SampQuery in your project, please use the actual, most excellent library by JustMavi.
  * https://github.com/justmavi/sampquery
@@ -130,14 +130,23 @@ public class SampQuery
     }
     
     /// <summary>
-    /// Get server players
+    /// Get server players. Attempts either player list or client list.
     /// </summary>
     /// <returns>An asynchronous task that completes with the collection of ServerPlayer instances</returns>
     /// <exception cref="SocketException">Thrown when operation timed out</exception>
     public async Task<List<ServerPlayer>> GetServerPlayersAsync()
     {
-        byte[] data = await SendSocketToServerAsync('d');
-        return CollectServerPlayersInfoFromByteArray(data);
+        byte[] data;
+        try
+        {
+            data = await SendSocketToServerAsync('d');
+            return CollectServerPlayersInfoFromByteArray(data, 'd');
+        }
+        catch
+        {
+            data = await SendSocketToServerAsync('c');
+            return CollectServerPlayersInfoFromByteArray(data, 'c');
+        }
     }
     
     /// <summary>
@@ -180,7 +189,7 @@ public class SampQuery
         return CollectServerRulesFromByteArray(data);
     }
 
-    private static List<ServerPlayer> CollectServerPlayersInfoFromByteArray(byte[] data)
+    private static List<ServerPlayer> CollectServerPlayersInfoFromByteArray(byte[] data, char packetType)
     {
         List<ServerPlayer> returnData = [];
 
@@ -191,13 +200,26 @@ public class SampQuery
 
         for (int i = 0, iTotalPlayers = read.ReadInt16(); i < iTotalPlayers; i++)
         {
-            returnData.Add(new ServerPlayer
+            if (packetType == 'd') // if the packet type is 'd', we got a full player list.
             {
-                PlayerId = Convert.ToByte(read.ReadByte()),
-                PlayerName = new string(read.ReadChars(read.ReadByte())),
-                PlayerScore = read.ReadInt32(),
-                PlayerPing = read.ReadInt32()
-            });
+                returnData.Add(new ServerPlayer
+                {
+                    PlayerId = Convert.ToByte(read.ReadByte()),
+                    PlayerName = new string(read.ReadChars(read.ReadByte())),
+                    PlayerScore = read.ReadInt32(),
+                    PlayerPing = read.ReadInt32()
+                });
+            }
+            else // Otherwise we got a 'client' list, which might be incomplete, as per https://open.mp/docs/tutorials/QueryMechanism
+            {
+                returnData.Add(new ServerPlayer
+                {
+                    PlayerId = 0,
+                    PlayerName = new string(read.ReadChars(read.ReadByte())),
+                    PlayerScore = read.ReadInt32(),
+                    PlayerPing = 0
+                });
+            }
         }
 
         return returnData;
