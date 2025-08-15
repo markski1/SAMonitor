@@ -24,7 +24,7 @@ public static class ServerManager
     {
         _servers = await ServerRepository.GetAllServersAsync();
 
-        UpdateBlacklist();
+        await UpdateBlacklist();
         _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
         _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
         UpdateMasterlist();
@@ -195,10 +195,13 @@ public static class ServerManager
         timedActions.Start();
     }
 
-    private static void TimedActions()
+    private static async void TimedActions()
     {
-        // Update the Blacklist.
-        UpdateBlacklist();
+        // 'async void' isn't great, but this runs in its own thread so crashing should be
+        // largely inconsequential.
+        
+        // Update the blacklist.
+        await UpdateBlacklist();
 
         // Clean list of "recently attempted" IP addresses.
         FailedAddresses.Clear();
@@ -208,14 +211,14 @@ public static class ServerManager
 
         _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
 
-        // Update the Masterlist accordingly.
+        // Update the masterlist accordingly.
         UpdateMasterlist();
 
         // Last of all, save the metrics.
-        SaveMetrics();
+        await SaveMetrics();
     }
 
-    private static async void SaveMetrics()
+    private static async Task SaveMetrics()
     {
         // don't save metrics unless in production
         if (Helpers.IsDevelopment) return;
@@ -273,7 +276,7 @@ public static class ServerManager
         }
     }
 
-    private static async void UpdateBlacklist()
+    private static async Task UpdateBlacklist()
     {
         using var getConn = DatabasePool.GetConnection();
         var conn = getConn.Db;

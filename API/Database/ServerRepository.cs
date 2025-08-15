@@ -79,14 +79,14 @@ public static class ServerRepository
         }
     }
 
-    public static async Task<int> InsertServerMetrics(int serverId, int playerAmount)
+    public static async Task InsertServerMetrics(int serverId, int playerAmount)
     {
         using var getConn = DatabasePool.GetConnection();
         var db = getConn.Db;
 
         const string sql = "INSERT INTO metrics_server (server_id, players) VALUES (@server_id, @player_amount)";
 
-        return await db.ExecuteAsync(sql, new { server_id = serverId, player_amount = playerAmount });
+        await db.ExecuteAsync(sql, new { server_id = serverId, player_amount = playerAmount });
     }
 
     public static async Task<bool> UpdateServer(Server server)
