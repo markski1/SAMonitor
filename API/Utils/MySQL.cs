@@ -12,7 +12,7 @@ public static class MySql
 
         try
         {
-            dynamic? data = JsonConvert.DeserializeObject(File.ReadAllText("/home/markski/samonitor/api/mysql.txt"));
+            dynamic? data = JsonConvert.DeserializeObject(File.ReadAllText("./mysql.txt"));
 
             if (data is null)
                 return false;
