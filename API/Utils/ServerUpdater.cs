@@ -44,7 +44,11 @@ public static class ServerUpdater
             }
             foreach (var server in currentQueue)
             {
-                await ServerRepository.UpdateServer(server);
+                if (!await ServerRepository.UpdateServer(server))
+                {
+                    // In the environment SAMonitor runs, messages to console are logged.
+                    Console.WriteLine($"Failed to update server {server.IpAddr}");
+                }
             }
         }
         catch (Exception ex)
