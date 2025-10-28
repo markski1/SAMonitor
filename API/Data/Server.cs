@@ -146,10 +146,6 @@ public sealed class Server : IDisposable
                 {
                     _queryTimer.Interval = 86400000;
                 }
-                else if (downtime > TimeSpan.FromDays(1)) // if the server's been dead over a day, only query every 3 hours.
-                {
-                    _queryTimer.Interval = 10800000;
-                }
                 else if (downtime > TimeSpan.FromHours(3)) { // if the server's been dead for over 3 hours, only query every hour
                     _queryTimer.Interval = 3600000;
                 }
