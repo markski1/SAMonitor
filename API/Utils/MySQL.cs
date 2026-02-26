@@ -26,8 +26,9 @@ public static class MySql
 
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Failed to read or build the ConnectString: {ex.Message}");
             return false;
         }
     }
