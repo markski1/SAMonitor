@@ -164,11 +164,11 @@ public class SampQuery
     /// Get whether the server software is open.mp or not
     /// </summary>
     /// <returns>An asynchronous task that completes with an instance of Bool</returns>
-    public bool GetServerIsOmp()
+    public async Task<bool> GetServerIsOmpAsync()
     {
         try
         {
-            SendSocketToServer('o');
+            await SendSocketToServerAsync('o');
             return true;
         }
         catch

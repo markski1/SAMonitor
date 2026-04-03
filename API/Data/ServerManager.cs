@@ -2,7 +2,6 @@
 using MySqlConnector;
 using SAMonitor.Database;
 using SAMonitor.Utils;
-using System.Timers;
 
 namespace SAMonitor.Data;
 
@@ -179,43 +178,52 @@ public static class ServerManager
         return -1;
     }
 
-    private static readonly System.Timers.Timer ThirtyMinuteTimer = new();
-
     private static void CreateTimers()
     {
-        ThirtyMinuteTimer.Elapsed += EveryThirtyMinutes;
-        ThirtyMinuteTimer.AutoReset = true;
-        ThirtyMinuteTimer.Interval = 1800000;
-        ThirtyMinuteTimer.Enabled = true;
+        Task.Run(EveryThirtyMinutesLoop);
     }
 
-    private static void EveryThirtyMinutes(object? sender, ElapsedEventArgs e)
+    private static async Task EveryThirtyMinutesLoop()
     {
-        Thread timedActions = new(TimedActions);
-        timedActions.Start();
+        while (true)
+        {
+            await Task.Delay(TimeSpan.FromMinutes(30));
+            try
+            {
+                await TimedActions();
+            }
+            catch (Exception ex)
+            {
+                await Helpers.LogError("TimedActions", ex);
+            }
+        }
     }
 
-    private static async void TimedActions()
+    private static async Task TimedActions()
     {
-        // 'async void' isn't great, but this runs in its own thread so crashing should be
-        // largely inconsequential.
-        
-        // Update the blacklist.
-        await UpdateBlacklist();
+        try
+        {
+            // Update the blacklist.
+            await UpdateBlacklist();
 
-        // Clean list of "recently attempted" IP addresses.
-        FailedAddresses.Clear();
+            // Clean list of "recently attempted" IP addresses.
+            FailedAddresses.Clear();
 
-        // Update the current servers with only the ones which have responded in the last 12 hours
-        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
+            // Update the current servers with only the ones which have responded in the last 12 hours
+            _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
 
-        _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
+            _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
 
-        // Update the masterlist accordingly.
-        UpdateMasterlist();
+            // Update the masterlist accordingly.
+            UpdateMasterlist();
 
-        // Last of all, save the metrics.
-        await SaveMetrics();
+            // Last of all, save the metrics.
+            await SaveMetrics();
+        }
+        catch (Exception ex)
+        {
+            await Helpers.LogError("TimedActions", ex);
+        }
     }
 
     private static async Task SaveMetrics()
@@ -223,8 +231,7 @@ public static class ServerManager
         // don't save metrics unless in production
         if (Helpers.IsDevelopment) return;
         
-        using var getConn = DatabasePool.GetConnection();
-        var conn = getConn.Db;
+        using var db = await DatabasePool.GetConnectionAsync();
 
         const string sql = "INSERT INTO metrics_global (players, servers, omp_servers) VALUES(@_players, @_servers, @_omp_servers)";
 
@@ -234,7 +241,7 @@ public static class ServerManager
 
         int ompServers = _currentServers.Count(x => x.IsOpenMp);
 
-        await conn.ExecuteAsync(sql, new { _players = players, _servers = servers, _omp_servers = ompServers });
+        await db.ExecuteAsync(sql, new { _players = players, _servers = servers, _omp_servers = ompServers });
     }
 
     private static void UpdateMasterlist()
@@ -278,17 +285,19 @@ public static class ServerManager
 
     private static async Task UpdateBlacklist()
     {
-        using var getConn = DatabasePool.GetConnection();
-        var conn = getConn.Db;
+        using var db = await DatabasePool.GetConnectionAsync();
 
         var sql = "SELECT ip_addr FROM blacklist";
 
-        _blacklist = (await conn.QueryAsync<string>(sql)).ToList();
+        _blacklist = (await db.QueryAsync<string>(sql)).ToList();
+
+        if (_blacklist.Count == 0) return;
+
+        sql = "DELETE FROM servers WHERE ip_addr LIKE @BlockedAddr";
 
         foreach (var blockedAddr in _blacklist)
         {
-            sql = "DELETE FROM servers WHERE ip_addr LIKE @BlockedAddr";
-            await conn.ExecuteAsync(sql, new { BlockedAddr = $"%{blockedAddr}%" });
+            await db.ExecuteAsync(sql, new { BlockedAddr = $"%{blockedAddr}%" });
         }
 
         _servers = _servers.Where(x => !_blacklist.Any(addr => x.IpAddr.Contains(addr))).ToList();

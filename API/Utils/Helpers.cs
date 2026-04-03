@@ -1,10 +1,14 @@
 ﻿using System.Net;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace SAMonitor.Utils;
 
 public static class Helpers
 {
     public static bool IsDevelopment = false;
+
+    private const string WebhookUrl = "https://discord.com/api/webhooks/1489735891403673630/prN7cAVWI2c04bNLXU27hpzjjF0-8VSvIJG5wrc-RDaIkOtbUHGWwEcXzEx5iNjDUsWb";
 
     public static async Task<string> ValidateIPv4(string ipAddr)
     {
@@ -60,16 +64,40 @@ public static class Helpers
         return text;
     }
 
-    public static void LogError(string context, Exception ex)
+    public static async Task LogError(string context, Exception ex)
     {
+        // Temporal but while some issues in the new server are being ironed out I want to know when and why db ops fail.
         try
         {
-            Console.WriteLine($"[err] {context} \n {ex}");
-            File.AppendAllText("log.txt", $"[err] {context} \n {ex}");
+            var message = $"[err] {context} \n {ex}";
+            Console.WriteLine(message);
+            await File.AppendAllTextAsync("log.txt", $"{message}\n");
+
+            if (!IsDevelopment)
+            {
+                await SendDiscordMessage(message);
+            }
         }
         catch (Exception logEx)
         {
-            Console.WriteLine($"[log error] Failed to write to log.txt: {logEx.Message}");
+            Console.WriteLine($"[log error] Failed to write to log.txt or send Discord message: {logEx.Message}");
+        }
+    }
+
+    private static async Task SendDiscordMessage(string message)
+    {
+        try
+        {
+            using var client = new HttpClient();
+            var payload = new { content = message.Length > 2000 ? message[..1997] + "..." : message };
+            var json = JsonConvert.SerializeObject(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            await client.PostAsync(WebhookUrl, content);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send Discord message: {ex.Message}");
         }
     }
 }

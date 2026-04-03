@@ -8,8 +8,7 @@ public static class ServerRepository
 {
     public static async Task<List<Server>> GetAllServersAsync()
     {
-        using var getConn = DatabasePool.GetConnection();
-        var db = getConn.Db;
+        using var db = await DatabasePool.GetConnectionAsync();
 
         const string sql = "SELECT id, ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, sponsor_until, weather FROM servers";
 
@@ -19,15 +18,14 @@ public static class ServerRepository
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[db_err] Could not get servers from database \n {ex}");
+            await Helpers.LogError("GetAllServersAsync", ex);
             return [];
         }
     }
 
     public static async Task<int> GetServerId(string ipAddr)
     {
-        using var getConn = DatabasePool.GetConnection();
-        var db = getConn.Db;
+        using var db = await DatabasePool.GetConnectionAsync();
 
         const string sql = "SELECT id FROM servers WHERE ip_addr=@IpAddr";
 
@@ -37,15 +35,14 @@ public static class ServerRepository
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[db_err] Failed to get ID for {ipAddr} !! \n {ex}");
+            await Helpers.LogError($"GetServerId {ipAddr}", ex);
             return 0;
         }
     }
 
     public static async Task<bool> InsertServer(Server server)
     {
-        using var getConn = DatabasePool.GetConnection();
-        var db = getConn.Db;
+        using var db = await DatabasePool.GetConnectionAsync();
 
         const string sql = """
                            INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, weather)
@@ -74,15 +71,14 @@ public static class ServerRepository
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[db_err] Failed to add {server.IpAddr} to the database \n {ex}");
+            await Helpers.LogError($"InsertServer {server.IpAddr}", ex);
             return false;
         }
     }
 
     public static async Task InsertServerMetrics(int serverId, int playerAmount)
     {
-        using var getConn = DatabasePool.GetConnection();
-        var db = getConn.Db;
+        using var db = await DatabasePool.GetConnectionAsync();
 
         const string sql = "INSERT INTO metrics_server (server_id, players) VALUES (@server_id, @player_amount)";
 
@@ -91,8 +87,7 @@ public static class ServerRepository
 
     public static async Task<bool> UpdateServer(Server server)
     {
-        using var getConn = DatabasePool.GetConnection();
-        var db = getConn.Db;
+        using var db = await DatabasePool.GetConnectionAsync();
 
         string sql = """
                      UPDATE servers
@@ -122,8 +117,9 @@ public static class ServerRepository
                 server.Weather
             }) > 0;
         }
-        catch
+        catch (Exception ex)
         {
+            await Helpers.LogError($"UpdateServer {server.IpAddr}", ex);
             success = false;
         }
 
@@ -143,8 +139,7 @@ public static class ServerRepository
 
     public static async Task<List<ServerMetrics>> GetServerMetrics(int id, DateTime requestTime, int includeMisses = 0)
     {
-        using var getConn = DatabasePool.GetConnection();
-        var db = getConn.Db;
+        using var db = await DatabasePool.GetConnectionAsync();
 
         string sql;
 
