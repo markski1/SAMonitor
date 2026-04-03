@@ -7,6 +7,8 @@ if (!MySql.MySqlSetup())
     return 1;
 }
 
+Helpers.LoadWebhookUrl();
+
 Console.WriteLine("Loading servers.");
 await ServerManager.LoadServers();
 
