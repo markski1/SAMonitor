@@ -55,7 +55,6 @@ public sealed class Server : IDisposable
         ShuffledOrder = 9999;
         Sponsor = sponsor_until > DateTime.UtcNow;
 
-        CreateTimer();
         Weather = weather;
     }
 
@@ -82,11 +81,9 @@ public sealed class Server : IDisposable
         ShuffledOrder = 9999;
         Sponsor = false;
         Weather = -1;
-
-        CreateTimer();
     }
 
-    private void CreateTimer()
+    public void CreateTimer()
     {
         Random rand = new();
         // while initializing, do the first update at a random amount of time between 0 seconds and 20 minutes.

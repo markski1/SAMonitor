@@ -24,11 +24,39 @@ public static class ServerManager
         _servers = await ServerRepository.GetAllServersAsync();
 
         await UpdateBlacklist();
-        _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(6)).ToList();
+
+        Console.WriteLine($"Querying {_servers.Count} servers...");
+
+        var dropZone = DateTime.UtcNow - TimeSpan.FromHours(6);
+
+        // query all servers
+        var tasks = _servers.Select(async x =>
+        {
+            if (await x.Query(false))
+            {
+                return x;
+            }
+
+            // if it failed to respond, but it's not in the drop zone, we still keep it
+            if (x.LastUpdated > dropZone)
+            {
+                return x;
+            }
+
+            return null;
+        });
+
+        var results = await Task.WhenAll(tasks);
+
+        _currentServers = results.Where(x => x is not null).Cast<Server>().ToList();
         _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
+
         UpdateMasterlist();
 
         CreateTimers();
+
+        // after we're done, start the query loop for all servers
+        _servers.ForEach(x => x.CreateTimer());
     }
 
     public static async Task<string> AddServer(string ipAddr)
@@ -38,6 +66,7 @@ public static class ServerManager
         if (FailedAddresses.Contains(ipAddr)) return "This IP address failed last time it was queried. Please try again in an hour.";
 
         var newServer = new Server(ipAddr);
+        newServer.CreateTimer();
 
         if (!await newServer.Query(false))
         {
