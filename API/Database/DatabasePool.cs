@@ -5,63 +5,19 @@ namespace SAMonitor.Database;
 
 public static class DatabasePool
 {
-    private static readonly List<MySqlConnection> AvailableConnections = [];
-
-    private static readonly Lock Lock = new();
-
-    public static DbConnectionWrapper GetConnection()
+    public static async Task<MySqlConnection> GetConnectionAsync()
     {
-        lock (Lock)
-        {
-            List<MySqlConnection> removal = [];
-
-            MySqlConnection? connection = null;
-
-            // Get an open connection from the available connection pool.
-            foreach (MySqlConnection conn in AvailableConnections)
-            {
-                // If a connection is open, or has been closed normally, it can be used.
-                if (conn.State is System.Data.ConnectionState.Open or System.Data.ConnectionState.Closed)
-                {
-                    connection = conn;
-                    break;
-                }
-
-                // Broken connections are added to a removal list.
-                // Because _availableConnections cannot be mutated while being iterated.
-                if (conn.State == System.Data.ConnectionState.Broken)
-                {
-                    removal.Add(conn);
-                }
-            }
-
-            // Remove all connections in the removal list, if any.
-            foreach (MySqlConnection conn in removal)
-            {
-                AvailableConnections.Remove(conn);
-                conn.Dispose();
-            }
-
-            // If a connection was found, remove it from the available list and return it.
-            if (connection != null)
-            {
-                AvailableConnections.Remove(connection);
-                return new DbConnectionWrapper(connection);
-            }
-
-            // Otherwise, create a new connection.
-            var newConn = new MySqlConnection(MySql.ConnectionString);
-
-            return new DbConnectionWrapper(newConn);
-        }
+        var connection = new MySqlConnection(MySql.ConnectionString);
+        await connection.OpenAsync();
+        return connection;
     }
 
-    public static void ReturnConnection(MySqlConnection connection)
+    // Deprecated. Use GetConnectionAsync for better reliability.
+    public static DbConnectionWrapper GetConnection()
     {
-        lock (Lock)
-        {
-            AvailableConnections.Add(connection);
-        }
+        var connection = new MySqlConnection(MySql.ConnectionString);
+        connection.Open();
+        return new DbConnectionWrapper(connection);
     }
 }
 
@@ -71,7 +27,7 @@ public class DbConnectionWrapper(MySqlConnection connection) : IDisposable
 
     public void Dispose()
     {
-        DatabasePool.ReturnConnection(Db);
+        Db.Dispose();
         GC.SuppressFinalize(this);
     }
 }

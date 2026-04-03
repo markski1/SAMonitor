@@ -8,14 +8,26 @@ public static class ServerUpdater
 {
     private static readonly List<Server> UpdateQueue = [];
     private static readonly Lock Lock = new();
-    private static readonly System.Timers.Timer UpdateQueueTimer = new();
 
     public static void Initialize()
     {
-        UpdateQueueTimer.Elapsed += TimedRun;
-        UpdateQueueTimer.AutoReset = true;
-        UpdateQueueTimer.Interval = 15000;
-        UpdateQueueTimer.Enabled = true;
+        Task.Run(UpdateQueueLoop);
+    }
+
+    private static async Task UpdateQueueLoop()
+    {
+        while (true)
+        {
+            await Task.Delay(15000);
+            try
+            {
+                await ProcessQueue();
+            }
+            catch (Exception ex)
+            {
+                await Helpers.LogError("UpdateQueueLoop", ex);
+            }
+        }
     }
 
     public static void Queue(Server server)
@@ -26,19 +38,14 @@ public static class ServerUpdater
         }
     }
 
-    private static void TimedRun(object? sender, ElapsedEventArgs e)
-    {
-        Thread timedActions = new(ProcessQueue);
-        timedActions.Start();
-    }
-
-    private static async void ProcessQueue()
+    private static async Task ProcessQueue()
     {
         try
         {
             List<Server> currentQueue;
             lock (Lock)
             {
+                if (UpdateQueue.Count == 0) return;
                 currentQueue = new List<Server>(UpdateQueue);
                 UpdateQueue.Clear();
             }
@@ -53,7 +60,7 @@ public static class ServerUpdater
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error committing db changes: {ex.Message}");
+            await Helpers.LogError("ProcessQueue", ex);
         }
     }
 }

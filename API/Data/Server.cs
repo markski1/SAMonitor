@@ -30,7 +30,8 @@ public sealed class Server : IDisposable
     public bool Sponsor { get; init; }
 
     private SampQuery? _query;
-    private readonly System.Timers.Timer _queryTimer = new(); // 20 minute timer
+    private readonly CancellationTokenSource _cts = new();
+    private int _queryInterval = 1200000;
 
     public Server(int id, string ip_addr, string name, DateTime last_updated, int is_open_mp, int lag_comp, string map_name, string gamemode, int players_online, int max_players, string website, string version, string language, string sampcac, DateTime sponsor_until, int weather)
     {
@@ -88,26 +89,34 @@ public sealed class Server : IDisposable
     private void CreateTimer()
     {
         Random rand = new();
-        _queryTimer.Elapsed += TimedQuery;
-        _queryTimer.AutoReset = true;
-
         // while initializing, do the first update at a random amount of time between 0 seconds and 20 minutes.
         // this is to avoid all servers doing the query at the same instant.
-        // after 1 call, it'll be set to the standard 20 minutes.
-        _queryTimer.Interval = rand.Next(1200000);
-        _queryTimer.Enabled = true;
+        _ = Task.Run(() => QueryLoop(rand.Next(1200000)));
     }
 
-    private void TimedQuery(object? sender, ElapsedEventArgs e)
+    private async Task QueryLoop(int initialDelay)
     {
-        _queryTimer.Interval = 1200000;
-        Thread timedActions = new(TimedQueryLaunch);
-        timedActions.Start();
-    }
-
-    public void TimedQueryLaunch()
-    {
-        _ = Query();
+        try
+        {
+            await Task.Delay(initialDelay, _cts.Token);
+            while (!_cts.Token.IsCancellationRequested)
+            {
+                try
+                {
+                    await Query();
+                }
+                catch (Exception ex)
+                {
+                    await Helpers.LogError($"QueryLoop {IpAddr}", ex);
+                }
+                await Task.Delay(_queryInterval, _cts.Token);
+            }
+        }
+        catch (TaskCanceledException) { }
+        catch (Exception ex)
+        {
+            await Helpers.LogError($"Unhandled exception in QueryLoop for {IpAddr}", ex);
+        }
     }
 
     public async Task<bool> Query(bool doUpdate = true)
@@ -144,14 +153,14 @@ public sealed class Server : IDisposable
 
                 if (downtime > TimeSpan.FromDays(7)) // if the server's been dead over a week, only query once a day.
                 {
-                    _queryTimer.Interval = 86400000;
+                    _queryInterval = 86400000;
                 }
                 else if (downtime > TimeSpan.FromHours(3)) { // if the server's been dead for over 3 hours, only query every hour
-                    _queryTimer.Interval = 3600000;
+                    _queryInterval = 3600000;
                 }
                 else // otherwise, always query every 20 minutes
                 {
-                    _queryTimer.Interval = 1200000;
+                    _queryInterval = 1200000;
                 }
             }
 
@@ -165,7 +174,7 @@ public sealed class Server : IDisposable
             return false;
         }
 
-        _queryTimer.Interval = 1200000;
+        _queryInterval = 1200000;
 
         Name = serverInfo.HostName;
         PlayersOnline = serverInfo.Players;
@@ -216,7 +225,7 @@ public sealed class Server : IDisposable
         else
         {
             await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
-            _ = Task.Run(() => IsOpenMp = _query.GetServerIsOmp());
+            IsOpenMp = await _query.GetServerIsOmpAsync();
         }
         
         if (doUpdate) ServerUpdater.Queue(this);
@@ -242,9 +251,8 @@ public sealed class Server : IDisposable
             _playerListCache.Clear();
             _playerListCache.AddRange(serverPlayers.Select(player => new Player(player)));
         }
-        catch (Exception Ex)
+        catch
         {
-            Helpers.LogError($"get-players-{Id}", Ex);
             // nothing to handle, this happens, usually, if the server has >100 players and is a SA-MP issue.
         }
 
@@ -267,8 +275,11 @@ public sealed class Server : IDisposable
         if (_disposed) return;
         _disposed = true;
 
-        // Dispose managed resources, just the query timer.
-        if (disposing) _queryTimer.Dispose();
+        if (disposing)
+        {
+            _cts.Cancel();
+            _cts.Dispose();
+        }
     }
 
     ~Server()
