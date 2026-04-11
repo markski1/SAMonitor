@@ -3,11 +3,13 @@
 using SAMonitor.Utils;
 using System.Timers;
 using SAMonitor.Database;
+using Newtonsoft.Json;
 
 namespace SAMonitor.Data;
 
 public sealed class Server : IDisposable
 {
+    private static readonly HttpClient Client = new();
     public int Id { get; set; }
     public bool Success { get; init; }
     public DateTime LastUpdated { get; set; }
@@ -130,13 +132,69 @@ public sealed class Server : IDisposable
             }
         }
         
-        ServerInfo serverInfo;
+        ServerInfo? serverInfo = null;
+        ServerRules? serverRules = null;
+        bool querySuccess = false;
+        bool isProxy = false;
 
         try
         {
             serverInfo = await _query.GetServerInfoAsync();
+            querySuccess = true;
         }
         catch
+        {
+            // If we fail to query, then we defer to the secondary querying server. (Just to be sure it's not a fluke, or a OVH blockage.)
+            if (QueryManagerProxy.ProxyUrl is not null)
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    using var response = await Client.GetAsync($"{QueryManagerProxy.ProxyUrl}/query?ip={IpAddr}", cts.Token);
+                    
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var json = await response.Content.ReadAsStringAsync();
+                        var data = JsonConvert.DeserializeObject<dynamic>(json);
+                        if (data is not null && data.info is not null)
+                        {
+                            serverInfo = new ServerInfo
+                            {
+                                HostName = (string?)data.info.HostName ?? "Unknown",
+                                Players = (ushort?)data.info.Players ?? 0,
+                                MaxPlayers = (ushort?)data.info.MaxPlayers ?? 0,
+                                GameMode = (string?)data.info.GameMode ?? "Unknown",
+                                Language = (string?)data.info.Language ?? "Unknown",
+                                Password = (bool?)data.info.Password ?? false
+                            };
+
+                            if (data.rules is not null)
+                            {
+                                serverRules = new ServerRules
+                                {
+                                    Version = (string?)data.rules.Version ?? "Unknown",
+                                    MapName = (string?)data.rules.MapName ?? "Unknown",
+                                    SampcacVersion = (string?)data.rules.SampcacVersion ?? "Unknown",
+                                    LagComp = (bool?)data.rules.LagComp ?? false,
+                                    WebUrl = (data.rules.WebUrl == "Unknown" || data.rules.WebUrl == null) ? null : new Uri((string)data.rules.WebUrl),
+                                    WorldTime = SqHelpers.ParseTime((string?)data.rules.WorldTime ?? "00:00"),
+                                    Weather = (int?)data.rules.Weather ?? -1
+                                };
+                            }
+                            
+                            isProxy = true;
+                            querySuccess = true;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Fallback failed too, continue to error handling
+                }
+            }
+        }
+
+        if (!querySuccess)
         {
             if (doUpdate)
             {
@@ -173,7 +231,7 @@ public sealed class Server : IDisposable
 
         _queryInterval = 1200000;
 
-        Name = serverInfo.HostName;
+        Name = serverInfo!.HostName;
         PlayersOnline = serverInfo.Players;
         MaxPlayers = serverInfo.MaxPlayers;
         GameMode = serverInfo.GameMode;
@@ -183,12 +241,8 @@ public sealed class Server : IDisposable
 
         if (PlayersOnline > MaxPlayers) return false;
 
-        await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
-
-        try
+        if (serverRules is not null)
         {
-            var serverRules = await _query.GetServerRulesAsync();
-
             Version = serverRules.Version ?? "Unknown";
             MapName = serverRules.MapName ?? "Unknown";
             SampCac = serverRules.SampcacVersion ?? "Not required";
@@ -197,11 +251,39 @@ public sealed class Server : IDisposable
             WorldTime = serverRules.WorldTime;
             Weather = serverRules.Weather;
         }
-        catch (Exception ex)
+        else if (isProxy)
         {
-            if (ex.ToString().Contains("SocketException") == false) // I don't care to log network exceptions
+            // If we used a proxy, but it didn't return rules, we skip direct rules query to avoid timeouts.
+            Version = "Unknown";
+            MapName = "Unknown";
+            SampCac = "Not required";
+            LagComp = false;
+            Website = "Unknown";
+            WorldTime = DateTime.MinValue;
+            Weather = -1;
+        }
+        else
+        {
+            await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
+
+            try
             {
-                Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
+                serverRules = await _query.GetServerRulesAsync();
+
+                Version = serverRules.Version ?? "Unknown";
+                MapName = serverRules.MapName ?? "Unknown";
+                SampCac = serverRules.SampcacVersion ?? "Not required";
+                LagComp = serverRules.LagComp;
+                Website = serverRules.WebUrl is null ? "Unknown" : serverRules.WebUrl.ToString();
+                WorldTime = serverRules.WorldTime;
+                Weather = serverRules.Weather;
+            }
+            catch (Exception ex)
+            {
+                if (ex.ToString().Contains("SocketException") == false) // I don't care to log network exceptions
+                {
+                    Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
+                }
             }
         }
 
@@ -219,6 +301,12 @@ public sealed class Server : IDisposable
         {
             IsOpenMp = true;
         }
+        else if (isProxy)
+        {
+            // If we are using a proxy, it's because direct queries are likely blocked.
+            // Attempting another direct query for OMP status will probably just waste 5 seconds on a timeout.
+            IsOpenMp = false;
+        }
         else
         {
             await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
@@ -235,9 +323,7 @@ public sealed class Server : IDisposable
 
     public async Task<List<Player>> GetPlayers()
     {
-        List<Player> players = [];
-
-        if (_query is null) return players;
+        if (_query is null) return [];
 
         if (DateTime.UtcNow - _playerListTime <= TimeSpan.FromMinutes(3)) return _playerListCache;
         
@@ -245,16 +331,14 @@ public sealed class Server : IDisposable
         {
             var serverPlayers = await _query.GetServerPlayersAsync();
             // we pass it as a different type of object for API compatibility reasons.
-            _playerListCache.Clear();
-            _playerListCache.AddRange(serverPlayers.Select(player => new Player(player)));
+            var players = serverPlayers.Select(player => new Player(player)).ToList();
+            _playerListCache = players;
+            _playerListTime = DateTime.UtcNow;
         }
         catch
         {
             // nothing to handle, this happens, usually, if the server has >100 players and is a SA-MP issue.
         }
-
-        _playerListCache = players;
-        _playerListTime = DateTime.UtcNow;
 
         return _playerListCache;
     }

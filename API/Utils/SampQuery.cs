@@ -275,7 +275,7 @@ public class SampQuery
 }
 
 
-internal static class SqHelpers
+public static class SqHelpers
 {
     public static Uri ParseWebUrl(string value)
     {

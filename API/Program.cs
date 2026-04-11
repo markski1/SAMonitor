@@ -8,6 +8,11 @@ if (!MySql.MySqlSetup())
 }
 
 Helpers.LoadWebhookUrl();
+if (!await QueryManagerProxy.SetupAsync())
+{
+    Console.WriteLine("Query Proxy Service is configured but unreachable.\nExiting.");
+    return 1;
+}
 
 Console.WriteLine("Loading servers.");
 await ServerManager.LoadServers();
