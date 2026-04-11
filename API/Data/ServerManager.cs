@@ -2,11 +2,14 @@
 using MySqlConnector;
 using SAMonitor.Database;
 using SAMonitor.Utils;
+using System.Text;
 
 namespace SAMonitor.Data;
 
 public static class ServerManager
 {
+    private static readonly Lock _lock = new();
+
     private static List<Server> _servers = [];
 
     private static List<Server> _currentServers = [];
@@ -21,16 +24,16 @@ public static class ServerManager
 
     public static async Task LoadServers()
     {
-        _servers = await ServerRepository.GetAllServersAsync();
+        var servers = await ServerRepository.GetAllServersAsync();
 
         await UpdateBlacklist();
 
-        Console.WriteLine($"Querying {_servers.Count} servers...");
+        Console.WriteLine($"Querying {servers.Count} servers...");
 
         var dropZone = DateTime.UtcNow - TimeSpan.FromHours(6);
 
         // query all servers
-        var tasks = _servers.Select(async x =>
+        var tasks = servers.Select(async x =>
         {
             if (await x.Query(false))
             {
@@ -48,8 +51,12 @@ public static class ServerManager
 
         var results = await Task.WhenAll(tasks);
 
-        _currentServers = results.Where(x => x is not null).Cast<Server>().ToList();
-        _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
+        lock (_lock)
+        {
+            _servers = servers;
+            _currentServers = results.Where(x => x is not null).Cast<Server>().ToList();
+            _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
+        }
 
         UpdateMasterlist();
 
@@ -62,8 +69,12 @@ public static class ServerManager
     public static async Task<string> AddServer(string ipAddr)
     {
         if (IsBlacklisted(ipAddr)) return "IP Address is blacklisted.";
-        if (_servers.Any(x => x.IpAddr.Contains(ipAddr))) return "Server is already monitored.";
-        if (FailedAddresses.Contains(ipAddr)) return "This IP address failed last time it was queried. Please try again in an hour.";
+
+        lock (_lock)
+        {
+            if (_servers.Any(x => x.IpAddr.Contains(ipAddr))) return "Server is already monitored.";
+            if (FailedAddresses.Contains(ipAddr)) return "This IP address failed last time it was queried. Please try again in an hour.";
+        }
 
         var newServer = new Server(ipAddr);
         newServer.CreateTimer();
@@ -71,14 +82,20 @@ public static class ServerManager
         if (!await newServer.Query(false))
         {
             newServer.Dispose();
-            FailedAddresses.Add(ipAddr);
+            lock (_lock)
+            {
+                FailedAddresses.Add(ipAddr);
+            }
             return "Server did not respond to query.";
         }
 
         if (newServer.Version.Contains("cr", StringComparison.CurrentCultureIgnoreCase))
         {
             newServer.Dispose();
-            FailedAddresses.Add(ipAddr);
+            lock (_lock)
+            {
+                FailedAddresses.Add(ipAddr);
+            }
             return "CR-MP servers are currently unsupported.";
         }
         
@@ -88,33 +105,32 @@ public static class ServerManager
         string newWebsite = newServer.Website;
 
         // check for copies
-        var copies = _currentServers.Where(x => 
-            x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) && 
-            x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) && 
-            x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase));
-
-        if (copies.Any())
+        lock (_lock)
         {
-            newServer.Dispose();
-            FailedAddresses.Add(ipAddr);
-            return "Server is already monitored. Be advised: Sneaking in repeated IPs for the same server is a motive for blacklisting.";
+            var copies = _currentServers.Where(x => 
+                x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) && 
+                x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) && 
+                x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase));
+
+            if (copies.Any())
+            {
+                newServer.Dispose();
+                FailedAddresses.Add(ipAddr);
+                return "Server is already monitored. Be advised: Sneaking in repeated IPs for the same server is a motive for blacklisting.";
+            }
+
+            // if there's an 'old' dead version of this, then delete it.
+            var deadCopies = _servers.Where(x => 
+                x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) && 
+                x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) && 
+                x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase)).ToList();
+
+            foreach (var server in deadCopies)
+            {
+                _ = ServerRepository.DeleteServer(server.Id); // Fire and forget deletion
+                _servers.Remove(server);
+            }
         }
-
-        // if there's an 'old' dead version of this, then delete it.
-        copies = _servers.Where(x => 
-            x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) && 
-            x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) && 
-            x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase));
-
-        var enumerable = copies as Server[] ?? copies.ToArray();
-        foreach (var server in enumerable)
-        {
-            var conn = new MySqlConnection(MySql.ConnectionString);
-            const string sql = "DELETE FROM servers WHERE id = @Id";
-            await conn.QueryAsync(sql, new { server.Id });
-        }
-
-        _servers.RemoveAll(x => enumerable.Contains(x));
 
         if (!await ServerRepository.InsertServer(newServer))
         {
@@ -123,8 +139,12 @@ public static class ServerManager
         }
         
         newServer.Id = await ServerRepository.GetServerId(ipAddr);
-        _servers.Add(newServer);
-        _currentServers.Add(newServer);
+
+        lock (_lock)
+        {
+            _servers.Add(newServer);
+            _currentServers.Add(newServer);
+        }
 
         return "Server added to SAMonitor.";
     }
@@ -136,7 +156,11 @@ public static class ServerManager
 
     public static Server? ServerByIp(string ip)
     {
-        var result = _servers.Where(x => x.IpAddr.Contains(ip)).ToList();
+        List<Server> result;
+        lock (_lock)
+        {
+            result = _servers.Where(x => x.IpAddr.Contains(ip)).ToList();
+        }
 
         switch (result.Count)
         {
@@ -160,12 +184,18 @@ public static class ServerManager
 
     public static List<Server> GetAllServers()
     {
-        return _servers;
+        lock (_lock)
+        {
+            return [.. _servers];
+        }
     }
 
     public static List<Server> GetServers()
     {
-        return _currentServers;
+        lock (_lock)
+        {
+            return [.. _currentServers];
+        }
     }
 
     public static string GetMasterlist(string version)
@@ -188,14 +218,17 @@ public static class ServerManager
 
     public static string GetEveryIp()
     {
-        string list = "";
+        StringBuilder list = new();
 
-        _servers.ForEach(x =>
+        lock (_lock)
         {
-            list += $"{x.IpAddr}\n";
-        });
+            _servers.ForEach(x =>
+            {
+                list.AppendLine(x.IpAddr);
+            });
+        }
 
-        return list;
+        return list.ToString();
     }
 
     public static int GetServerIdFromIp(string ipAddr)
@@ -235,13 +268,16 @@ public static class ServerManager
             // Update the blacklist.
             await UpdateBlacklist();
 
-            // Clean list of "recently attempted" IP addresses.
-            FailedAddresses.Clear();
+            lock (_lock)
+            {
+                // Clean list of "recently attempted" IP addresses.
+                FailedAddresses.Clear();
 
-            // Update the current servers with only the ones which have responded in the last 12 hours
-            _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
+                // Update the current servers with only the ones which have responded in the last 12 hours
+                _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
 
-            _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
+                _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
+            }
 
             // Update the masterlist accordingly.
             UpdateMasterlist();
@@ -264,11 +300,16 @@ public static class ServerManager
 
         const string sql = "INSERT INTO metrics_global (players, servers, omp_servers) VALUES(@_players, @_servers, @_omp_servers)";
 
-        int servers = _currentServers.Count;
+        int servers;
+        int players;
+        int ompServers;
 
-        int players = _currentServers.Sum(x => x.PlayersOnline);
-
-        int ompServers = _currentServers.Count(x => x.IsOpenMp);
+        lock (_lock)
+        {
+            servers = _currentServers.Count;
+            players = _currentServers.Sum(x => x.PlayersOnline);
+            ompServers = _currentServers.Count(x => x.IsOpenMp);
+        }
 
         await db.ExecuteAsync(sql, new { _players = players, _servers = servers, _omp_servers = ompServers });
     }
@@ -278,38 +319,50 @@ public static class ServerManager
         Random rng = new();
         // To keep things somewhat fair, shuffle the position of all servers every 30 minutes
 
-        int n = _currentServers.Count;
+        List<Server> serversToProcess;
+
+        lock (_lock)
+        {
+            serversToProcess = [.. _currentServers];
+        }
+
+        int n = serversToProcess.Count;
         while (n > 1)
         {
             n--;
             int k = rng.Next(n + 1);
-            (_currentServers[n], _currentServers[k]) = (_currentServers[k], _currentServers[n]);
+            (serversToProcess[n], serversToProcess[k]) = (serversToProcess[k], serversToProcess[n]);
         }
 
         // Sponsor servers should stay at the top, however
-        _currentServers.Sort((a, b) => b.Sponsor.CompareTo(a.Sponsor));
+        serversToProcess.Sort((a, b) => b.Sponsor.CompareTo(a.Sponsor));
 
-        _masterListGlobal = "";
-        _masterList037 = "";
-        _masterList03Dl = "";
+        var globalList = new StringBuilder();
+        var list037 = new StringBuilder();
+        var list03Dl = new StringBuilder();
+
         n = 0;
-        foreach (var server in _currentServers)
+        foreach (var server in serversToProcess)
         {
             server.ShuffledOrder = n;
             n++;
             // passworded servers don't make it to the masterlist.
             if (server.RequiresPassword) continue;
 
-            _masterListGlobal += $"{server.IpAddr}\n";
+            globalList.AppendLine(server.IpAddr);
             if (server.Version.Contains("3.7"))
             {
-                _masterList037 += $"{server.IpAddr}\n";
+                list037.AppendLine(server.IpAddr);
             }
             else if (server.Version.Contains("DL"))
             {
-                _masterList03Dl += $"{server.IpAddr}\n";
+                list03Dl.AppendLine(server.IpAddr);
             }
         }
+
+        _masterListGlobal = globalList.ToString();
+        _masterList037 = list037.ToString();
+        _masterList03Dl = list03Dl.ToString();
     }
 
     private static async Task UpdateBlacklist()

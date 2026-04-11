@@ -154,4 +154,21 @@ public static class ServerRepository
 
         return (await db.QueryAsync<ServerMetrics>(sql, new { requestTime, id })).ToList();
     }
+
+    public static async Task<bool> DeleteServer(int id)
+    {
+        using var db = await DatabasePool.GetConnectionAsync();
+
+        const string sql = "DELETE FROM servers WHERE id = @Id";
+
+        try
+        {
+            return await db.ExecuteAsync(sql, new { Id = id }) > 0;
+        }
+        catch (Exception ex)
+        {
+            await Helpers.LogError($"DeleteServer {id}", ex);
+            return false;
+        }
+    }
 }
