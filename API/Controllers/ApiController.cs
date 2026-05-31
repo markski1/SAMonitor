@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SAMonitor.Data;
 using SAMonitor.Database;
 using SAMonitor.Utils;
@@ -110,6 +111,7 @@ public class ApiController : ControllerBase
     }
 
     [HttpGet("AddServer")]
+    [EnableRateLimiting("fixed")]
     public async Task<string> AddServer(string ip_addr)
     {
         ip_addr = ip_addr.Trim();

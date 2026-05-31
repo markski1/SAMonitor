@@ -9,9 +9,15 @@ public static class QueryManagerProxy
     {
         try
         {
-            if (!File.Exists("query_service.txt")) return true;
-
-            ProxyUrl = (await File.ReadAllTextAsync("query_service.txt")).Trim();
+            var envUrl = Environment.GetEnvironmentVariable("QUERY_SERVICE_URL");
+            if (!string.IsNullOrEmpty(envUrl))
+            {
+                ProxyUrl = envUrl;
+            }
+            else if (File.Exists("query_service.txt"))
+            {
+                ProxyUrl = (await File.ReadAllTextAsync("query_service.txt")).Trim();
+            }
 
             if (string.IsNullOrEmpty(ProxyUrl)) return true;
 

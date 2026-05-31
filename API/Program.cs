@@ -1,6 +1,8 @@
 using SAMonitor.Data;
 using SAMonitor.Utils;
 
+DotEnv.Load();
+
 if (!MySql.MySqlSetup())
 {
     Console.WriteLine("Could not generate ConnectionString for MySQL.\nExiting.");

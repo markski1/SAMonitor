@@ -1,4 +1,7 @@
-﻿namespace SAMonitor.Utils;
+﻿using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+
+namespace SAMonitor.Utils;
 
 public static class WebServer
 {
@@ -19,16 +22,28 @@ public static class WebServer
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.AddFixedWindowLimiter("fixed", limiterOptions =>
+            {
+                limiterOptions.PermitLimit = 40;
+                limiterOptions.Window = TimeSpan.FromSeconds(60);
+                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                limiterOptions.QueueLimit = 2;
+            });
+        });
+
         var app = builder.Build();
 
         Helpers.IsDevelopment = app.Environment.IsDevelopment();
 
-        // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+
+        app.UseRateLimiter();
 
         app.MapControllers();
 

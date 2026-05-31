@@ -1,5 +1,4 @@
 ﻿using MySqlConnector;
-using Newtonsoft.Json;
 
 namespace SAMonitor.Utils;
 
@@ -12,15 +11,22 @@ public static class MySql
 
         try
         {
-            dynamic? data = JsonConvert.DeserializeObject(File.ReadAllText("./mysql.txt"));
+            var host = Environment.GetEnvironmentVariable("MYSQL_HOST");
+            var user = Environment.GetEnvironmentVariable("MYSQL_USER");
+            var pass = Environment.GetEnvironmentVariable("MYSQL_PASS");
+            var db   = Environment.GetEnvironmentVariable("MYSQL_DB");
 
-            if (data is null)
+            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(user) ||
+                string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(db))
+            {
+                Console.WriteLine("Missing required MYSQL_* environment variables.");
                 return false;
+            }
 
-            builder.Server = data.Server;
-            builder.UserID = data.UserID;
-            builder.Password = data.Password;
-            builder.Database = data.Database;
+            builder.Server = host;
+            builder.UserID = user;
+            builder.Password = pass;
+            builder.Database = db;
 
             ConnectionString = builder.ToString();
 
@@ -28,7 +34,7 @@ public static class MySql
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to read or build the ConnectString: {ex.Message}");
+            Console.WriteLine($"Failed to build the ConnectionString: {ex.Message}");
             return false;
         }
     }

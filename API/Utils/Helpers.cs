@@ -8,20 +8,14 @@ public static class Helpers
 {
     public static bool IsDevelopment = false;
 
-    private static string WebhookUrl = "https://discord.com/api/webhooks/1489735891403673630/prN7cAVWI2c04bNLXU27hpzjjF0-8VSvIJG5wrc-RDaIkOtbUHGWwEcXzEx5iNjDUsWb";
+    private static string WebhookUrl = "";
 
     public static void LoadWebhookUrl()
     {
-        try
+        var envUrl = Environment.GetEnvironmentVariable("DISCORD_WEBHOOK_URL");
+        if (!string.IsNullOrEmpty(envUrl))
         {
-            if (File.Exists("ds_webhook.txt"))
-            {
-                WebhookUrl = File.ReadAllText("ds_webhook.txt").Trim();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load ds_webhook.txt: {ex.Message}");
+            WebhookUrl = envUrl;
         }
     }
 
