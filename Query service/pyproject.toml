@@ -1,0 +1,10 @@
+[project]
+name = "samonitor-query-service"
+version = "0.1.0"
+description = "SAMonitor secondary query service for servers that block OVH"
+requires-python = "==3.13.*"
+
+dependencies = [
+    "flask>=3.0",
+    "gunicorn>=23.0",
+]

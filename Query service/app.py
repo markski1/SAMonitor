@@ -1,5 +1,7 @@
 ﻿import socket
 import struct
+from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 from flask import Flask, request, jsonify
 
 """
@@ -15,25 +17,25 @@ addresses for reasons related to denial of service attacks.
 
 app = Flask(__name__)
 
-def query_samp_info(host, port):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.settimeout(5)
 
+@lru_cache(maxsize=256)
+def resolve_host(host):
+    return socket.gethostbyname(host)
+
+
+def _build_packet(ip_str, port, query_type):
+    return b"SAMP" + socket.inet_aton(ip_str) + struct.pack('H', port) + query_type
+
+
+def query_samp_info(sock, ip_str, port):
     try:
-        ip_parts = socket.gethostbyname(host).split('.')
-        packet = b"SAMP"
-        for part in ip_parts:
-            packet += struct.pack('B', int(part))
-        packet += struct.pack('H', port)
-        packet += b'i'
-
-        sock.sendto(packet, (host, port))
+        packet = _build_packet(ip_str, port, b'i')
+        sock.sendto(packet, (ip_str, port))
         data, _ = sock.recvfrom(2048)
 
         if len(data) < 11:
             return None
 
-        # Basic validation of the response header
         if data[0:4] != b"SAMP" or data[10] != ord('i'):
             return None
 
@@ -71,25 +73,14 @@ def query_samp_info(host, port):
             "Password": password
         }
     except Exception as e:
-        print(f"Error querying info from {host}:{port}: {e}")
+        print(f"Error querying info from {ip_str}:{port}: {e}")
         return None
-    finally:
-        sock.close()
 
 
-def query_samp_rules(host, port):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.settimeout(5)
-
+def query_samp_rules(sock, ip_str, port):
     try:
-        ip_parts = socket.gethostbyname(host).split('.')
-        packet = b"SAMP"
-        for part in ip_parts:
-            packet += struct.pack('B', int(part))
-        packet += struct.pack('H', port)
-        packet += b'r'
-
-        sock.sendto(packet, (host, port))
+        packet = _build_packet(ip_str, port, b'r')
+        sock.sendto(packet, (ip_str, port))
         data, _ = sock.recvfrom(2048)
 
         if len(data) < 13:
@@ -127,17 +118,14 @@ def query_samp_rules(host, port):
             "WorldTime": rules.get('worldtime', '00:00')
         }
     except Exception as e:
-        print(f"Error querying rules from {host}:{port}: {e}")
+        print(f"Error querying rules from {ip_str}:{port}: {e}")
         return None
-    finally:
-        sock.close()
 
 
 @app.route('/query', methods=['GET'])
 def query():
     ip = request.args.get('ip')
     if not ip:
-        # Just inform SAMonitor that we're up and running.
         return jsonify({"status": "online"}), 200
 
     try:
@@ -150,11 +138,27 @@ def query():
     except ValueError:
         return jsonify({"error": "Invalid IP format"}), 400
 
-    info = query_samp_info(host, port)
+    try:
+        ip_str = resolve_host(host)
+    except socket.gaierror:
+        return jsonify({"error": "Failed to resolve host"}), 400
+
+    def run_query(func):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(5)
+        try:
+            return func(sock, ip_str, port)
+        finally:
+            sock.close()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        info_future = executor.submit(run_query, query_samp_info)
+        rules_future = executor.submit(run_query, query_samp_rules)
+        info = info_future.result()
+        rules = rules_future.result()
+
     if not info:
         return jsonify({"error": "Failed to query server info"}), 500
-
-    rules = query_samp_rules(host, port)
 
     return jsonify({
         "info": info,
@@ -162,4 +166,4 @@ def query():
     })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, threaded=True)
