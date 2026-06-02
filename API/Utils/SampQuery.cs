@@ -64,36 +64,41 @@ public class SampQuery
     {
         _serverSocket = new Socket(_serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
-        using var stream = new MemoryStream();
-        await using var writer = new BinaryWriter(stream);
-        string[] splitIp = _serverIpString.Split('.');
-
-        writer.Write(_socketHeader);
-
-        for (sbyte i = 0; i < splitIp.Length; i++)
+        try
         {
-            writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
+            using var stream = new MemoryStream();
+            await using var writer = new BinaryWriter(stream);
+            string[] splitIp = _serverIpString.Split('.');
+
+            writer.Write(_socketHeader);
+
+            for (sbyte i = 0; i < splitIp.Length; i++)
+            {
+                writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
+            }
+
+            writer.Write(_serverPort);
+            writer.Write(packetType);
+
+            _transmitMs = DateTime.Now;
+
+            await _serverSocket.SendToAsync(stream.ToArray(), SocketFlags.None, _serverEndPoint);
+            EndPoint rawPoint = _serverEndPoint;
+            var data = new byte[ReceiveArraySize];
+
+            var task = _serverSocket.ReceiveFromAsync(data, SocketFlags.None, rawPoint);
+
+            if (await Task.WhenAny(task, Task.Delay(TimeoutMilliseconds)) != task)
+            {
+                throw new SocketException(10060); // Operation timed out
+            }
+
+            return data;
         }
-
-        writer.Write(_serverPort);
-        writer.Write(packetType);
-
-        _transmitMs = DateTime.Now;
-
-        await _serverSocket.SendToAsync(stream.ToArray(), SocketFlags.None, _serverEndPoint);
-        EndPoint rawPoint = _serverEndPoint;
-        var data = new byte[ReceiveArraySize];
-
-        var task = _serverSocket.ReceiveFromAsync(data, SocketFlags.None, rawPoint);
-
-        if (await Task.WhenAny(task, Task.Delay(TimeoutMilliseconds)) != task)
+        finally
         {
-            _serverSocket.Close();
-            throw new SocketException(10060); // Operation timed out
+            _serverSocket.Dispose();
         }
-
-        _serverSocket.Close();
-        return data;
 
     }
     
@@ -105,28 +110,34 @@ public class SampQuery
             ReceiveTimeout = TimeoutMilliseconds
         };
 
-        using var stream = new MemoryStream();
-        using var writer = new BinaryWriter(stream);
-        string[] splitIp = _serverIpString.Split('.');
-
-        writer.Write(_socketHeader);
-
-        for (sbyte i = 0; i < splitIp.Length; i++)
+        try
         {
-            writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            string[] splitIp = _serverIpString.Split('.');
+
+            writer.Write(_socketHeader);
+
+            for (sbyte i = 0; i < splitIp.Length; i++)
+            {
+                writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
+            }
+
+            writer.Write(_serverPort);
+            writer.Write(packetType);
+
+            _transmitMs = DateTime.Now;
+
+            _serverSocket.SendTo(stream.ToArray(), SocketFlags.None, _serverEndPoint);
+
+            EndPoint rawPoint = _serverEndPoint;
+            var szReceive = new byte[ReceiveArraySize];
+            _serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
         }
-
-        writer.Write(_serverPort);
-        writer.Write(packetType);
-
-        _transmitMs = DateTime.Now;
-
-        _serverSocket.SendTo(stream.ToArray(), SocketFlags.None, _serverEndPoint);
-
-        EndPoint rawPoint = _serverEndPoint;
-        var szReceive = new byte[ReceiveArraySize];
-        _serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
-        _serverSocket.Close();
+        finally
+        {
+            _serverSocket.Dispose();
+        }
     }
     
     /// <summary>

@@ -375,11 +375,11 @@ public static class ServerManager
 
         if (_blacklist.Count == 0) return;
 
-        sql = "DELETE FROM servers WHERE ip_addr LIKE @BlockedAddr";
+        sql = "DELETE FROM servers WHERE ip_addr LIKE CONCAT('%', @BlockedAddr, '%')";
 
         foreach (var blockedAddr in _blacklist)
         {
-            await db.ExecuteAsync(sql, new { BlockedAddr = $"%{blockedAddr}%" });
+            await db.ExecuteAsync(sql, new { BlockedAddr = blockedAddr });
         }
 
         _servers = _servers.Where(x => !_blacklist.Any(addr => x.IpAddr.Contains(addr))).ToList();

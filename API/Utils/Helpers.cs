@@ -9,6 +9,7 @@ public static class Helpers
     public static bool IsDevelopment = false;
 
     private static string WebhookUrl = "";
+    private static readonly HttpClient _httpClient = new();
 
     public static void LoadWebhookUrl()
     {
@@ -97,12 +98,11 @@ public static class Helpers
     {
         try
         {
-            using var client = new HttpClient();
             var payload = new { content = message.Length > 2000 ? message[..1997] + "..." : message };
             var json = JsonConvert.SerializeObject(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            await client.PostAsync(WebhookUrl, content);
+            await _httpClient.PostAsync(WebhookUrl, content);
         }
         catch (Exception ex)
         {

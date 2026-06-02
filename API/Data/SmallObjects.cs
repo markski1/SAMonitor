@@ -113,14 +113,14 @@ public class ServerFilterer
                 // otherwise we have to separate them
                 if (!ShowEmpty)
                 {
-                    servers = servers.OrderBy(x => x.MaxPlayers / x.PlayersOnline).ToList();
+                    servers = servers.OrderBy(x => (double)x.MaxPlayers / x.PlayersOnline).ToList();
                 }
                 else
                 {
                     var emptyServers = servers.Where(x => x.PlayersOnline == 0);
                     var populatedServers = servers.Where(x => x.PlayersOnline > 0);
 
-                    servers = populatedServers.OrderByDescending(x => x.PlayersOnline / x.MaxPlayers).ToList();
+                    servers = populatedServers.OrderByDescending(x => (double)x.PlayersOnline / x.MaxPlayers).ToList();
                     servers.AddRange(emptyServers);
                 }
             }
