@@ -17,6 +17,7 @@ public sealed class Server : IDisposable
     public int PlayersOnline { get; set; }
     public int MaxPlayers { get; set; }
     public bool IsOpenMp { get; set; }
+    public bool IsProxyQueried { get; set; }
     public bool LagComp { get; set; }
     public string Name { get; set; }
     public string GameMode { get; set; }
@@ -141,6 +142,7 @@ public sealed class Server : IDisposable
         {
             serverInfo = await _query.GetServerInfoAsync();
             querySuccess = true;
+            IsProxyQueried = false;
         }
         catch
         {
@@ -183,6 +185,7 @@ public sealed class Server : IDisposable
                             }
                             
                             isProxy = true;
+                            IsProxyQueried = true;
                             querySuccess = true;
                         }
                     }
@@ -329,7 +332,17 @@ public sealed class Server : IDisposable
         
         try
         {
-            var serverPlayers = await _query.GetServerPlayersAsync(IsOpenMp);
+            List<ServerPlayer> serverPlayers;
+            
+            if (IsProxyQueried && QueryManagerProxy.ProxyUrl is not null)
+            {
+                serverPlayers = await GetPlayersFromProxyAsync();
+            }
+            else
+            {
+                serverPlayers = await _query.GetServerPlayersAsync(IsOpenMp);
+            }
+            
             // we pass it as a different type of object for API compatibility reasons.
             var players = serverPlayers.Select(player => new Player(player)).ToList();
             _playerListCache = players;
@@ -341,6 +354,42 @@ public sealed class Server : IDisposable
         }
 
         return _playerListCache;
+    }
+    
+    private async Task<List<ServerPlayer>> GetPlayersFromProxyAsync()
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var response = await Client.GetAsync($"{QueryManagerProxy.ProxyUrl}/query/players?ip={IpAddr}", cts.Token);
+            
+            if (!response.IsSuccessStatusCode)
+                return [];
+            
+            var json = await response.Content.ReadAsStringAsync();
+            var data = JsonConvert.DeserializeObject<dynamic>(json);
+            
+            if (data?.players == null)
+                return [];
+            
+            var players = new List<ServerPlayer>();
+            foreach (var player in data.players)
+            {
+                players.Add(new ServerPlayer
+                {
+                    PlayerId = (byte?)player.PlayerId ?? 0,
+                    PlayerName = (string?)player.PlayerName ?? "Unknown",
+                    PlayerScore = (int?)player.PlayerScore ?? 0,
+                    PlayerPing = (int?)player.PlayerPing ?? 0
+                });
+            }
+            
+            return players;
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     private bool _disposed;
