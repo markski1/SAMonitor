@@ -20,7 +20,7 @@ namespace SAMonitor.Utils;
 public class SampQuery
 {
     private const ushort DefaultServerPort = 7777;
-    private const int ReceiveArraySize = 2048;
+    private const int ReceiveArraySize = 8192;
     private const int TimeoutMilliseconds = 5000;
     private readonly ushort _serverPort;
     private readonly string _serverIpString;
@@ -93,7 +93,15 @@ public class SampQuery
                 throw new SocketException(10060); // Operation timed out
             }
 
-            return data;
+            var result = await task;
+            if (result.ReceivedBytes == 0)
+            {
+                throw new SocketException(10060); // Empty response treated as timeout
+            }
+
+            var actualData = new byte[result.ReceivedBytes];
+            Buffer.BlockCopy(data, 0, actualData, 0, result.ReceivedBytes);
+            return actualData;
         }
         finally
         {
@@ -145,19 +153,25 @@ public class SampQuery
     /// </summary>
     /// <returns>An asynchronous task that completes with the collection of ServerPlayer instances</returns>
     /// <exception cref="SocketException">Thrown when operation timed out</exception>
-    public async Task<List<ServerPlayer>> GetServerPlayersAsync()
+    public async Task<List<ServerPlayer>> GetServerPlayersAsync(bool isOpenMp = false)
     {
         byte[] data;
-        try
+        // open.mp does not support the 'd' (detailed player list) opcode.
+        // https://github.com/openmultiplayer/open.mp/blob/master/Server/Components/LegacyNetwork/Query/query.cpp
+        if (!isOpenMp)
         {
-            data = await SendSocketToServerAsync('d');
-            return CollectServerPlayersInfoFromByteArray(data, 'd');
+            try
+            {
+                data = await SendSocketToServerAsync('d');
+                return CollectServerPlayersInfoFromByteArray(data, 'd');
+            }
+            catch
+            {
+                // fallback to c
+            }
         }
-        catch
-        {
-            data = await SendSocketToServerAsync('c');
-            return CollectServerPlayersInfoFromByteArray(data, 'c');
-        }
+        data = await SendSocketToServerAsync('c');
+        return CollectServerPlayersInfoFromByteArray(data, 'c');
     }
     
     /// <summary>
@@ -205,7 +219,7 @@ public class SampQuery
         List<ServerPlayer> returnData = [];
 
         using MemoryStream stream = new(data);
-        using BinaryReader read = new(stream);
+        using BinaryReader read = new(stream, Encoding.GetEncoding(1251));
         read.ReadBytes(10);
         read.ReadChar();
 
@@ -213,20 +227,25 @@ public class SampQuery
         {
             if (packetType == 'd') // if the packet type is 'd', we got a full player list.
             {
+                var playerId = Convert.ToByte(read.ReadByte());
+                var nameLen = read.ReadByte();
+                var playerName = Encoding.GetEncoding(1251).GetString(read.ReadBytes(nameLen));
                 returnData.Add(new ServerPlayer
                 {
-                    PlayerId = Convert.ToByte(read.ReadByte()),
-                    PlayerName = new string(read.ReadChars(read.ReadByte())),
+                    PlayerId = playerId,
+                    PlayerName = playerName,
                     PlayerScore = read.ReadInt32(),
                     PlayerPing = read.ReadInt32()
                 });
             }
             else // Otherwise we got a 'client' list, which might be incomplete, as per https://open.mp/docs/tutorials/QueryMechanism
             {
+                var nameLen = read.ReadByte();
+                var playerName = Encoding.GetEncoding(1251).GetString(read.ReadBytes(nameLen));
                 returnData.Add(new ServerPlayer
                 {
                     PlayerId = 0,
-                    PlayerName = new string(read.ReadChars(read.ReadByte())),
+                    PlayerName = playerName,
                     PlayerScore = read.ReadInt32(),
                     PlayerPing = 0
                 });

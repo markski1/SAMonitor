@@ -329,7 +329,7 @@ public sealed class Server : IDisposable
         
         try
         {
-            var serverPlayers = await _query.GetServerPlayersAsync();
+            var serverPlayers = await _query.GetServerPlayersAsync(IsOpenMp);
             // we pass it as a different type of object for API compatibility reasons.
             var players = serverPlayers.Select(player => new Player(player)).ToList();
             _playerListCache = players;
