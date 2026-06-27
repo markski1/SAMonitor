@@ -22,6 +22,38 @@ public static class ServerManager
     private static string _masterList037 = "";
     private static string _masterList03Dl = "";
 
+    private static ServerLookupIndex _serverLookupIndex = ServerLookupIndex.Create([]);
+
+    private static ServerFilterSnapshot? _filterSnapshot;
+    private static bool _filterSnapshotDirty = true;
+
+    public static void MarkFilterCachesDirty()
+    {
+        lock (_lock)
+        {
+            _filterSnapshotDirty = true;
+        }
+    }
+
+    private static void RebuildServerLookupIndexUnsafe()
+    {
+        _serverLookupIndex = ServerLookupIndex.Create(_servers);
+    }
+
+    internal static List<Server> GetFilteredServerBase(ServerFilterPreset preset)
+    {
+        lock (_lock)
+        {
+            if (_filterSnapshotDirty || _filterSnapshot is null)
+            {
+                _filterSnapshot = ServerFilterSnapshot.Create(_currentServers);
+                _filterSnapshotDirty = false;
+            }
+
+            return _filterSnapshot.GetPreset(preset);
+        }
+    }
+
     public static async Task LoadServers()
     {
         var servers = await ServerRepository.GetAllServersAsync();
@@ -66,6 +98,8 @@ public static class ServerManager
             _servers = servers;
             _currentServers = results.Where(x => x is not null).Cast<Server>().ToList();
             _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
+            RebuildServerLookupIndexUnsafe();
+            _filterSnapshotDirty = true;
         }
 
         UpdateMasterlist();
@@ -139,7 +173,11 @@ public static class ServerManager
             {
                 _ = ServerRepository.DeleteServer(server.Id); // Fire and forget deletion
                 _servers.Remove(server);
+                _currentServers.Remove(server);
             }
+
+            RebuildServerLookupIndexUnsafe();
+            _filterSnapshotDirty = true;
         }
 
         if (!await ServerRepository.InsertServer(newServer))
@@ -154,6 +192,8 @@ public static class ServerManager
         {
             _servers.Add(newServer);
             _currentServers.Add(newServer);
+            RebuildServerLookupIndexUnsafe();
+            _filterSnapshotDirty = true;
         }
 
         return "Server added to SAMonitor.";
@@ -166,30 +206,10 @@ public static class ServerManager
 
     public static Server? ServerByIp(string ip)
     {
-        List<Server> result;
         lock (_lock)
         {
-            result = _servers.Where(x => x.IpAddr.Contains(ip)).ToList();
+            return _serverLookupIndex.Lookup(ip);
         }
-
-        switch (result.Count)
-        {
-            case < 1:
-                return null;
-            case > 1:
-            {
-                var newFind = result.Where(x => x.IpAddr.Contains("7777")).ToList();
-
-                if (newFind.Count > 0)
-                {
-                    return newFind.FirstOrDefault();
-                }
-
-                break;
-            }
-        }
-
-        return result.FirstOrDefault();
     }
 
     public static List<Server> GetAllServers()
@@ -287,6 +307,7 @@ public static class ServerManager
                 _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
 
                 _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
+                _filterSnapshotDirty = true;
             }
 
             // Update the masterlist accordingly.
@@ -392,6 +413,12 @@ public static class ServerManager
             await db.ExecuteAsync(sql, new { BlockedAddr = blockedAddr });
         }
 
-        _servers = _servers.Where(x => !_blacklist.Any(addr => x.IpAddr.Contains(addr))).ToList();
+        lock (_lock)
+        {
+            _servers = _servers.Where(x => !_blacklist.Any(addr => x.IpAddr.Contains(addr))).ToList();
+            _currentServers = _currentServers.Where(x => !_blacklist.Any(addr => x.IpAddr.Contains(addr))).ToList();
+            RebuildServerLookupIndexUnsafe();
+            _filterSnapshotDirty = true;
+        }
     }
 }

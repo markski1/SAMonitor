@@ -5,6 +5,147 @@ namespace SAMonitor.Data;
 
 // Internal use classes.
 
+[Flags]
+internal enum ServerFilterPreset
+{
+    None = 0,
+    OnlyOpenMp = 1,
+    HideEmpty = 2,
+    HidePassworded = 4,
+    HideRoleplay = 8,
+    RequireSampCac = 16
+}
+
+internal static class ServerFilterLogic
+{
+    internal static ServerFilterPreset BuildPreset(bool showEmpty, bool showPassworded, bool hideRoleplay, bool requireSampCac, bool onlyOpenMp)
+    {
+        ServerFilterPreset preset = ServerFilterPreset.None;
+
+        if (onlyOpenMp) preset |= ServerFilterPreset.OnlyOpenMp;
+        if (!showEmpty) preset |= ServerFilterPreset.HideEmpty;
+        if (!showPassworded) preset |= ServerFilterPreset.HidePassworded;
+        if (hideRoleplay) preset |= ServerFilterPreset.HideRoleplay;
+        if (requireSampCac) preset |= ServerFilterPreset.RequireSampCac;
+
+        return preset;
+    }
+
+    internal static bool MatchesPreset(Server server, ServerFilterPreset preset)
+    {
+        if ((preset & ServerFilterPreset.OnlyOpenMp) != 0 && !server.IsOpenMp) return false;
+        if ((preset & ServerFilterPreset.HideEmpty) != 0 && server.PlayersOnline <= 0) return false;
+        if ((preset & ServerFilterPreset.HidePassworded) != 0 && server.RequiresPassword) return false;
+        if ((preset & ServerFilterPreset.HideRoleplay) != 0 && IsRoleplay(server)) return false;
+        if ((preset & ServerFilterPreset.RequireSampCac) != 0 && server.SampCac.Contains("not required", StringComparison.OrdinalIgnoreCase)) return false;
+
+        return true;
+    }
+
+    internal static bool IsRoleplay(Server server)
+    {
+        return server.GameMode.Contains("rp", StringComparison.OrdinalIgnoreCase) ||
+               server.GameMode.Contains("role", StringComparison.OrdinalIgnoreCase) ||
+               server.Name.Contains("roleplay", StringComparison.OrdinalIgnoreCase) ||
+               server.Name.Contains("role play", StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static List<Server> ApplyTextFilters(IReadOnlyList<Server> source, string name, string version, string language, string gamemode)
+    {
+        List<Server> servers = [.. source];
+
+        if (name != "unspecified")
+        {
+            servers = servers.Where(x => x.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        if (version != "any")
+        {
+            servers = servers.Where(x => x.Version.Contains(version, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        // In the future, should probably have a way to specify a language in a more broad sense rather than by string,
+        // as server operators define languages in rather inconsistent ways.
+        if (language != "any")
+        {
+            servers = servers.Where(x => x.Language.Contains(language, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        if (gamemode != "unspecified")
+        {
+            servers = servers.Where(x => x.GameMode.Contains(gamemode, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        return servers;
+    }
+
+    internal static List<Server> ApplyOrdering(List<Server> servers, string order, bool showEmpty)
+    {
+        if (order != "none")
+        {
+            if (order == "players")
+            {
+                return servers.OrderByDescending(x => x.PlayersOnline).ToList();
+            }
+
+            // show_empty=0 guarantees PlayersOnline will never be zero.
+            // otherwise we have to separate them
+            if (!showEmpty)
+            {
+                return servers.OrderBy(x => (double)x.MaxPlayers / x.PlayersOnline).ToList();
+            }
+
+            var emptyServers = servers.Where(x => x.PlayersOnline == 0);
+            var populatedServers = servers.Where(x => x.PlayersOnline > 0);
+
+            servers = populatedServers.OrderByDescending(x => (double)x.PlayersOnline / x.MaxPlayers).ToList();
+            servers.AddRange(emptyServers);
+            return servers;
+        }
+
+        // if "none", then order by the ShuffleOrder, which gets shuffled every 30 minutes.
+        return servers.OrderBy(x => x.ShuffledOrder).ToList();
+    }
+}
+
+internal sealed class ServerFilterSnapshot
+{
+    private const int PresetCount = 32;
+    private readonly Dictionary<int, List<Server>> _bases;
+
+    private ServerFilterSnapshot(Dictionary<int, List<Server>> bases)
+    {
+        _bases = bases;
+    }
+
+    internal static ServerFilterSnapshot Create(IReadOnlyList<Server> servers)
+    {
+        var bases = new Dictionary<int, List<Server>>(PresetCount);
+        for (int mask = 0; mask < PresetCount; mask++)
+        {
+            bases[mask] = [];
+        }
+
+        foreach (var server in servers)
+        {
+            for (int mask = 0; mask < PresetCount; mask++)
+            {
+                if (ServerFilterLogic.MatchesPreset(server, (ServerFilterPreset)mask))
+                {
+                    bases[mask].Add(server);
+                }
+            }
+        }
+
+        return new ServerFilterSnapshot(bases);
+    }
+
+    internal List<Server> GetPreset(ServerFilterPreset preset)
+    {
+        return [.. _bases[(int)preset]];
+    }
+}
+
 public class ServerFilterer
 {
     private bool ShowEmpty { get; set; }
@@ -35,107 +176,20 @@ public class ServerFilterer
 
     /*
      * People who hate if statements for no reason beware:
-     * 
-     * I don't care that there's "prettier" ways to do this. I don't want this to be pretty, I want it to be performant.
-     * 
-     * Don't tell me about all the fancy ways this could be refactored to be "pretty", unless they run as fast as this does.
-     * 
-     * Also, it might seem counter-intuitive, but using ToList() after every filter is actually faster than just doing it once at the end.
-     * If you don't believe me, look into how lambda expression trees work in LINQ. It's rather trippy.
-     */
-    public List<Server> GetFilteredServers()
-    {
-        List<Server> servers = new(ServerManager.GetServers());
-
-        if (OnlyOpenMp)
-        {
-            servers = servers.Where(x => x.IsOpenMp).ToList();
-        }
-
-        if (!ShowEmpty)
-        {
-            servers = servers.Where(x => x.PlayersOnline > 0).ToList();
-        }
-
-        if (!ShowPassworded)
-        {
-            servers = servers.Where(x => x.RequiresPassword == false).ToList();
-        }
-
-        if (HideRoleplay)
-        {
-            servers = servers.Where(x => !x.GameMode.Contains("rp", StringComparison.OrdinalIgnoreCase) &&
-                                         !x.GameMode.Contains("role", StringComparison.OrdinalIgnoreCase) &&
-                                         !x.Name.Contains("roleplay", StringComparison.OrdinalIgnoreCase) &&
-                                         !x.Name.Contains("role play", StringComparison.OrdinalIgnoreCase))
-                             .ToList();
-        }
-
-        if (RequireSampCac)
-        {
-            servers = servers.Where(x => !x.SampCac.Contains("not required", StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        if (Name != "unspecified")
-        {
-            servers = servers.Where(x => x.Name.Contains(Name, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        if (Version != "any")
-        {
-            servers = servers.Where(x => x.Version.Contains(Version, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        // In the future, should probably have a way to specify a language in a more broad sense rather than by string,
-        // as server operators define languages in rather inconsistent ways.
-        if (Language != "any")
-        {
-            servers = servers.Where(x => x.Language.Contains(Language, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        if (Gamemode != "unspecified")
-        {
-            servers = servers.Where(x => x.GameMode.Contains(Gamemode, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        // if specified, order
-        if (Order != "none")
-        {
-            // by player count
-            if (Order == "players")
-            {
-                servers = servers.OrderByDescending(x => x.PlayersOnline).ToList();
-            }
-            // by player count over the max player ratio.
-            else
-            {
-                // show_empty=0 guarantees PlayersOnline will never be zero.
-                // otherwise we have to separate them
-                if (!ShowEmpty)
-                {
-                    servers = servers.OrderBy(x => (double)x.MaxPlayers / x.PlayersOnline).ToList();
-                }
-                else
-                {
-                    var emptyServers = servers.Where(x => x.PlayersOnline == 0);
-                    var populatedServers = servers.Where(x => x.PlayersOnline > 0);
-
-                    servers = populatedServers.OrderByDescending(x => (double)x.PlayersOnline / x.MaxPlayers).ToList();
-                    servers.AddRange(emptyServers);
-                }
-            }
-        }
-        else
-        {
-            // if "none", then order by the ShuffleOrder, which gets shuffled every 30 minutes.
-            servers = servers.OrderBy(x => x.ShuffledOrder).ToList();
-        }
-    /*
+     *
      * I don't care that there's "prettier" ways to do this. I want this to stay fast.
+     *
      * The cheap boolean filters (empty/passworded/roleplay/open.mp/SAMPCAC) are precomputed
      * into cached base lists in ServerManager. Per request, we only apply the free-text
      * filters and ordering over the smallest viable base list.
      */
+    public List<Server> GetFilteredServers()
+    {
+        var preset = ServerFilterLogic.BuildPreset(ShowEmpty, ShowPassworded, HideRoleplay, RequireSampCac, OnlyOpenMp);
+        List<Server> servers = ServerManager.GetFilteredServerBase(preset);
+
+        servers = ServerFilterLogic.ApplyTextFilters(servers, Name, Version, Language, Gamemode);
+        servers = ServerFilterLogic.ApplyOrdering(servers, Order, ShowEmpty);
 
         return servers;
     }
