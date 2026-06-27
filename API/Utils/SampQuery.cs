@@ -22,10 +22,10 @@ public class SampQuery
     private const ushort DefaultServerPort = 7777;
     private const int ReceiveArraySize = 8192;
     private const int TimeoutMilliseconds = 5000;
-    private readonly ushort _serverPort;
     private readonly string _serverIpString;
     private readonly IPEndPoint _serverEndPoint;
-    private readonly char[] _socketHeader;
+    // Cache per server since destinations won't change.
+    private readonly byte[] _packetPrefix;
     private DateTime _transmitMs;
 
     private SampQuery(string host, ushort port)
@@ -46,9 +46,20 @@ public class SampQuery
         _serverEndPoint = new IPEndPoint(serverIp1, port);
 
         _serverIpString = serverIp1.ToString();
-        _serverPort = port;
 
-        _socketHeader = "SAMP".ToCharArray();
+        // Build the per-destination packet header: "SAMP" + 4 IPv4 octets + 2-byte port.
+        _packetPrefix = new byte[10];
+        "SAMP"u8.CopyTo(_packetPrefix);
+
+        var octets = _serverIpString.Split('.');
+        for (int i = 0; i < 4; i++)
+        {
+            _packetPrefix[4 + i] = byte.Parse(octets[i], CultureInfo.InvariantCulture);
+        }
+
+        // SA-MP uses little-endian for the port field. Wtf
+        _packetPrefix[8] = (byte)(port & 0xFF);
+        _packetPrefix[9] = (byte)((port >> 8) & 0xFF);
     }
 
     public SampQuery(string ip) : this(ip.Split(':')[0], GetPortFromStringOrDefault(ip)) { }
@@ -62,26 +73,17 @@ public class SampQuery
     private async Task<byte[]> SendSocketToServerAsync(char packetType)
     {
         // Local socket so multiple async invocations on the same SampQuery instance
-        // (e.g. concurrent 'i' and 'r' queries) do not race on the field.
+        // (e.g. concurrent 'i' and 'r' queries) do not race on the underlying socket.
         using var socket = new Socket(_serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
-        using var stream = new MemoryStream();
-        await using var writer = new BinaryWriter(stream);
-        string[] splitIp = _serverIpString.Split('.');
-
-        writer.Write(_socketHeader);
-
-        for (sbyte i = 0; i < splitIp.Length; i++)
-        {
-            writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
-        }
-
-        writer.Write(_serverPort);
-        writer.Write(packetType);
+        // Build the per-query packet: cached prefix + opcode byte. Avoids MemoryStream / BinaryWriter / per-call string split.
+        var packet = new byte[_packetPrefix.Length + 1];
+        Buffer.BlockCopy(_packetPrefix, 0, packet, 0, _packetPrefix.Length);
+        packet[_packetPrefix.Length] = (byte)packetType;
 
         _transmitMs = DateTime.Now;
 
-        await socket.SendToAsync(stream.ToArray(), SocketFlags.None, _serverEndPoint);
+        await socket.SendToAsync(packet, SocketFlags.None, _serverEndPoint);
         EndPoint rawPoint = _serverEndPoint;
         var data = new byte[ReceiveArraySize];
 

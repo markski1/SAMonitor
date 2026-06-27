@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text;
 using Newtonsoft.Json;
+using System.Threading;
 
 namespace SAMonitor.Utils;
 
@@ -10,6 +11,11 @@ public static class Helpers
 
     private static string WebhookUrl = "";
     private static readonly HttpClient _httpClient = new();
+
+    // Debounce to stop hitting Discord limits.
+    private static readonly TimeSpan DiscordMinInterval = TimeSpan.FromSeconds(60);
+    private static readonly Lock DiscordLock = new();
+    private static readonly Dictionary<string, DateTime> DiscordLastSent = new(StringComparer.Ordinal);
 
     public static void LoadWebhookUrl()
     {
@@ -85,7 +91,7 @@ public static class Helpers
 
             if (!IsDevelopment)
             {
-                await SendDiscordMessage(message);
+                await SendDiscordMessage(context, message);
             }
         }
         catch (Exception logEx)
@@ -94,8 +100,29 @@ public static class Helpers
         }
     }
 
-    private static async Task SendDiscordMessage(string message)
+    private static async Task SendDiscordMessage(string context, string message)
     {
+        bool shouldSend;
+        lock (DiscordLock)
+        {
+            var now = DateTime.UtcNow;
+            if (DiscordLastSent.TryGetValue(context, out var last) && now - last < DiscordMinInterval)
+            {
+                shouldSend = false;
+            }
+            else
+            {
+                DiscordLastSent[context] = now;
+                shouldSend = true;
+            }
+        }
+
+        if (!shouldSend)
+        {
+            // nothing to do here.
+            return;
+        }
+
         try
         {
             var payload = new { content = message.Length > 2000 ? message[..1997] + "..." : message };
