@@ -1,6 +1,6 @@
-﻿using SAMonitor.Data;
+﻿using Dapper;
+using SAMonitor.Data;
 using SAMonitor.Utils;
-using static Dapper.SqlMapper;
 
 namespace SAMonitor.Database;
 
@@ -129,12 +129,81 @@ public static class ServerRepository
         {
             return success;
         }
-        
+
         sql = "INSERT INTO metrics_server (server_id, players) VALUES (@Id, @PlayersOnline)";
 
         await db.ExecuteAsync(sql, new { server.Id, server.PlayersOnline });
 
         return success;
+    }
+
+    public static async Task UpdateServersBatch(IReadOnlyList<Server> servers)
+    {
+        if (servers.Count == 0) return;
+
+        const string updateSql = """
+                                 UPDATE servers
+                                 SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac, weather=@Weather
+                                 WHERE ip_addr = @IpAddr
+                                 """;
+
+        using var db = await DatabasePool.GetConnectionAsync();
+        using var tx = await db.BeginTransactionAsync();
+
+        try
+        {
+            foreach (var server in servers)
+            {
+                await db.ExecuteAsync(updateSql, new
+                {
+                    server.IpAddr,
+                    server.Name,
+                    server.LastUpdated,
+                    server.IsOpenMp,
+                    server.LagComp,
+                    server.MapName,
+                    server.GameMode,
+                    server.PlayersOnline,
+                    server.MaxPlayers,
+                    server.Website,
+                    server.Version,
+                    server.Language,
+                    server.SampCac,
+                    server.Weather
+                }, tx);
+            }
+
+            if (!Helpers.IsDevelopment)
+            {
+                // Dapper doesn't expand collection parameters for arbitrary SQL
+                var sb = new System.Text.StringBuilder(
+                    "INSERT INTO metrics_server (server_id, players) VALUES ");
+                var dynParams = new DynamicParameters();
+                int appended = 0;
+                for (int i = 0; i < servers.Count; i++)
+                {
+                    var s = servers[i];
+                    if (s.Id <= 0) continue; // skip servers that haven't been inserted yet
+                    if (appended > 0) sb.Append(',');
+                    sb.Append($"(@id{appended}, @players{appended})");
+                    dynParams.Add($"id{appended}", s.Id);
+                    dynParams.Add($"players{appended}", s.PlayersOnline);
+                    appended++;
+                }
+
+                if (appended > 0)
+                {
+                    await db.ExecuteAsync(sb.ToString(), dynParams, tx);
+                }
+            }
+
+            await tx.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            await Helpers.LogError("UpdateServersBatch", ex);
+        }
     }
 
     public static async Task<List<ServerMetrics>> GetServerMetrics(int id, DateTime requestTime, int includeMisses = 0)

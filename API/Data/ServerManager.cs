@@ -32,21 +32,31 @@ public static class ServerManager
 
         var dropZone = DateTime.UtcNow - TimeSpan.FromHours(6);
 
-        // query all servers
+        using var gate = new SemaphoreSlim(64);
+
+        // query all servers, gated by the semaphore
         var tasks = servers.Select(async x =>
         {
-            if (await x.Query(false))
+            await gate.WaitAsync();
+            try
             {
-                return x;
-            }
+                if (await x.Query(false))
+                {
+                    return x;
+                }
 
-            // if it failed to respond, but it's not in the drop zone, we still keep it
-            if (x.LastUpdated > dropZone)
+                // if it failed to respond, but it's not in the drop zone, we still keep it
+                if (x.LastUpdated > dropZone)
+                {
+                    return x;
+                }
+
+                return null;
+            }
+            finally
             {
-                return x;
+                gate.Release();
             }
-
-            return null;
         });
 
         var results = await Task.WhenAll(tasks);
@@ -98,7 +108,7 @@ public static class ServerManager
             }
             return "CR-MP servers are currently unsupported.";
         }
-        
+
         // Extract to avoid 'disposed at outer scope' false(?) positive in JetBrains.
         string newName = newServer.Name;
         string newLang = newServer.Language;
@@ -107,9 +117,9 @@ public static class ServerManager
         // check for copies
         lock (_lock)
         {
-            var copies = _currentServers.Where(x => 
-                x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) && 
-                x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) && 
+            var copies = _currentServers.Where(x =>
+                x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) &&
+                x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) &&
                 x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase));
 
             if (copies.Any())
@@ -120,9 +130,9 @@ public static class ServerManager
             }
 
             // if there's an 'old' dead version of this, then delete it.
-            var deadCopies = _servers.Where(x => 
-                x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) && 
-                x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) && 
+            var deadCopies = _servers.Where(x =>
+                x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) &&
+                x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) &&
                 x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase)).ToList();
 
             foreach (var server in deadCopies)
@@ -137,7 +147,7 @@ public static class ServerManager
             newServer.Dispose();
             return "Sorry, there was an error adding your server to SAMonitor.";
         }
-        
+
         newServer.Id = await ServerRepository.GetServerId(ipAddr);
 
         lock (_lock)
@@ -178,7 +188,7 @@ public static class ServerManager
                 break;
             }
         }
-        
+
         return result.FirstOrDefault();
     }
 
@@ -295,7 +305,7 @@ public static class ServerManager
     {
         // don't save metrics unless in production
         if (Helpers.IsDevelopment) return;
-        
+
         using var db = await DatabasePool.GetConnectionAsync();
 
         const string sql = "INSERT INTO metrics_global (players, servers, omp_servers) VALUES(@_players, @_servers, @_omp_servers)";

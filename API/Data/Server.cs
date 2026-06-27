@@ -132,7 +132,7 @@ public sealed class Server : IDisposable
                 return false;
             }
         }
-        
+
         ServerInfo? serverInfo = null;
         ServerRules? serverRules = null;
         bool querySuccess = false;
@@ -153,7 +153,7 @@ public sealed class Server : IDisposable
                 {
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                     using var response = await Client.GetAsync($"{QueryManagerProxy.ProxyUrl}/query?ip={IpAddr}", cts.Token);
-                    
+
                     if (response.IsSuccessStatusCode)
                     {
                         var json = await response.Content.ReadAsStringAsync();
@@ -183,7 +183,7 @@ public sealed class Server : IDisposable
                                     Weather = (int?)data.rules.Weather ?? -1
                                 };
                             }
-                            
+
                             isProxy = true;
                             IsProxyQueried = true;
                             querySuccess = true;
@@ -195,6 +195,13 @@ public sealed class Server : IDisposable
                     // Fallback failed too, continue to error handling
                 }
             }
+        }
+
+        // If direct 'i' succeeded, kick off 'r' in parallel and gather both.
+        Task<ServerRules>? rulesTask = null;
+        if (querySuccess && !isProxy)
+        {
+            rulesTask = _query.GetServerRulesAsync();
         }
 
         if (!querySuccess)
@@ -267,12 +274,30 @@ public sealed class Server : IDisposable
         }
         else
         {
-            await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
-
+            // Await the in-flight 'r' query. If it failed, retry after a short delay to respect rate limits.
             try
             {
-                serverRules = await _query.GetServerRulesAsync();
+                serverRules = await rulesTask!;
+            }
+            catch
+            {
+                // The first attempt was rate-limited or timed out. Back off briefly, then try once more.
+                await Task.Delay(500);
+                try
+                {
+                    serverRules = await _query.GetServerRulesAsync();
+                }
+                catch (Exception ex)
+                {
+                    if (ex.ToString().Contains("SocketException") == false) // I don't care to log network exceptions
+                    {
+                        Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
+                    }
+                }
+            }
 
+            if (serverRules is not null)
+            {
                 Version = serverRules.Version ?? "Unknown";
                 MapName = serverRules.MapName ?? "Unknown";
                 SampCac = serverRules.SampcacVersion ?? "Not required";
@@ -280,13 +305,6 @@ public sealed class Server : IDisposable
                 Website = serverRules.WebUrl is null ? "Unknown" : serverRules.WebUrl.ToString();
                 WorldTime = serverRules.WorldTime;
                 Weather = serverRules.Weather;
-            }
-            catch (Exception ex)
-            {
-                if (ex.ToString().Contains("SocketException") == false) // I don't care to log network exceptions
-                {
-                    Console.WriteLine($"Error getting rules for {IpAddr} : {ex}");
-                }
             }
         }
 
@@ -317,11 +335,11 @@ public sealed class Server : IDisposable
         if (_query is null) return [];
 
         if (DateTime.UtcNow - _playerListTime <= TimeSpan.FromMinutes(3)) return _playerListCache;
-        
+
         try
         {
             List<ServerPlayer> serverPlayers;
-            
+
             if (IsProxyQueried && QueryManagerProxy.ProxyUrl is not null)
             {
                 serverPlayers = await GetPlayersFromProxyAsync();
@@ -330,7 +348,7 @@ public sealed class Server : IDisposable
             {
                 serverPlayers = await _query.GetServerPlayersAsync(IsOpenMp);
             }
-            
+
             // we pass it as a different type of object for API compatibility reasons.
             var players = serverPlayers.Select(player => new Player(player)).ToList();
             _playerListCache = players;
@@ -343,23 +361,23 @@ public sealed class Server : IDisposable
 
         return _playerListCache;
     }
-    
+
     private async Task<List<ServerPlayer>> GetPlayersFromProxyAsync()
     {
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             using var response = await Client.GetAsync($"{QueryManagerProxy.ProxyUrl}/query/players?ip={IpAddr}", cts.Token);
-            
+
             if (!response.IsSuccessStatusCode)
                 return [];
-            
+
             var json = await response.Content.ReadAsStringAsync();
             var data = JsonConvert.DeserializeObject<dynamic>(json);
-            
+
             if (data?.players == null)
                 return [];
-            
+
             var players = new List<ServerPlayer>();
             foreach (var player in data.players)
             {
@@ -371,7 +389,7 @@ public sealed class Server : IDisposable
                     PlayerPing = (int?)player.PlayerPing ?? 0
                 });
             }
-            
+
             return players;
         }
         catch

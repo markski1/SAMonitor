@@ -1,6 +1,5 @@
 ﻿using SAMonitor.Data;
 using SAMonitor.Database;
-using System.Timers;
 
 namespace SAMonitor.Utils;
 
@@ -49,14 +48,19 @@ public static class ServerUpdater
                 currentQueue = new List<Server>(UpdateQueue);
                 UpdateQueue.Clear();
             }
+
+            // Dedupe by IP addr
+            var deduped = new List<Server>(currentQueue.Count);
+            var seen = new HashSet<string>(currentQueue.Count, StringComparer.Ordinal);
             foreach (var server in currentQueue)
             {
-                if (!await ServerRepository.UpdateServer(server))
+                if (seen.Add(server.IpAddr))
                 {
-                    // In the environment SAMonitor runs, messages to console are logged.
-                    Console.WriteLine($"Failed to update server {server.IpAddr}");
+                    deduped.Add(server);
                 }
             }
+
+            await ServerRepository.UpdateServersBatch(deduped);
         }
         catch (Exception ex)
         {

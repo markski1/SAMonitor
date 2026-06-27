@@ -26,7 +26,6 @@ public class SampQuery
     private readonly string _serverIpString;
     private readonly IPEndPoint _serverEndPoint;
     private readonly char[] _socketHeader;
-    private Socket? _serverSocket;
     private DateTime _transmitMs;
 
     private SampQuery(string host, ushort port)
@@ -62,92 +61,48 @@ public class SampQuery
 
     private async Task<byte[]> SendSocketToServerAsync(char packetType)
     {
-        _serverSocket = new Socket(_serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+        // Local socket so multiple async invocations on the same SampQuery instance
+        // (e.g. concurrent 'i' and 'r' queries) do not race on the field.
+        using var socket = new Socket(_serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
-        try
+        using var stream = new MemoryStream();
+        await using var writer = new BinaryWriter(stream);
+        string[] splitIp = _serverIpString.Split('.');
+
+        writer.Write(_socketHeader);
+
+        for (sbyte i = 0; i < splitIp.Length; i++)
         {
-            using var stream = new MemoryStream();
-            await using var writer = new BinaryWriter(stream);
-            string[] splitIp = _serverIpString.Split('.');
-
-            writer.Write(_socketHeader);
-
-            for (sbyte i = 0; i < splitIp.Length; i++)
-            {
-                writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
-            }
-
-            writer.Write(_serverPort);
-            writer.Write(packetType);
-
-            _transmitMs = DateTime.Now;
-
-            await _serverSocket.SendToAsync(stream.ToArray(), SocketFlags.None, _serverEndPoint);
-            EndPoint rawPoint = _serverEndPoint;
-            var data = new byte[ReceiveArraySize];
-
-            var task = _serverSocket.ReceiveFromAsync(data, SocketFlags.None, rawPoint);
-
-            if (await Task.WhenAny(task, Task.Delay(TimeoutMilliseconds)) != task)
-            {
-                throw new SocketException(10060); // Operation timed out
-            }
-
-            var result = await task;
-            if (result.ReceivedBytes == 0)
-            {
-                throw new SocketException(10060); // Empty response treated as timeout
-            }
-
-            var actualData = new byte[result.ReceivedBytes];
-            Buffer.BlockCopy(data, 0, actualData, 0, result.ReceivedBytes);
-            return actualData;
-        }
-        finally
-        {
-            _serverSocket.Dispose();
+            writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
         }
 
+        writer.Write(_serverPort);
+        writer.Write(packetType);
+
+        _transmitMs = DateTime.Now;
+
+        await socket.SendToAsync(stream.ToArray(), SocketFlags.None, _serverEndPoint);
+        EndPoint rawPoint = _serverEndPoint;
+        var data = new byte[ReceiveArraySize];
+
+        var task = socket.ReceiveFromAsync(data, SocketFlags.None, rawPoint);
+
+        if (await Task.WhenAny(task, Task.Delay(TimeoutMilliseconds)) != task)
+        {
+            throw new SocketException(10060); // Operation timed out
+        }
+
+        var result = await task;
+        if (result.ReceivedBytes == 0)
+        {
+            throw new SocketException(10060); // Empty response treated as timeout
+        }
+
+        var actualData = new byte[result.ReceivedBytes];
+        Buffer.BlockCopy(data, 0, actualData, 0, result.ReceivedBytes);
+        return actualData;
     }
-    
-    private void SendSocketToServer(char packetType)
-    {
-        _serverSocket = new Socket(_serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
-        {
-            SendTimeout = TimeoutMilliseconds,
-            ReceiveTimeout = TimeoutMilliseconds
-        };
 
-        try
-        {
-            using var stream = new MemoryStream();
-            using var writer = new BinaryWriter(stream);
-            string[] splitIp = _serverIpString.Split('.');
-
-            writer.Write(_socketHeader);
-
-            for (sbyte i = 0; i < splitIp.Length; i++)
-            {
-                writer.Write(Convert.ToByte(Convert.ToInt16(splitIp[i])));
-            }
-
-            writer.Write(_serverPort);
-            writer.Write(packetType);
-
-            _transmitMs = DateTime.Now;
-
-            _serverSocket.SendTo(stream.ToArray(), SocketFlags.None, _serverEndPoint);
-
-            EndPoint rawPoint = _serverEndPoint;
-            var szReceive = new byte[ReceiveArraySize];
-            _serverSocket.ReceiveFrom(szReceive, SocketFlags.None, ref rawPoint);
-        }
-        finally
-        {
-            _serverSocket.Dispose();
-        }
-    }
-    
     /// <summary>
     /// Get server players. Attempts either player list or client list.
     /// </summary>
@@ -173,7 +128,7 @@ public class SampQuery
         data = await SendSocketToServerAsync('c');
         return CollectServerPlayersInfoFromByteArray(data, 'c');
     }
-    
+
     /// <summary>
     /// Get information about server
     /// </summary>
@@ -184,7 +139,7 @@ public class SampQuery
         byte[] data = await SendSocketToServerAsync('i');
         return CollectServerInfoFromByteArray(data);
     }
-    
+
     /// <summary>
     /// Get server rules
     /// </summary>
@@ -273,7 +228,7 @@ public class SampQuery
             var value = new string(read.ReadChars(read.ReadByte()));
 
             if (property == null) continue;
-            
+
             object val;
             if (property.PropertyType == typeof(bool)) val = value == "On";
             else if (property.PropertyType == typeof(Uri)) val = SqHelpers.ParseWebUrl(value);
