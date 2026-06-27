@@ -139,7 +139,7 @@ public class SampQuery
     public async Task<ServerInfo> GetServerInfoAsync()
     {
         byte[] data = await SendSocketToServerAsync('i');
-        return CollectServerInfoFromByteArray(data);
+        return SqHelpers.NormalizeServerInfo(CollectServerInfoFromByteArray(data));
     }
 
     /// <summary>
@@ -256,6 +256,42 @@ public static class SqHelpers
     {
         if (!TimeSpan.TryParse(value, out var parsedTime)) parsedTime = TimeSpan.FromHours(0);
         return DateTime.Today.Add(parsedTime);
+    }
+
+    public static bool UsesCyrillicEncoding(string language)
+    {
+        return language.Contains("ru", StringComparison.OrdinalIgnoreCase) ||
+               language.Contains("ру", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static string NormalizeQueryText(string text, string language)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        return UsesCyrillicEncoding(language) ? text : Helpers.BodgedEncodingFix(text);
+    }
+
+    public static ServerInfo NormalizeServerInfo(ServerInfo info)
+    {
+        if (UsesCyrillicEncoding(info.Language)) return info;
+
+        return new ServerInfo
+        {
+            HostName = Helpers.BodgedEncodingFix(info.HostName),
+            GameMode = Helpers.BodgedEncodingFix(info.GameMode),
+            Language = Helpers.BodgedEncodingFix(info.Language),
+            Players = info.Players,
+            MaxPlayers = info.MaxPlayers,
+            Password = info.Password,
+            ServerPing = info.ServerPing
+        };
+    }
+
+    public static ServerRules NormalizeServerRules(ServerRules rules, string language)
+    {
+        if (UsesCyrillicEncoding(language)) return rules;
+
+        rules.MapName = rules.MapName is null ? null : Helpers.BodgedEncodingFix(rules.MapName);
+        return rules;
     }
 
     public static object TryParseByte(string value, PropertyInfo property)

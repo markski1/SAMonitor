@@ -3,7 +3,6 @@
 using SAMonitor.Utils;
 using System.Timers;
 using SAMonitor.Database;
-using Newtonsoft.Json;
 
 namespace SAMonitor.Data;
 
@@ -157,31 +156,31 @@ public sealed class Server : IDisposable
                     if (response.IsSuccessStatusCode)
                     {
                         var json = await response.Content.ReadAsStringAsync();
-                        var data = JsonConvert.DeserializeObject<dynamic>(json);
-                        if (data is not null && data.info is not null)
+                        var data = ProxyJson.DeserializeQueryResponse(json);
+                        if (data?.Info is not null)
                         {
-                            serverInfo = new ServerInfo
+                            serverInfo = SqHelpers.NormalizeServerInfo(new ServerInfo
                             {
-                                HostName = (string?)data.info.HostName ?? "Unknown",
-                                Players = (ushort?)data.info.Players ?? 0,
-                                MaxPlayers = (ushort?)data.info.MaxPlayers ?? 0,
-                                GameMode = (string?)data.info.GameMode ?? "Unknown",
-                                Language = (string?)data.info.Language ?? "Unknown",
-                                Password = (bool?)data.info.Password ?? false
-                            };
+                                HostName = data.Info.HostName ?? "Unknown",
+                                Players = data.Info.Players ?? 0,
+                                MaxPlayers = data.Info.MaxPlayers ?? 0,
+                                GameMode = data.Info.GameMode ?? "Unknown",
+                                Language = data.Info.Language ?? "Unknown",
+                                Password = data.Info.Password ?? false
+                            });
 
-                            if (data.rules is not null)
+                            if (data.Rules is not null)
                             {
-                                serverRules = new ServerRules
+                                serverRules = SqHelpers.NormalizeServerRules(new ServerRules
                                 {
-                                    Version = (string?)data.rules.Version ?? "Unknown",
-                                    MapName = (string?)data.rules.MapName ?? "Unknown",
-                                    SampcacVersion = (string?)data.rules.SampcacVersion ?? "Unknown",
-                                    LagComp = (bool?)data.rules.LagComp ?? false,
-                                    WebUrl = (data.rules.WebUrl == "Unknown" || data.rules.WebUrl == null) ? null : new Uri((string)data.rules.WebUrl),
-                                    WorldTime = SqHelpers.ParseTime((string?)data.rules.WorldTime ?? "00:00"),
-                                    Weather = (int?)data.rules.Weather ?? -1
-                                };
+                                    Version = data.Rules.Version ?? "Unknown",
+                                    MapName = data.Rules.MapName ?? "Unknown",
+                                    SampcacVersion = data.Rules.SampcacVersion ?? "Unknown",
+                                    LagComp = data.Rules.LagComp ?? false,
+                                    WebUrl = string.IsNullOrWhiteSpace(data.Rules.WebUrl) || data.Rules.WebUrl == "Unknown" ? null : new Uri(data.Rules.WebUrl),
+                                    WorldTime = SqHelpers.ParseTime(data.Rules.WorldTime ?? "00:00"),
+                                    Weather = data.Rules.Weather ?? -1
+                                }, serverInfo.Language);
                             }
 
                             isProxy = true;
@@ -277,7 +276,7 @@ public sealed class Server : IDisposable
             // Await the in-flight 'r' query. If it failed, retry after a short delay to respect rate limits.
             try
             {
-                serverRules = await rulesTask!;
+                serverRules = SqHelpers.NormalizeServerRules(await rulesTask!, serverInfo.Language);
             }
             catch
             {
@@ -285,7 +284,7 @@ public sealed class Server : IDisposable
                 await Task.Delay(500);
                 try
                 {
-                    serverRules = await _query.GetServerRulesAsync();
+                    serverRules = SqHelpers.NormalizeServerRules(await _query.GetServerRulesAsync(), serverInfo.Language);
                 }
                 catch (Exception ex)
                 {
@@ -308,21 +307,15 @@ public sealed class Server : IDisposable
             }
         }
 
-        // SAMP encodes certain special latin characters as if they were Cyrillic.
-        // So, if the server doesn't seem russian, we replace certain known ones.
-        if (Language.Contains("ru", StringComparison.CurrentCultureIgnoreCase) == false && Language.Contains("ру", StringComparison.CurrentCultureIgnoreCase) == false)
-        {
-            Name = Helpers.BodgedEncodingFix(Name);
-            Language = Helpers.BodgedEncodingFix(Language);
-            GameMode = Helpers.BodgedEncodingFix(GameMode);
-            MapName = Helpers.BodgedEncodingFix(MapName);
-        }
-
         // The version string returned by the server is a reliable enough signal for whether it is open.mp.
         // This used to be backed by a dedicated 'o' query, but that was wasteful and is no longer needed.
         IsOpenMp = Version.Contains("omp", StringComparison.OrdinalIgnoreCase);
 
-        if (doUpdate) ServerUpdater.Queue(this);
+        if (doUpdate)
+        {
+            ServerManager.MarkFilterCachesDirty();
+            ServerUpdater.Queue(this);
+        }
 
         return true;
     }
@@ -373,24 +366,18 @@ public sealed class Server : IDisposable
                 return [];
 
             var json = await response.Content.ReadAsStringAsync();
-            var data = JsonConvert.DeserializeObject<dynamic>(json);
+            var data = ProxyJson.DeserializePlayersResponse(json);
 
-            if (data?.players == null)
+            if (data?.Players is null)
                 return [];
 
-            var players = new List<ServerPlayer>();
-            foreach (var player in data.players)
+            return data.Players.Select(player => new ServerPlayer
             {
-                players.Add(new ServerPlayer
-                {
-                    PlayerId = (byte?)player.PlayerId ?? 0,
-                    PlayerName = (string?)player.PlayerName ?? "Unknown",
-                    PlayerScore = (int?)player.PlayerScore ?? 0,
-                    PlayerPing = (int?)player.PlayerPing ?? 0
-                });
-            }
-
-            return players;
+                PlayerId = player.PlayerId ?? 0,
+                PlayerName = player.PlayerName ?? "Unknown",
+                PlayerScore = player.PlayerScore ?? 0,
+                PlayerPing = player.PlayerPing ?? 0
+            }).ToList();
         }
         catch
         {

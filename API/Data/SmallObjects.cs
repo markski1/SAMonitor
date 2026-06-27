@@ -130,6 +130,12 @@ public class ServerFilterer
             // if "none", then order by the ShuffleOrder, which gets shuffled every 30 minutes.
             servers = servers.OrderBy(x => x.ShuffledOrder).ToList();
         }
+    /*
+     * I don't care that there's "prettier" ways to do this. I want this to stay fast.
+     * The cheap boolean filters (empty/passworded/roleplay/open.mp/SAMPCAC) are precomputed
+     * into cached base lists in ServerManager. Per request, we only apply the free-text
+     * filters and ordering over the smallest viable base list.
+     */
 
         return servers;
     }

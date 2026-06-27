@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Text;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System.Threading;
 
 namespace SAMonitor.Utils;
@@ -126,7 +126,7 @@ public static class Helpers
         try
         {
             var payload = new { content = message.Length > 2000 ? message[..1997] + "..." : message };
-            var json = JsonConvert.SerializeObject(payload);
+            var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             await _httpClient.PostAsync(WebhookUrl, content);
