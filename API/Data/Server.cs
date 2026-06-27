@@ -300,22 +300,10 @@ public sealed class Server : IDisposable
             MapName = Helpers.BodgedEncodingFix(MapName);
         }
 
-        if (Version.Contains("omp"))
-        {
-            IsOpenMp = true;
-        }
-        else if (isProxy)
-        {
-            // If we are using a proxy, it's because direct queries are likely blocked.
-            // Attempting another direct query for OMP status will probably just waste 5 seconds on a timeout.
-            IsOpenMp = false;
-        }
-        else
-        {
-            await Task.Delay(500); // Await 500ms before next query to prevent ratelimit
-            IsOpenMp = await _query.GetServerIsOmpAsync();
-        }
-        
+        // The version string returned by the server is a reliable enough signal for whether it is open.mp.
+        // This used to be backed by a dedicated 'o' query, but that was wasteful and is no longer needed.
+        IsOpenMp = Version.Contains("omp", StringComparison.OrdinalIgnoreCase);
+
         if (doUpdate) ServerUpdater.Queue(this);
 
         return true;

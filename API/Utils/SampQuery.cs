@@ -186,24 +186,6 @@ public class SampQuery
     }
     
     /// <summary>
-    /// Get whether the server software is open.mp or not
-    /// </summary>
-    /// <returns>An asynchronous task that completes with an instance of Bool</returns>
-    public async Task<bool> GetServerIsOmpAsync()
-    {
-        try
-        {
-            await SendSocketToServerAsync('o');
-            return true;
-        }
-        catch
-        {
-            // a timeout means the server is not open.mp
-            return false;
-        }
-    }
-    
-    /// <summary>
     /// Get server rules
     /// </summary>
     /// <returns>An asynchronous task that completes with an instance of ServerRules</returns>
