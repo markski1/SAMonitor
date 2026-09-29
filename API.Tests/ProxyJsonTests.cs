@@ -9,7 +9,7 @@ public sealed class ProxyJsonTests
     public void QueryResponse_AcceptsLowercaseProxyKeys()
     {
         const string json = """
-            {"info":{"hostname":"My Server","players":123},"rules":{"lagcomp":true,"version":"omp 1.4"}}
+            {"info":{"hostname":"My Server","players":123},"rules":{"lagcomp":true,"version":"omp 1.4","weburl":"example.com"}}
             """;
 
         var result = ProxyJson.DeserializeQueryResponse(json);
@@ -20,6 +20,7 @@ public sealed class ProxyJsonTests
         Assert.Equal((ushort)123, result.Info.Players);
         Assert.True(result.Rules.LagComp);
         Assert.Equal("omp 1.4", result.Rules.Version);
+        Assert.Equal("example.com", result.Rules.ToServerRules("English").WebUrl?.ToString());
     }
 
     [Fact]

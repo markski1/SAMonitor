@@ -1,5 +1,7 @@
 ﻿using System.Net;
 using System.Text;
+using System.Net.Sockets;
+using System.Globalization;
 using System.Text.Json;
 using System.Threading;
 
@@ -28,45 +30,42 @@ public static class Helpers
 
     public static async Task<string> ValidateIPv4(string ipAddr)
     {
-        bool needsResolving = false;
-        var items = ipAddr.Split('.');
-        if (items.Length != 4 || ipAddr.Any(char.IsLetter))
+        return await ValidateIPv4(ipAddr, Dns.GetHostAddressesAsync);
+    }
+
+    internal static async Task<string> ValidateIPv4(string ipAddr, Func<string, Task<IPAddress[]>> resolve)
+    {
+        var parts = ipAddr.Trim().Split(':');
+        if (parts.Length is < 1 or > 2 || string.IsNullOrWhiteSpace(parts[0])) return "invalid";
+
+        int port = 7777;
+        if (parts.Length == 2 && (!int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out port) || port is < 1 or > 65535))
         {
-            // if it doesn't look like a valid IP address, check it has any dots at all.
-            if (items.Length <= 0)
-            {
-                return "invalid";
-            }
-            // if it does, then assume it's a hostname and must be resolved.
-            needsResolving = true;
+            return "invalid";
         }
 
-        // separate by port, if any.
-        items = ipAddr.Split(':');
-
-        // if we need to resolve, items[0] will be the hostname.
-        if (needsResolving)
+        IPAddress? address;
+        string host = parts[0];
+        if (host.All(c => char.IsAsciiDigit(c) || c == '.'))
         {
+            var octets = host.Split('.');
+            if (octets.Length != 4 || octets.Any(x => !byte.TryParse(x, NumberStyles.None, CultureInfo.InvariantCulture, out _))) return "invalid";
+            address = new IPAddress(octets.Select(x => byte.Parse(x, CultureInfo.InvariantCulture)).ToArray());
+        }
+        else
+        {
+            if (Uri.CheckHostName(host) != UriHostNameType.Dns) return "invalid";
             try
             {
-                // resolve hostname to ip address and assign
-                var hostEntry = await Dns.GetHostEntryAsync(items[0]);
-                ipAddr = hostEntry.AddressList[0].ToString();
-                // fill in the port if provided, else 7777
-                ipAddr = items.Length != 2 ? $"{ipAddr}:7777" : $"{ipAddr}:{items[1]}";
+                address = (await resolve(host)).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
             }
             catch
             {
                 return "invalid";
             }
         }
-        // if we don't need to resolve, then just make sure there's a port.
-        else if (items.Length != 2)
-        {
-            ipAddr = $"{ipAddr}:7777";
-        }
 
-        return ipAddr;
+        return address is null ? "invalid" : $"{address}:{port}";
     }
 
     public static string BodgedEncodingFix(string text)

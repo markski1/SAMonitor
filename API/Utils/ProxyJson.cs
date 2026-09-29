@@ -38,6 +38,17 @@ internal sealed class ProxyServerInfo
 
 internal sealed class ProxyServerRules
 {
+    internal ServerRules ToServerRules(string language) => SqHelpers.NormalizeServerRules(new ServerRules
+    {
+        Version = Version ?? "Unknown",
+        MapName = MapName ?? "Unknown",
+        SampcacVersion = SampcacVersion ?? "Unknown",
+        LagComp = LagComp ?? false,
+        WebUrl = string.IsNullOrWhiteSpace(WebUrl) || WebUrl == "Unknown" ? null : SqHelpers.ParseWebUrl(WebUrl),
+        WorldTime = SqHelpers.ParseTime(WorldTime ?? "00:00"),
+        Weather = Weather ?? -1
+    }, language);
+
     public bool? LagComp { get; init; }
     public string? MapName { get; init; }
     public string? Version { get; init; }

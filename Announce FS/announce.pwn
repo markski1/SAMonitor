@@ -28,21 +28,25 @@ public OnFilterScriptInit()
 
     if (!strlen(ip)) {
         printf("%sFailed to obtain IP address, can't announce server", LOG_PREFIX);
+        return 1;
     }
 
     // It's all done through GET, so no POST data.
     format(queryUrl, sizeof(queryUrl), "sam.markski.ar/api/AddServer?ip_addr=%s:%d", ip, GetServerVarAsInt("port"));
-    HTTP(0, HTTP_POST, queryUrl, "", "OnAnnounced"); // no need for different announce indices
+    HTTP(0, HTTP_GET, queryUrl, "", "OnAnnounced");
+    return 1;
 }
 
 forward OnAnnounced(index, response_code, data[]);
 public OnAnnounced(index, response_code, data[])
 {
-    #pragma unused data
-    if (response_code >= 200) {
+    #pragma unused index
+    if (response_code >= 200 && response_code < 300 &&
+        (!strcmp(data, "Server added to SAMonitor.") || !strcmp(data, "Server is already monitored."))) {
         printf("%sServer announced successfully.", LOG_PREFIX);
     }
     else {
-        printf("%sServer failed to announce (error %d).", LOG_PREFIX, response_code);
+        printf("%sServer failed to announce (status %d): %s", LOG_PREFIX, response_code, data);
     }
+    return 1;
 }

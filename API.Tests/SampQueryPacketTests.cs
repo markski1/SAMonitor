@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using SAMonitor.Utils;
+using SAMonitor.Data;
 using Xunit;
 
 namespace SAMonitor.Tests;
@@ -123,6 +124,42 @@ public sealed class SampQueryPacketTests
             await Assert.ThrowsAsync<InvalidDataException>(() => result);
         else
             Assert.Equal("Русский сервер", (await result).HostName);
+    }
+
+    [Theory]
+    [InlineData(3, true)]
+    [InlineData(30, false)]
+    public async Task ServerQuery_ValidatesBeforeChangingState(byte playerCount, bool valid)
+    {
+        using var endpoint = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        int port = ((IPEndPoint)endpoint.Client.LocalEndPoint!).Port;
+        using var server = new Server($"127.0.0.1:{port}")
+        {
+            Id = 1, Name = "Previous name", PlayersOnline = 1, MaxPlayers = 10, IsProxyQueried = true,
+            LastUpdated = DateTime.UtcNow.AddHours(-1)
+        };
+        var lastUpdated = server.LastUpdated;
+        var query = server.Query(false);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var request = await endpoint.ReceiveAsync(timeout.Token);
+        var info = InfoPacket();
+        request.Buffer.CopyTo(info, 0);
+        info[12] = playerCount;
+        await endpoint.SendAsync(info, request.RemoteEndPoint);
+        if (valid)
+        {
+            var rulesRequest = await endpoint.ReceiveAsync(timeout.Token);
+            var rules = Packet('r', writer => writer.Write((ushort)0));
+            rulesRequest.Buffer.CopyTo(rules, 0);
+            await endpoint.SendAsync(rules, rulesRequest.RemoteEndPoint);
+        }
+
+        Assert.Equal(valid, await query);
+        Assert.Equal(valid ? "Русский сервер" : "Previous name", server.Name);
+        Assert.Equal(valid ? 3 : 1, server.PlayersOnline);
+        Assert.Equal(!valid, server.IsProxyQueried);
+        if (valid) Assert.True(server.LastUpdated > lastUpdated);
+        else Assert.Equal(lastUpdated, server.LastUpdated);
     }
 
     private static byte[] InfoPacket() => Packet('i', writer =>

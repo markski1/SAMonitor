@@ -144,7 +144,6 @@ public sealed class Server : IDisposable
         {
             serverInfo = await _query.GetServerInfoAsync();
             querySuccess = true;
-            IsProxyQueried = false;
         }
         catch
         {
@@ -174,20 +173,10 @@ public sealed class Server : IDisposable
 
                             if (data.Rules is not null)
                             {
-                                serverRules = SqHelpers.NormalizeServerRules(new ServerRules
-                                {
-                                    Version = data.Rules.Version ?? "Unknown",
-                                    MapName = data.Rules.MapName ?? "Unknown",
-                                    SampcacVersion = data.Rules.SampcacVersion ?? "Unknown",
-                                    LagComp = data.Rules.LagComp ?? false,
-                                    WebUrl = string.IsNullOrWhiteSpace(data.Rules.WebUrl) || data.Rules.WebUrl == "Unknown" ? null : new Uri(data.Rules.WebUrl),
-                                    WorldTime = SqHelpers.ParseTime(data.Rules.WorldTime ?? "00:00"),
-                                    Weather = data.Rules.Weather ?? -1
-                                }, serverInfo.Language);
+                                serverRules = data.Rules.ToServerRules(serverInfo.Language);
                             }
 
                             isProxy = true;
-                            IsProxyQueried = true;
                             querySuccess = true;
                         }
                     }
@@ -198,6 +187,9 @@ public sealed class Server : IDisposable
                 }
             }
         }
+
+        if (serverInfo is not null && serverInfo.Players > serverInfo.MaxPlayers) return false;
+        if (_disposed) return false;
 
         // If direct 'i' succeeded, kick off 'r' in parallel and gather both.
         Task<ServerRules>? rulesTask = null;
@@ -243,6 +235,7 @@ public sealed class Server : IDisposable
 
         _queryInterval = 1200000;
 
+        IsProxyQueried = isProxy;
         Name = serverInfo!.HostName;
         PlayersOnline = serverInfo.Players;
         MaxPlayers = serverInfo.MaxPlayers;
@@ -250,8 +243,6 @@ public sealed class Server : IDisposable
         Language = serverInfo.Language;
         RequiresPassword = serverInfo.Password;
         LastUpdated = DateTime.UtcNow;
-
-        if (PlayersOnline > MaxPlayers) return false;
 
         if (serverRules is not null)
         {

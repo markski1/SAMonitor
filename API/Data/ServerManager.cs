@@ -10,6 +10,7 @@ public static class ServerManager
 {
     private static readonly Lock _lock = new();
     private static readonly SemaphoreSlim ServerChanges = new(1);
+    private static readonly TimeSpan OfflineCutoff = TimeSpan.FromHours(6);
 
     private static List<Server> _servers = [];
 
@@ -61,7 +62,7 @@ public static class ServerManager
 
         Console.WriteLine($"Querying {servers.Count} servers...");
 
-        var dropZone = DateTime.UtcNow - TimeSpan.FromHours(6);
+        var dropZone = DateTime.UtcNow - OfflineCutoff;
 
         using var gate = new SemaphoreSlim(64);
 
@@ -125,7 +126,7 @@ public static class ServerManager
 
         lock (_lock)
         {
-            if (_servers.Any(x => x.IpAddr.Contains(ipAddr))) return "Server is already monitored.";
+            if (_serverLookupIndex.Lookup(ipAddr) is not null) return "Server is already monitored.";
             if (FailedAddresses.Contains(ipAddr)) return "This IP address failed last time it was queried. Please try again in an hour.";
         }
 
@@ -167,7 +168,7 @@ public static class ServerManager
                     newServer.Dispose();
                     return "IP Address is blacklisted.";
                 }
-                if (_servers.Any(x => x.IpAddr.Contains(ipAddr)))
+                if (_serverLookupIndex.Lookup(ipAddr) is not null)
                 {
                     newServer.Dispose();
                     return "Server is already monitored.";
@@ -327,8 +328,7 @@ public static class ServerManager
                 // Clean list of "recently attempted" IP addresses.
                 FailedAddresses.Clear();
 
-                // Update the current servers with only the ones which have responded in the last 12 hours
-                _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - TimeSpan.FromHours(12)).ToList();
+                _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - OfflineCutoff).ToList();
 
                 _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
                 _filterSnapshotDirty = true;
