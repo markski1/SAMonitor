@@ -6,71 +6,68 @@ namespace SAMonitor.Tests;
 public sealed class ServerFilterLogicTests
 {
     [Fact]
-    public void SnapshotPreset_UsesCachedBaseFiltersBeforeTextFilters()
+    public void Preset_CombinesServerFilters()
     {
-        var baseline = CreateServer("alpha.example", name: "Alpha Freeroam", gameMode: "Freeroam", language: "English", playersOnline: 42, maxPlayers: 100, isOpenMp: true, sampCac: "1.0.0");
-        var empty = CreateServer("empty.example", name: "Empty Server", gameMode: "Freeroam", language: "English", playersOnline: 0, maxPlayers: 100, isOpenMp: true, sampCac: "1.0.0");
-        var passworded = CreateServer("pw.example", name: "Pw Server", gameMode: "Freeroam", language: "English", playersOnline: 10, maxPlayers: 100, isOpenMp: true, requiresPassword: true, sampCac: "1.0.0");
-        var roleplay = CreateServer("rp.example", name: "Roleplay World", gameMode: "Roleplay", language: "English", playersOnline: 20, maxPlayers: 100, isOpenMp: true, sampCac: "1.0.0");
-        var noCac = CreateServer("nocac.example", name: "No CAC", gameMode: "Freeroam", language: "English", playersOnline: 15, maxPlayers: 100, isOpenMp: true, sampCac: "Not required");
-        var notOmp = CreateServer("samp.example", name: "Classic SA-MP", gameMode: "Freeroam", language: "English", playersOnline: 30, maxPlayers: 100, isOpenMp: false, sampCac: "1.0.0");
+        using var match = CreateServer();
+        using var empty = CreateServer();
+        using var passworded = CreateServer();
+        using var roleplay = CreateServer();
+        using var noCac = CreateServer();
+        using var classic = CreateServer();
+        empty.PlayersOnline = 0;
+        passworded.RequiresPassword = true;
+        roleplay.GameMode = "Roleplay";
+        noCac.SampCac = "Not required";
+        classic.IsOpenMp = false;
+        var snapshot = ServerFilterSnapshot.Create([match, empty, passworded, roleplay, noCac, classic]);
+        var preset = ServerFilterLogic.BuildPreset(
+            showEmpty: false, showPassworded: false, hideRoleplay: true, requireSampCac: true, onlyOpenMp: true);
 
-        var snapshot = ServerFilterSnapshot.Create([baseline, empty, passworded, roleplay, noCac, notOmp]);
-        var preset = ServerFilterLogic.BuildPreset(showEmpty: false, showPassworded: false, hideRoleplay: true, requireSampCac: true, onlyOpenMp: true);
-
-        var result = snapshot.GetPreset(preset);
-
-        Assert.Collection(result, server => Assert.Same(baseline, server));
+        Assert.Same(match, Assert.Single(snapshot.GetPreset(preset)));
     }
 
     [Fact]
-    public void ApplyOrdering_RatioWithShowEmpty_LeavesEmptyServersAtEnd()
+    public void RatioOrdering_PutsFullerServersFirstAndEmptyServersLast()
     {
-        var almostFull = CreateServer("a.example", name: "Almost Full", gameMode: "Freeroam", language: "English", playersOnline: 80, maxPlayers: 100);
-        var halfFull = CreateServer("b.example", name: "Half Full", gameMode: "Freeroam", language: "English", playersOnline: 50, maxPlayers: 100);
-        var empty = CreateServer("c.example", name: "Empty", gameMode: "Freeroam", language: "English", playersOnline: 0, maxPlayers: 100);
+        using var full = CreateServer();
+        using var half = CreateServer();
+        using var empty = CreateServer();
+        full.PlayersOnline = 80;
+        half.PlayersOnline = 50;
+        empty.PlayersOnline = 0;
 
-        var ordered = ServerFilterLogic.ApplyOrdering([almostFull, empty, halfFull], order: "ratio", showEmpty: true);
-
-        Assert.Equal([almostFull, halfFull, empty], ordered);
+        Assert.Equal([full, half, empty],
+            ServerFilterLogic.ApplyOrdering([half, empty, full], "ratio", showEmpty: true));
     }
 
     [Fact]
-    public void ApplyTextFilters_FiltersNameVersionLanguageAndGamemode()
+    public void TextFilters_CombineCaseInsensitiveMatches()
     {
-        var match = CreateServer("match.example", name: "Brazil Drift Arena", gameMode: "Drift", language: "Portuguese", playersOnline: 25, maxPlayers: 100, version: "omp 1.4.0.2783");
-        var noLanguage = CreateServer("lang.example", name: "Brazil Drift Arena", gameMode: "Drift", language: "English", playersOnline: 25, maxPlayers: 100, version: "omp 1.4.0.2783");
-        var noGamemode = CreateServer("gm.example", name: "Brazil Drift Arena", gameMode: "Freeroam", language: "Portuguese", playersOnline: 25, maxPlayers: 100, version: "omp 1.4.0.2783");
-        var noVersion = CreateServer("ver.example", name: "Brazil Drift Arena", gameMode: "Drift", language: "Portuguese", playersOnline: 25, maxPlayers: 100, version: "0.3.7");
+        using var match = CreateServer();
+        using var otherLanguage = CreateServer();
+        using var otherMode = CreateServer();
+        using var otherVersion = CreateServer();
+        using var otherName = CreateServer();
+        otherLanguage.Language = "English";
+        otherMode.GameMode = "Freeroam";
+        otherVersion.Version = "0.3.7";
+        otherName.Name = "Other server";
 
-        var filtered = ServerFilterLogic.ApplyTextFilters([match, noLanguage, noGamemode, noVersion], name: "brazil", version: "omp", language: "port", gamemode: "drift");
+        var result = ServerFilterLogic.ApplyTextFilters(
+            [match, otherLanguage, otherMode, otherVersion, otherName], "brazil", "omp", "port", "drift");
 
-        Assert.Collection(filtered, server => Assert.Same(match, server));
+        Assert.Same(match, Assert.Single(result));
     }
 
-    private static Server CreateServer(
-        string ipAddr,
-        string name,
-        string gameMode,
-        string language,
-        int playersOnline,
-        int maxPlayers,
-        bool isOpenMp = true,
-        bool requiresPassword = false,
-        string sampCac = "1.0.0",
-        string version = "omp 1.4.0.2783")
+    private static Server CreateServer() => new("203.0.113.1:7777")
     {
-        return new Server(ipAddr)
-        {
-            Name = name,
-            GameMode = gameMode,
-            Language = language,
-            PlayersOnline = playersOnline,
-            MaxPlayers = maxPlayers,
-            IsOpenMp = isOpenMp,
-            RequiresPassword = requiresPassword,
-            SampCac = sampCac,
-            Version = version
-        };
-    }
+        Name = "Brazil Drift Arena",
+        GameMode = "Drift",
+        Language = "Portuguese",
+        PlayersOnline = 25,
+        MaxPlayers = 100,
+        IsOpenMp = true,
+        SampCac = "1.0.0",
+        Version = "omp 1.4"
+    };
 }

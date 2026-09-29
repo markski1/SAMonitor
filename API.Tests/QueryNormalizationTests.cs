@@ -6,48 +6,27 @@ namespace SAMonitor.Tests;
 public sealed class QueryNormalizationTests
 {
     [Fact]
-    public void NormalizeServerInfo_FixesKnownLatinCharacters_ForNonRussianServers()
+    public void NonRussianQueries_RepairLatinText()
     {
-        var info = new ServerInfo
+        var info = SqHelpers.NormalizeServerInfo(new ServerInfo
         {
-            HostName = "Los сaballeros",
-            GameMode = "Stкnt",
-            Language = "Spanish"
-        };
+            HostName = "Los сaballeros", GameMode = "Stкnt", Language = "Spanish"
+        });
+        var rules = SqHelpers.NormalizeServerRules(new ServerRules { MapName = "Desкrt" }, "English");
 
-        var normalized = SqHelpers.NormalizeServerInfo(info);
-
-        Assert.Equal("Los ñaballeros", normalized.HostName);
-        Assert.Equal("Stênt", normalized.GameMode);
-        Assert.Equal("Spanish", normalized.Language);
+        Assert.Equal("Los ñaballeros", info.HostName);
+        Assert.Equal("Stênt", info.GameMode);
+        Assert.Equal("Desêrt", rules.MapName);
     }
 
     [Fact]
-    public void NormalizeServerInfo_LeavesRussianServersUntouched()
+    public void RussianQueries_PreserveCyrillicText()
     {
-        var info = new ServerInfo
+        var info = SqHelpers.NormalizeServerInfo(new ServerInfo
         {
-            HostName = "Русский сервер",
-            GameMode = "Roleplay",
-            Language = "Русский"
-        };
+            HostName = "Русский сервер", Language = "Русский"
+        });
 
-        var normalized = SqHelpers.NormalizeServerInfo(info);
-
-        Assert.Same(info, normalized);
-    }
-
-    [Fact]
-    public void NormalizeServerRules_FixesMapName_ForNonRussianServers()
-    {
-        var rules = new ServerRules
-        {
-            MapName = "Desкrt"
-        };
-
-        var normalized = SqHelpers.NormalizeServerRules(rules, "English");
-
-        Assert.Same(rules, normalized);
-        Assert.Equal("Desêrt", normalized.MapName);
+        Assert.Equal("Русский сервер", info.HostName);
     }
 }

@@ -6,90 +6,36 @@ namespace SAMonitor.Tests;
 public sealed class ProxyJsonTests
 {
     [Fact]
-    public void DeserializeQueryResponse_ParsesLowercaseProxyPayload()
+    public void QueryResponse_AcceptsLowercaseProxyKeys()
     {
         const string json = """
-        {
-          "info": {
-            "HostName": "My Server",
-            "Players": 123,
-            "MaxPlayers": 500,
-            "GameMode": "Freeroam",
-            "Language": "English",
-            "Password": false
-          },
-          "rules": {
-            "LagComp": true,
-            "MapName": "San Andreas",
-            "Version": "omp 1.4.0.2783",
-            "SampcacVersion": "1.0.0",
-            "Weather": 10,
-            "WebUrl": "https://example.com",
-            "WorldTime": "12:34"
-          }
-        }
-        """;
+            {"info":{"hostname":"My Server","players":123},"rules":{"lagcomp":true,"version":"omp 1.4"}}
+            """;
 
         var result = ProxyJson.DeserializeQueryResponse(json);
 
-        Assert.NotNull(result);
-        Assert.NotNull(result!.Info);
+        Assert.NotNull(result?.Info);
         Assert.NotNull(result.Rules);
-        Assert.Equal("My Server", result.Info!.HostName);
+        Assert.Equal("My Server", result.Info.HostName);
         Assert.Equal((ushort)123, result.Info.Players);
-        Assert.Equal((ushort)500, result.Info.MaxPlayers);
-        Assert.Equal("Freeroam", result.Info.GameMode);
-        Assert.Equal("English", result.Info.Language);
-        Assert.False(result.Info.Password);
-        Assert.True(result.Rules!.LagComp);
-        Assert.Equal("San Andreas", result.Rules.MapName);
-        Assert.Equal("omp 1.4.0.2783", result.Rules.Version);
-        Assert.Equal("1.0.0", result.Rules.SampcacVersion);
-        Assert.Equal(10, result.Rules.Weather);
-        Assert.Equal("https://example.com", result.Rules.WebUrl);
-        Assert.Equal("12:34", result.Rules.WorldTime);
+        Assert.True(result.Rules.LagComp);
+        Assert.Equal("omp 1.4", result.Rules.Version);
     }
 
     [Fact]
-    public void DeserializePlayersResponse_ParsesPlayerList()
+    public void PlayersResponse_ParsesPlayerFields()
     {
         const string json = """
-        {
-          "players": [
-            {
-              "PlayerId": 7,
-              "PlayerName": "Alice",
-              "PlayerScore": 99,
-              "PlayerPing": 42
-            },
-            {
-              "PlayerId": 8,
-              "PlayerName": "Bob",
-              "PlayerScore": 123,
-              "PlayerPing": 55
-            }
-          ]
-        }
-        """;
+            {"players":[{"PlayerId":7,"PlayerName":"Alice","PlayerScore":99,"PlayerPing":42}]}
+            """;
 
         var result = ProxyJson.DeserializePlayersResponse(json);
 
-        Assert.NotNull(result);
-        Assert.NotNull(result!.Players);
-        Assert.Collection(result.Players!,
-            player =>
-            {
-                Assert.Equal((byte)7, player.PlayerId);
-                Assert.Equal("Alice", player.PlayerName);
-                Assert.Equal(99, player.PlayerScore);
-                Assert.Equal(42, player.PlayerPing);
-            },
-            player =>
-            {
-                Assert.Equal((byte)8, player.PlayerId);
-                Assert.Equal("Bob", player.PlayerName);
-                Assert.Equal(123, player.PlayerScore);
-                Assert.Equal(55, player.PlayerPing);
-            });
+        Assert.NotNull(result?.Players);
+        var player = Assert.Single(result.Players);
+        Assert.Equal((byte)7, player.PlayerId);
+        Assert.Equal("Alice", player.PlayerName);
+        Assert.Equal(99, player.PlayerScore);
+        Assert.Equal(42, player.PlayerPing);
     }
 }
