@@ -102,6 +102,12 @@ public class SampQuery
 
         var actualData = new byte[result.ReceivedBytes];
         Buffer.BlockCopy(data, 0, actualData, 0, result.ReceivedBytes);
+        ValidatePacketHeader(actualData, packetType);
+        if (!_serverEndPoint.Equals(result.RemoteEndPoint) ||
+            !actualData.AsSpan(0, _packetPrefix.Length).SequenceEqual(_packetPrefix))
+        {
+            throw new InvalidDataException("Query response does not match the requested server.");
+        }
         return actualData;
     }
 
@@ -153,22 +159,25 @@ public class SampQuery
         return CollectServerRulesFromByteArray(data);
     }
 
-    private static List<ServerPlayer> CollectServerPlayersInfoFromByteArray(byte[] data, char packetType)
+    internal static List<ServerPlayer> CollectServerPlayersInfoFromByteArray(byte[] data, char packetType)
     {
         List<ServerPlayer> returnData = [];
 
-        using MemoryStream stream = new(data);
-        using BinaryReader read = new(stream, Encoding.GetEncoding(1251));
-        read.ReadBytes(10);
-        read.ReadChar();
+        using var read = OpenPacket(data, packetType);
+        int playerCount = read.ReadUInt16();
+        int minimumPlayerSize = packetType == 'd' ? 10 : 5;
+        if (playerCount > (read.BaseStream.Length - read.BaseStream.Position) / minimumPlayerSize)
+        {
+            throw new InvalidDataException("Player count exceeds the query response size.");
+        }
 
-        for (int i = 0, iTotalPlayers = read.ReadInt16(); i < iTotalPlayers; i++)
+        for (int i = 0; i < playerCount; i++)
         {
             if (packetType == 'd') // if the packet type is 'd', we got a full player list.
             {
                 var playerId = Convert.ToByte(read.ReadByte());
                 var nameLen = read.ReadByte();
-                var playerName = Encoding.GetEncoding(1251).GetString(read.ReadBytes(nameLen));
+                var playerName = ReadQueryString(read, nameLen);
                 returnData.Add(new ServerPlayer
                 {
                     PlayerId = playerId,
@@ -180,7 +189,7 @@ public class SampQuery
             else // Otherwise we got a 'client' list, which might be incomplete, as per https://open.mp/docs/tutorials/QueryMechanism
             {
                 var nameLen = read.ReadByte();
-                var playerName = Encoding.GetEncoding(1251).GetString(read.ReadBytes(nameLen));
+                var playerName = ReadQueryString(read, nameLen);
                 returnData.Add(new ServerPlayer
                 {
                     PlayerId = 0,
@@ -194,12 +203,9 @@ public class SampQuery
         return returnData;
     }
 
-    private ServerInfo CollectServerInfoFromByteArray(byte[] data)
+    internal ServerInfo CollectServerInfoFromByteArray(byte[] data)
     {
-        using MemoryStream stream = new(data);
-        using BinaryReader read = new(stream, Encoding.GetEncoding(1251));
-        read.ReadBytes(10);
-        read.ReadChar();
+        using var read = OpenPacket(data, 'i');
 
         return new ServerInfo
         {
@@ -207,27 +213,30 @@ public class SampQuery
             Players = read.ReadUInt16(),
             MaxPlayers = read.ReadUInt16(),
 
-            HostName = new string(read.ReadChars(read.ReadInt32())),
-            GameMode = new string(read.ReadChars(read.ReadInt32())),
-            Language = new string(read.ReadChars(read.ReadInt32())),
+            HostName = ReadQueryString(read, read.ReadInt32()),
+            GameMode = ReadQueryString(read, read.ReadInt32()),
+            Language = ReadQueryString(read, read.ReadInt32()),
 
             ServerPing = DateTime.Now.Subtract(_transmitMs).Milliseconds
         };
     }
 
-    private static ServerRules CollectServerRulesFromByteArray(byte[] data)
+    internal static ServerRules CollectServerRulesFromByteArray(byte[] data)
     {
         var sampServerRulesData = new ServerRules();
 
-        using MemoryStream stream = new(data);
-        using BinaryReader read = new(stream, Encoding.GetEncoding(1251));
-        read.ReadBytes(10);
-        read.ReadChar();
-
-        for (int i = 0, iRules = read.ReadInt16(); i < iRules; i++)
+        using var read = OpenPacket(data, 'r');
+        int ruleCount = read.ReadUInt16();
+        if (ruleCount > (read.BaseStream.Length - read.BaseStream.Position) / 2)
         {
-            PropertyInfo? property = sampServerRulesData.GetType().GetProperty(new string(read.ReadChars(read.ReadByte())).Replace(' ', '_'), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-            var value = new string(read.ReadChars(read.ReadByte()));
+            throw new InvalidDataException("Rule count exceeds the query response size.");
+        }
+
+        for (int i = 0; i < ruleCount; i++)
+        {
+            string name = ReadQueryString(read, read.ReadByte());
+            PropertyInfo? property = sampServerRulesData.GetType().GetProperty(name.Replace(' ', '_'), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+            var value = ReadQueryString(read, read.ReadByte());
 
             if (property == null) continue;
 
@@ -240,6 +249,31 @@ public class SampQuery
             property.SetValue(sampServerRulesData, val);
         }
         return sampServerRulesData;
+    }
+
+    internal static void ValidatePacketHeader(byte[] data, char packetType)
+    {
+        if (data.Length < 11 || data.Length > ReceiveArraySize ||
+            !data.AsSpan(0, 4).SequenceEqual("SAMP"u8) || data[10] != (byte)packetType)
+        {
+            throw new InvalidDataException("Invalid query response header.");
+        }
+    }
+
+    private static BinaryReader OpenPacket(byte[] data, char packetType)
+    {
+        ValidatePacketHeader(data, packetType);
+        var stream = new MemoryStream(data) { Position = 11 };
+        return new BinaryReader(stream, Encoding.GetEncoding(1251));
+    }
+
+    private static string ReadQueryString(BinaryReader read, int length)
+    {
+        if (length < 0 || length > read.BaseStream.Length - read.BaseStream.Position)
+        {
+            throw new InvalidDataException("String length exceeds the query response size.");
+        }
+        return Encoding.GetEncoding(1251).GetString(read.ReadBytes(length));
     }
 }
 

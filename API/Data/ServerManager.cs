@@ -9,6 +9,7 @@ namespace SAMonitor.Data;
 public static class ServerManager
 {
     private static readonly Lock _lock = new();
+    private static readonly SemaphoreSlim ServerChanges = new(1);
 
     private static List<Server> _servers = [];
 
@@ -56,9 +57,7 @@ public static class ServerManager
 
     public static async Task LoadServers()
     {
-        var servers = await ServerRepository.GetAllServersAsync();
-
-        await UpdateBlacklist();
+        var servers = await LoadUnblockedServers(UpdateBlacklist, ServerRepository.GetAllServersAsync, IsBlacklisted);
 
         Console.WriteLine($"Querying {servers.Count} servers...");
 
@@ -110,6 +109,16 @@ public static class ServerManager
         _servers.ForEach(x => x.CreateTimer());
     }
 
+    internal static async Task<List<Server>> LoadUnblockedServers(
+        Func<Task> updateBlacklist,
+        Func<Task<List<Server>>> loadServers,
+        Func<string, bool> isBlacklisted)
+    {
+        await updateBlacklist();
+        var servers = await loadServers();
+        return servers.Where(x => !isBlacklisted(x.IpAddr)).ToList();
+    }
+
     public static async Task<string> AddServer(string ipAddr)
     {
         if (IsBlacklisted(ipAddr)) return "IP Address is blacklisted.";
@@ -121,7 +130,6 @@ public static class ServerManager
         }
 
         var newServer = new Server(ipAddr);
-        newServer.CreateTimer();
 
         if (!await newServer.Query(false))
         {
@@ -148,55 +156,71 @@ public static class ServerManager
         string newLang = newServer.Language;
         string newWebsite = newServer.Website;
 
-        // check for copies
-        lock (_lock)
+        await ServerChanges.WaitAsync();
+        try
         {
-            var copies = _currentServers.Where(x =>
-                x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) &&
-                x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) &&
-                x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase));
+            List<Server> deadCopies;
+            lock (_lock)
+            {
+                if (IsBlacklisted(ipAddr))
+                {
+                    newServer.Dispose();
+                    return "IP Address is blacklisted.";
+                }
+                if (_servers.Any(x => x.IpAddr.Contains(ipAddr)))
+                {
+                    newServer.Dispose();
+                    return "Server is already monitored.";
+                }
 
-            if (copies.Any())
+                var copies = _currentServers.Where(x =>
+                    x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) &&
+                    x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) &&
+                    x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase));
+
+                if (copies.Any())
+                {
+                    newServer.Dispose();
+                    FailedAddresses.Add(ipAddr);
+                    return "Server is already monitored. Be advised: Sneaking in repeated IPs for the same server is a motive for blacklisting.";
+                }
+
+                deadCopies = _servers.Where(x =>
+                    x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) &&
+                    x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) &&
+                    x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase)).ToList();
+            }
+
+            var id = await ServerRepository.InsertServer(newServer, deadCopies.Select(x => x.Id).ToArray());
+            if (id is null)
             {
                 newServer.Dispose();
-                FailedAddresses.Add(ipAddr);
-                return "Server is already monitored. Be advised: Sneaking in repeated IPs for the same server is a motive for blacklisting.";
+                return "Sorry, there was an error adding your server to SAMonitor.";
             }
 
-            // if there's an 'old' dead version of this, then delete it.
-            var deadCopies = _servers.Where(x =>
-                x.Name.Equals(newName, StringComparison.CurrentCultureIgnoreCase) &&
-                x.Language.Equals(newLang, StringComparison.CurrentCultureIgnoreCase) &&
-                x.Website.Equals(newWebsite, StringComparison.CurrentCultureIgnoreCase)).ToList();
-
-            foreach (var server in deadCopies)
+            newServer.Id = id.Value;
+            lock (_lock)
             {
-                _ = ServerRepository.DeleteServer(server.Id); // Fire and forget deletion
-                _servers.Remove(server);
-                _currentServers.Remove(server);
+                foreach (var server in deadCopies)
+                {
+                    _servers.Remove(server);
+                    _currentServers.Remove(server);
+                    server.Dispose();
+                }
+
+                _servers.Add(newServer);
+                _currentServers.Add(newServer);
+                RebuildServerLookupIndexUnsafe();
+                _filterSnapshotDirty = true;
             }
 
-            RebuildServerLookupIndexUnsafe();
-            _filterSnapshotDirty = true;
+            newServer.CreateTimer();
+            return "Server added to SAMonitor.";
         }
-
-        if (!await ServerRepository.InsertServer(newServer))
+        finally
         {
-            newServer.Dispose();
-            return "Sorry, there was an error adding your server to SAMonitor.";
+            ServerChanges.Release();
         }
-
-        newServer.Id = await ServerRepository.GetServerId(ipAddr);
-
-        lock (_lock)
-        {
-            _servers.Add(newServer);
-            _currentServers.Add(newServer);
-            RebuildServerLookupIndexUnsafe();
-            _filterSnapshotDirty = true;
-        }
-
-        return "Server added to SAMonitor.";
     }
 
     private static bool IsBlacklisted(string ipAddr)
@@ -398,27 +422,38 @@ public static class ServerManager
 
     private static async Task UpdateBlacklist()
     {
-        using var db = await DatabasePool.GetConnectionAsync();
-
-        var sql = "SELECT ip_addr FROM blacklist";
-
-        _blacklist = (await db.QueryAsync<string>(sql)).ToList();
-
-        if (_blacklist.Count == 0) return;
-
-        sql = "DELETE FROM servers WHERE ip_addr LIKE CONCAT('%', @BlockedAddr, '%')";
-
-        foreach (var blockedAddr in _blacklist)
+        await ServerChanges.WaitAsync();
+        try
         {
-            await db.ExecuteAsync(sql, new { BlockedAddr = blockedAddr });
+            using var db = await DatabasePool.GetConnectionAsync();
+            const string selectSql = "SELECT ip_addr FROM blacklist";
+            var blacklist = (await db.QueryAsync<string>(selectSql)).ToList();
+            bool removedServers = false;
+
+            lock (_lock)
+            {
+                _blacklist = blacklist;
+                foreach (var server in _servers.Where(x => IsBlacklisted(x.IpAddr)))
+                {
+                    removedServers = true;
+                    server.Dispose();
+                }
+                _servers = _servers.Where(x => !IsBlacklisted(x.IpAddr)).ToList();
+                _currentServers = _currentServers.Where(x => !IsBlacklisted(x.IpAddr)).ToList();
+                RebuildServerLookupIndexUnsafe();
+                _filterSnapshotDirty = true;
+            }
+            if (removedServers) UpdateMasterlist();
+
+            const string deleteSql = "DELETE FROM servers WHERE ip_addr LIKE CONCAT('%', @BlockedAddr, '%')";
+            foreach (var blockedAddr in blacklist)
+            {
+                await db.ExecuteAsync(deleteSql, new { BlockedAddr = blockedAddr });
+            }
         }
-
-        lock (_lock)
+        finally
         {
-            _servers = _servers.Where(x => !_blacklist.Any(addr => x.IpAddr.Contains(addr))).ToList();
-            _currentServers = _currentServers.Where(x => !_blacklist.Any(addr => x.IpAddr.Contains(addr))).ToList();
-            RebuildServerLookupIndexUnsafe();
-            _filterSnapshotDirty = true;
+            ServerChanges.Release();
         }
     }
 }

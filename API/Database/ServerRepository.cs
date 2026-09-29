@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using SAMonitor.Data;
 using SAMonitor.Utils;
+using System.Data.Common;
 
 namespace SAMonitor.Database;
 
@@ -40,39 +41,53 @@ public static class ServerRepository
         }
     }
 
-    public static async Task<bool> InsertServer(Server server)
+    public static async Task<int?> InsertServer(Server server, IReadOnlyCollection<int> replacedIds)
     {
-        using var db = await DatabasePool.GetConnectionAsync();
+        try
+        {
+            using var db = await DatabasePool.GetConnectionAsync();
+            return await InsertServer(db, server, replacedIds);
+        }
+        catch (Exception ex)
+        {
+            await Helpers.LogError($"InsertServer {server.IpAddr}", ex);
+            return null;
+        }
+    }
 
+    internal static async Task<int> InsertServer(DbConnection db, Server server, IReadOnlyCollection<int> replacedIds)
+    {
         const string sql = """
                            INSERT INTO servers (ip_addr, name, last_updated, is_open_mp, lag_comp, map_name, gamemode, players_online, max_players, website, version, language, sampcac, weather)
                            VALUES(@IpAddr, @Name, @LastUpdated, @IsOpenMp, @LagComp, @MapName, @GameMode, @PlayersOnline, @MaxPlayers, @Website, @Version, @Language, @SampCac, @Weather)
                            """;
 
+        using var tx = await db.BeginTransactionAsync();
         try
         {
-            return await db.ExecuteAsync(sql, new
+            if (replacedIds.Count > 0)
             {
-                server.IpAddr,
-                server.Name,
-                server.LastUpdated,
-                server.IsOpenMp,
-                server.LagComp,
-                server.MapName,
-                server.GameMode,
-                server.PlayersOnline,
-                server.MaxPlayers,
-                server.Website,
-                server.Version,
-                server.Language,
-                server.SampCac,
-                server.Weather
-            }) > 0;
+                await db.ExecuteAsync("DELETE FROM servers WHERE id IN @Ids", new { Ids = replacedIds }, tx);
+            }
+
+            if (await db.ExecuteAsync(sql, server, tx) != 1)
+            {
+                throw new InvalidOperationException("Server insertion did not create a row.");
+            }
+
+            int id = await db.ExecuteScalarAsync<int>("SELECT LAST_INSERT_ID()", transaction: tx);
+            if (id <= 0)
+            {
+                throw new InvalidOperationException("Server insertion did not return a valid ID.");
+            }
+
+            await tx.CommitAsync();
+            return id;
         }
-        catch (Exception ex)
+        catch
         {
-            await Helpers.LogError($"InsertServer {server.IpAddr}", ex);
-            return false;
+            await tx.RollbackAsync();
+            throw;
         }
     }
 
@@ -137,72 +152,65 @@ public static class ServerRepository
         return success;
     }
 
-    public static async Task UpdateServersBatch(IReadOnlyList<Server> servers)
+    internal static async Task UpdateServersBatch(IReadOnlyList<ServerUpdate> updates)
     {
-        if (servers.Count == 0) return;
+        if (updates.Count == 0) return;
+
+        using var db = await DatabasePool.GetConnectionAsync();
+        await UpdateServersBatch(db, updates, !Helpers.IsDevelopment);
+    }
+
+    internal static async Task UpdateServersBatch(DbConnection db, IReadOnlyList<ServerUpdate> updates, bool recordMetrics)
+    {
+        if (updates.Count == 0) return;
+
+        var ids = updates.Where(x => x.Id > 0).Select(x => x.Id).Distinct().ToArray();
+        if (ids.Length == 0) return;
 
         const string updateSql = """
                                  UPDATE servers
                                  SET name=@Name, last_updated=@LastUpdated, is_open_mp=@IsOpenMp, lag_comp=@LagComp, map_name=@MapName, gamemode=@GameMode, players_online=@PlayersOnline, max_players=@MaxPlayers, website=@Website, version=@Version, language=@Language, sampcac=@SampCac, weather=@Weather
-                                 WHERE ip_addr = @IpAddr
+                                 WHERE id = @Id
                                  """;
 
-        using var db = await DatabasePool.GetConnectionAsync();
         using var tx = await db.BeginTransactionAsync();
 
         try
         {
-            foreach (var server in servers)
+            var existingIds = (await db.QueryAsync<int>(
+                "SELECT id FROM servers WHERE id IN @Ids FOR UPDATE", new { Ids = ids }, tx)).ToHashSet();
+            var activeUpdates = updates.Where(x => existingIds.Contains(x.Id)).ToList();
+
+            foreach (var server in activeUpdates.GroupBy(x => x.Id).Select(x => x.Last()))
             {
-                await db.ExecuteAsync(updateSql, new
-                {
-                    server.IpAddr,
-                    server.Name,
-                    server.LastUpdated,
-                    server.IsOpenMp,
-                    server.LagComp,
-                    server.MapName,
-                    server.GameMode,
-                    server.PlayersOnline,
-                    server.MaxPlayers,
-                    server.Website,
-                    server.Version,
-                    server.Language,
-                    server.SampCac,
-                    server.Weather
-                }, tx);
+                await db.ExecuteAsync(updateSql, server, tx);
             }
 
-            if (!Helpers.IsDevelopment)
+            if (recordMetrics && activeUpdates.Count > 0)
             {
                 // Dapper doesn't expand collection parameters for arbitrary SQL
                 var sb = new System.Text.StringBuilder(
-                    "INSERT INTO metrics_server (server_id, players) VALUES ");
+                    "INSERT INTO metrics_server (server_id, players, time) VALUES ");
                 var dynParams = new DynamicParameters();
-                int appended = 0;
-                for (int i = 0; i < servers.Count; i++)
+                for (int i = 0; i < activeUpdates.Count; i++)
                 {
-                    var s = servers[i];
-                    if (s.Id <= 0) continue; // skip servers that haven't been inserted yet
-                    if (appended > 0) sb.Append(',');
-                    sb.Append($"(@id{appended}, @players{appended})");
-                    dynParams.Add($"id{appended}", s.Id);
-                    dynParams.Add($"players{appended}", s.PlayersOnline);
-                    appended++;
+                    var update = activeUpdates[i];
+                    if (i > 0) sb.Append(',');
+                    sb.Append($"(@id{i}, @players{i}, @time{i})");
+                    dynParams.Add($"id{i}", update.Id);
+                    dynParams.Add($"players{i}", update.PlayersOnline);
+                    dynParams.Add($"time{i}", update.LastUpdated);
                 }
 
-                if (appended > 0)
-                {
-                    await db.ExecuteAsync(sb.ToString(), dynParams, tx);
-                }
+                await db.ExecuteAsync(sb.ToString(), dynParams, tx);
             }
 
             await tx.CommitAsync();
         }
-        catch (Exception ex)
+        catch
         {
             await tx.RollbackAsync();
-            await Helpers.LogError("UpdateServersBatch", ex);
+            throw;
         }
     }
 

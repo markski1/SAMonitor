@@ -97,8 +97,9 @@ public sealed class Server : IDisposable
     {
         try
         {
-            await Task.Delay(initialDelay, _cts.Token);
-            while (!_cts.Token.IsCancellationRequested)
+            var token = _cts.Token;
+            await Task.Delay(initialDelay, token);
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
@@ -108,10 +109,11 @@ public sealed class Server : IDisposable
                 {
                     await Helpers.LogError($"QueryLoop {IpAddr}", ex);
                 }
-                await Task.Delay(_queryInterval, _cts.Token);
+                await Task.Delay(_queryInterval, token);
             }
         }
         catch (TaskCanceledException) { }
+        catch (ObjectDisposedException) when (_disposed) { }
         catch (Exception ex)
         {
             await Helpers.LogError($"Unhandled exception in QueryLoop for {IpAddr}", ex);
@@ -120,6 +122,7 @@ public sealed class Server : IDisposable
 
     public async Task<bool> Query(bool doUpdate = true)
     {
+        if (_disposed) return false;
         if (_query is null)
         {
             try
@@ -205,7 +208,7 @@ public sealed class Server : IDisposable
 
         if (!querySuccess)
         {
-            if (doUpdate)
+            if (doUpdate && !_disposed)
             {
                 if (!Helpers.IsDevelopment)
                 {
@@ -311,7 +314,7 @@ public sealed class Server : IDisposable
         // This used to be backed by a dedicated 'o' query, but that was wasteful and is no longer needed.
         IsOpenMp = Version.Contains("omp", StringComparison.OrdinalIgnoreCase);
 
-        if (doUpdate)
+        if (doUpdate && !_disposed)
         {
             ServerManager.MarkFilterCachesDirty();
             ServerUpdater.Queue(this);
@@ -385,7 +388,7 @@ public sealed class Server : IDisposable
         }
     }
 
-    private bool _disposed;
+    private volatile bool _disposed;
 
     public void Dispose()
     {
