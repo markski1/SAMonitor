@@ -5,20 +5,11 @@ namespace SAMonitor.Utils;
 
 public static class WebServer
 {
-    private static string[] _args = [];
-    private static Thread? _webServerThread;
-
-    public static void Initialize(string[] args)
+    public static async Task<WebApplication> InitializeAsync(string[] args)
     {
-        _args = args;
-        _webServerThread = new Thread(RunWebServer);
-        _webServerThread.Start();
-    }
+        var builder = WebApplication.CreateBuilder(args);
 
-    private static void RunWebServer() {
-        var builder = WebApplication.CreateBuilder(_args);
-
-        builder.Services.AddControllers();
+        builder.Services.AddControllers().AddApplicationPart(typeof(SAMonitor.Controllers.ApiController).Assembly);
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
@@ -52,6 +43,16 @@ public static class WebServer
                     .AllowAnyHeader()
                     .SetIsOriginAllowed(_ => true));
 
-        app.Run();
+        try
+        {
+            await app.StartAsync();
+            Console.WriteLine("HTTP API started. Server refresh will run in the background.");
+            return app;
+        }
+        catch
+        {
+            await app.DisposeAsync();
+            throw;
+        }
     }
 }

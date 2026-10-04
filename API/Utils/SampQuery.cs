@@ -22,45 +22,36 @@ public class SampQuery
     private const ushort DefaultServerPort = 7777;
     private const int ReceiveArraySize = 8192;
     private const int TimeoutMilliseconds = 5000;
-    private readonly string _serverIpString;
-    private readonly IPEndPoint _serverEndPoint;
-    // Cache per server since destinations won't change.
-    private readonly byte[] _packetPrefix;
+    private readonly string _serverHost;
+    private readonly ushort _serverPort;
+    private QueryDestination? _destination;
     private DateTime _transmitMs;
 
     private SampQuery(string host, ushort port)
     {
-        IPAddress serverIp1;
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        _serverHost = host;
+        _serverPort = port;
+        if (IPAddress.TryParse(host, out var address))
+            _destination = CreateDestination(address, port);
+    }
 
-        // if the given 'host' cannot be parsed as an IP Address, it might be a domain/hostname.
-        if (!IPAddress.TryParse(host, out var getAddr))
-        {
-            serverIp1 = Dns.GetHostEntry(host).AddressList.First(a => a.AddressFamily == AddressFamily.InterNetwork);
-        }
-        else
-        {
-            serverIp1 = getAddr;
-        }
-
-        _serverEndPoint = new IPEndPoint(serverIp1, port);
-
-        _serverIpString = serverIp1.ToString();
-
+    private static QueryDestination CreateDestination(IPAddress address, ushort port)
+    {
+        if (address.AddressFamily != AddressFamily.InterNetwork)
+            throw new ArgumentException("Query destination must be IPv4.", nameof(address));
         // Build the per-destination packet header: "SAMP" + 4 IPv4 octets + 2-byte port.
-        _packetPrefix = new byte[10];
-        "SAMP"u8.CopyTo(_packetPrefix);
-
-        var octets = _serverIpString.Split('.');
-        for (int i = 0; i < 4; i++)
-        {
-            _packetPrefix[4 + i] = byte.Parse(octets[i], CultureInfo.InvariantCulture);
-        }
+        var prefix = new byte[10];
+        "SAMP"u8.CopyTo(prefix);
+        address.GetAddressBytes().CopyTo(prefix, 4);
 
         // SA-MP uses little-endian for the port field. Wtf
-        _packetPrefix[8] = (byte)(port & 0xFF);
-        _packetPrefix[9] = (byte)((port >> 8) & 0xFF);
+        prefix[8] = (byte)(port & 0xFF);
+        prefix[9] = (byte)((port >> 8) & 0xFF);
+        return new QueryDestination(new IPEndPoint(address, port), prefix);
     }
+
+    private sealed record QueryDestination(IPEndPoint EndPoint, byte[] PacketPrefix);
 
     public SampQuery(string ip) : this(ip.Split(':')[0], GetPortFromStringOrDefault(ip)) { }
 
@@ -70,31 +61,47 @@ public class SampQuery
         return parts.Length > 1 ? string.IsNullOrWhiteSpace(parts[1]) ? DefaultServerPort : ushort.Parse(parts[1]) : DefaultServerPort;
     }
 
-    private async Task<byte[]> SendSocketToServerAsync(char packetType)
+    private async Task<byte[]> SendSocketToServerAsync(char packetType, CancellationToken cancellationToken = default)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeoutMilliseconds);
+        try
+        {
+            return await SendPacketAsync(packetType, timeout.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new SocketException(10060);
+        }
+    }
+
+    private async Task<byte[]> SendPacketAsync(char packetType, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var destination = _destination;
+        if (destination is null)
+        {
+            var addresses = await Dns.GetHostAddressesAsync(_serverHost, AddressFamily.InterNetwork, cancellationToken)
+                .WaitAsync(cancellationToken);
+            destination = CreateDestination(addresses.First(), _serverPort);
+            _destination = destination;
+        }
+        var serverEndPoint = destination.EndPoint;
+        var packetPrefix = destination.PacketPrefix;
         // Local socket so multiple async invocations on the same SampQuery instance
         // (e.g. concurrent 'i' and 'r' queries) do not race on the underlying socket.
-        using var socket = new Socket(_serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+        using var socket = new Socket(serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
         // Build the per-query packet: cached prefix + opcode byte. Avoids MemoryStream / BinaryWriter / per-call string split.
-        var packet = new byte[_packetPrefix.Length + 1];
-        Buffer.BlockCopy(_packetPrefix, 0, packet, 0, _packetPrefix.Length);
-        packet[_packetPrefix.Length] = (byte)packetType;
+        var packet = new byte[packetPrefix.Length + 1];
+        Buffer.BlockCopy(packetPrefix, 0, packet, 0, packetPrefix.Length);
+        packet[packetPrefix.Length] = (byte)packetType;
 
         _transmitMs = DateTime.Now;
 
-        await socket.SendToAsync(packet, SocketFlags.None, _serverEndPoint);
-        EndPoint rawPoint = _serverEndPoint;
+        await socket.SendToAsync(packet.AsMemory(), SocketFlags.None, serverEndPoint, cancellationToken);
         var data = new byte[ReceiveArraySize];
-
-        var task = socket.ReceiveFromAsync(data, SocketFlags.None, rawPoint);
-
-        if (await Task.WhenAny(task, Task.Delay(TimeoutMilliseconds)) != task)
-        {
-            throw new SocketException(10060); // Operation timed out
-        }
-
-        var result = await task;
+        var result = await socket.ReceiveFromAsync(data.AsMemory(), SocketFlags.None, serverEndPoint, cancellationToken);
         if (result.ReceivedBytes == 0)
         {
             throw new SocketException(10060); // Empty response treated as timeout
@@ -103,8 +110,8 @@ public class SampQuery
         var actualData = new byte[result.ReceivedBytes];
         Buffer.BlockCopy(data, 0, actualData, 0, result.ReceivedBytes);
         ValidatePacketHeader(actualData, packetType);
-        if (!_serverEndPoint.Equals(result.RemoteEndPoint) ||
-            !actualData.AsSpan(0, _packetPrefix.Length).SequenceEqual(_packetPrefix))
+        if (!serverEndPoint.Equals(result.RemoteEndPoint) ||
+            !actualData.AsSpan(0, packetPrefix.Length).SequenceEqual(packetPrefix))
         {
             throw new InvalidDataException("Query response does not match the requested server.");
         }
@@ -142,9 +149,9 @@ public class SampQuery
     /// </summary>
     /// <returns>An asynchronous task that completes with an instance of ServerPlayer</returns>
     /// <exception cref="SocketException">Thrown when operation timed out</exception>
-    public async Task<ServerInfo> GetServerInfoAsync()
+    public async Task<ServerInfo> GetServerInfoAsync(CancellationToken cancellationToken = default)
     {
-        byte[] data = await SendSocketToServerAsync('i');
+        byte[] data = await SendSocketToServerAsync('i', cancellationToken);
         return SqHelpers.NormalizeServerInfo(CollectServerInfoFromByteArray(data));
     }
 
@@ -153,9 +160,9 @@ public class SampQuery
     /// </summary>
     /// <returns>An asynchronous task that completes with an instance of ServerRules</returns>
     /// <exception cref="SocketException">Thrown when operation timed out</exception>
-    public async Task<ServerRules> GetServerRulesAsync()
+    public async Task<ServerRules> GetServerRulesAsync(CancellationToken cancellationToken = default)
     {
-        byte[] data = await SendSocketToServerAsync('r');
+        byte[] data = await SendSocketToServerAsync('r', cancellationToken);
         return CollectServerRulesFromByteArray(data);
     }
 

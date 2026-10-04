@@ -162,6 +162,82 @@ public sealed class SampQueryPacketTests
         else Assert.Equal(lastUpdated, server.LastUpdated);
     }
 
+    [Theory]
+    [InlineData('i')]
+    [InlineData('r')]
+    public async Task Socket_CancellationStopsAnUnansweredQuery(char opcode)
+    {
+        using var endpoint = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        int port = ((IPEndPoint)endpoint.Client.LocalEndPoint!).Port;
+        var query = new SampQuery($"127.0.0.1:{port}");
+        using var cancellation = new CancellationTokenSource();
+        Task result = opcode == 'i' ? query.GetServerInfoAsync(cancellation.Token) : query.GetServerRulesAsync(cancellation.Token);
+        using var receiveTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await endpoint.ReceiveAsync(receiveTimeout.Token);
+
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => result.WaitAsync(TimeSpan.FromSeconds(1)));
+    }
+
+    [Fact]
+    public async Task Socket_UnansweredQueryTimesOut()
+    {
+        using var endpoint = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        int port = ((IPEndPoint)endpoint.Client.LocalEndPoint!).Port;
+        var query = new SampQuery($"127.0.0.1:{port}");
+
+        var error = await Assert.ThrowsAsync<SocketException>(() => query.GetServerInfoAsync().WaitAsync(TimeSpan.FromSeconds(8)));
+
+        Assert.Equal(SocketError.TimedOut, error.SocketErrorCode);
+    }
+
+    [Fact]
+    public async Task Socket_ResolvesHostnamesBeforeSending()
+    {
+        using var endpoint = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        int port = ((IPEndPoint)endpoint.Client.LocalEndPoint!).Port;
+        var query = new SampQuery($"localhost:{port}");
+        var result = query.GetServerInfoAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var request = await endpoint.ReceiveAsync(timeout.Token);
+        var response = InfoPacket();
+        request.Buffer.CopyTo(response, 0);
+        await endpoint.SendAsync(response, request.RemoteEndPoint);
+
+        Assert.Equal("Русский сервер", (await result).HostName);
+    }
+
+    [Fact]
+    public async Task Socket_CanceledHostnameQueryDoesNotResolveOrSend()
+    {
+        var query = new SampQuery("unresolved.example.invalid:7777");
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => query.GetServerInfoAsync(cancellation.Token));
+    }
+
+    [Fact]
+    public async Task ServerQuery_CancellationLeavesCachedStateIntact()
+    {
+        using var endpoint = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        int port = ((IPEndPoint)endpoint.Client.LocalEndPoint!).Port;
+        using var server = new Server($"127.0.0.1:{port}") { Id = 1, Name = "Cached server", PlayersOnline = 10 };
+        var updatedAt = server.LastUpdated;
+        using var cancellation = new CancellationTokenSource();
+        var query = server.Query(false, cancellation.Token);
+        using var receiveTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await endpoint.ReceiveAsync(receiveTimeout.Token);
+
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => query.WaitAsync(TimeSpan.FromSeconds(1)));
+        Assert.Equal("Cached server", server.Name);
+        Assert.Equal(10, server.PlayersOnline);
+        Assert.Equal(updatedAt, server.LastUpdated);
+    }
+
     private static byte[] InfoPacket() => Packet('i', writer =>
     {
         WriteInfoPrefix(writer);

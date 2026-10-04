@@ -58,56 +58,81 @@ public static class ServerManager
 
     public static async Task LoadServers()
     {
-        var servers = await LoadUnblockedServers(UpdateBlacklist, ServerRepository.GetAllServersAsync, IsBlacklisted);
+        await LoadServers(() => LoadUnblockedServers(UpdateBlacklist, ServerRepository.GetAllServersAsync, IsBlacklisted));
+        CreateTimers();
+    }
 
-        Console.WriteLine($"Querying {servers.Count} servers...");
-
-        var dropZone = DateTime.UtcNow - OfflineCutoff;
-
-        using var gate = new SemaphoreSlim(64);
-
-        // query all servers, gated by the semaphore
-        var tasks = servers.Select(async x =>
-        {
-            await gate.WaitAsync();
-            try
-            {
-                if (await x.Query(false))
-                {
-                    return x;
-                }
-
-                // if it failed to respond, but it's not in the drop zone, we still keep it
-                if (x.LastUpdated > dropZone)
-                {
-                    return x;
-                }
-
-                return null;
-            }
-            finally
-            {
-                gate.Release();
-            }
-        });
-
-        var results = await Task.WhenAll(tasks);
-
+    internal static async Task LoadServers(Func<Task<List<Server>>> loadServers)
+    {
+        var servers = await loadServers();
         lock (_lock)
         {
             _servers = servers;
-            _currentServers = results.Where(x => x is not null).Cast<Server>().ToList();
-            _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
+            UpdateCurrentServersUnsafe();
             RebuildServerLookupIndexUnsafe();
-            _filterSnapshotDirty = true;
         }
 
         UpdateMasterlist();
+        Console.WriteLine($"Loaded {servers.Count} cached servers; {_currentServers.Count} recently online.");
+    }
 
-        CreateTimers();
+    public static async Task RefreshServersAsync(CancellationToken cancellationToken = default)
+    {
+        var servers = GetAllServers();
+        int completed = 0;
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+        Console.WriteLine($"Querying {servers.Count} servers in the background...");
 
-        // after we're done, start the query loop for all servers
-        _servers.ForEach(x => x.CreateTimer());
+        try
+        {
+            await Parallel.ForEachAsync(servers, new ParallelOptions
+            {
+                MaxDegreeOfParallelism = 64,
+                CancellationToken = cancellationToken
+            }, async (server, token) =>
+            {
+                try
+                {
+                    await server.Query(false, token);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Initial query failed for {server.IpAddr}: {ex.Message}");
+                }
+                finally
+                {
+                    if (!token.IsCancellationRequested) server.CreateTimer();
+                }
+
+                lock (_lock)
+                {
+                    if (_servers.Contains(server) && server.LastUpdated > DateTime.UtcNow - OfflineCutoff &&
+                        server.Name.Length > 0 && !_currentServers.Contains(server))
+                        _currentServers.Add(server);
+                    _filterSnapshotDirty = true;
+                }
+
+                int count = Interlocked.Increment(ref completed);
+                if (count % 100 == 0 || count == servers.Count)
+                    Console.WriteLine($"Initial queries: {count}/{servers.Count} completed in {elapsed.Elapsed.TotalSeconds:F0}s.");
+            });
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return; }
+
+        lock (_lock)
+        {
+            UpdateCurrentServersUnsafe();
+        }
+        UpdateMasterlist();
+        Console.WriteLine($"Initial server refresh finished in {elapsed.Elapsed.TotalSeconds:F0}s.");
+    }
+
+    private static void UpdateCurrentServersUnsafe()
+    {
+        var dropZone = DateTime.UtcNow - OfflineCutoff;
+        _currentServers = _servers.Where(x => x.LastUpdated > dropZone && x.Name.Length > 0).ToList();
+        _filterSnapshotDirty = true;
     }
 
     internal static async Task<List<Server>> LoadUnblockedServers(
@@ -263,7 +288,7 @@ public static class ServerManager
         // failing all of the above, generate whatever got requested... I guess!
         string newList = "";
 
-        _currentServers.ForEach(x =>
+        GetServers().ForEach(x =>
         {
             if (x.Version.Contains(version)) newList += $"{x.IpAddr}\n";
         });
@@ -328,10 +353,7 @@ public static class ServerManager
                 // Clean list of "recently attempted" IP addresses.
                 FailedAddresses.Clear();
 
-                _currentServers = _servers.Where(x => x.LastUpdated > DateTime.UtcNow - OfflineCutoff).ToList();
-
-                _currentServers = _currentServers.Where(x => x.Name.Length > 0).ToList();
-                _filterSnapshotDirty = true;
+                UpdateCurrentServersUnsafe();
             }
 
             // Update the masterlist accordingly.

@@ -12,8 +12,7 @@ if (!MySql.MySqlSetup())
 Helpers.LoadWebhookUrl();
 if (!await QueryManagerProxy.SetupAsync())
 {
-    Console.WriteLine("Query Proxy Service is configured but unreachable.\nExiting.");
-    return 1;
+    Console.WriteLine("Query Proxy Service is unreachable. Continuing with cached data and direct queries.");
 }
 
 Console.WriteLine("Loading servers.");
@@ -25,11 +24,11 @@ StatsManager.LoadStats();
 Console.WriteLine("Initializing server updater.");
 ServerUpdater.Initialize();
 
-WebServer.Initialize(args);
-
 ThreadPool.SetMinThreads(64, 32);
-ThreadPool.SetMaxThreads(256, 128);
 
-await Task.Delay(-1);
+await using var app = await WebServer.InitializeAsync(args);
+var refresh = ServerManager.RefreshServersAsync(app.Lifetime.ApplicationStopping);
+await app.WaitForShutdownAsync();
+await refresh;
 
 return 0;

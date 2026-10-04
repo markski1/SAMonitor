@@ -105,6 +105,7 @@ public sealed class Server : IDisposable
                 {
                     await Query();
                 }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { return; }
                 catch (Exception ex)
                 {
                     await Helpers.LogError($"QueryLoop {IpAddr}", ex);
@@ -120,9 +121,12 @@ public sealed class Server : IDisposable
         }
     }
 
-    public async Task<bool> Query(bool doUpdate = true)
+    public async Task<bool> Query(bool doUpdate = true, CancellationToken cancellationToken = default)
     {
         if (_disposed) return false;
+        using var queryCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
+        var token = queryCancellation.Token;
+        token.ThrowIfCancellationRequested();
         if (_query is null)
         {
             try
@@ -142,9 +146,10 @@ public sealed class Server : IDisposable
 
         try
         {
-            serverInfo = await _query.GetServerInfoAsync();
+            serverInfo = await _query.GetServerInfoAsync(token);
             querySuccess = true;
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
         catch
         {
             // If we fail to query, then we defer to the secondary querying server. (Just to be sure it's not a fluke, or a OVH blockage.)
@@ -152,12 +157,13 @@ public sealed class Server : IDisposable
             {
                 try
                 {
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                    cts.CancelAfter(TimeSpan.FromSeconds(10));
                     using var response = await Client.GetAsync($"{QueryManagerProxy.ProxyUrl}/query?ip={IpAddr}", cts.Token);
 
                     if (response.IsSuccessStatusCode)
                     {
-                        var json = await response.Content.ReadAsStringAsync();
+                        var json = await response.Content.ReadAsStringAsync(cts.Token);
                         var data = ProxyJson.DeserializeQueryResponse(json);
                         if (data?.Info is not null)
                         {
@@ -181,6 +187,7 @@ public sealed class Server : IDisposable
                         }
                     }
                 }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
                 catch
                 {
                     // Fallback failed too, continue to error handling
@@ -195,7 +202,7 @@ public sealed class Server : IDisposable
         Task<ServerRules>? rulesTask = null;
         if (querySuccess && !isProxy)
         {
-            rulesTask = _query.GetServerRulesAsync();
+            rulesTask = _query.GetServerRulesAsync(token);
         }
 
         if (!querySuccess)
@@ -272,14 +279,16 @@ public sealed class Server : IDisposable
             {
                 serverRules = SqHelpers.NormalizeServerRules(await rulesTask!, serverInfo.Language);
             }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
             catch
             {
                 // The first attempt was rate-limited or timed out. Back off briefly, then try once more.
-                await Task.Delay(500);
+                await Task.Delay(500, token);
                 try
                 {
-                    serverRules = SqHelpers.NormalizeServerRules(await _query.GetServerRulesAsync(), serverInfo.Language);
+                    serverRules = SqHelpers.NormalizeServerRules(await _query.GetServerRulesAsync(token), serverInfo.Language);
                 }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
                 catch (Exception ex)
                 {
                     if (ex.ToString().Contains("SocketException") == false) // I don't care to log network exceptions
