@@ -26,9 +26,14 @@ public static class StatsManager
 
     public static List<GlobalMetrics> GetGlobalMetrics(int hours, bool skipTrimming = false)
     {
+        return GetGlobalMetrics(hours, skipTrimming, GlobalMetrics);
+    }
+
+    internal static List<GlobalMetrics> GetGlobalMetrics(int hours, bool skipTrimming, IEnumerable<GlobalMetrics> metrics)
+    {
         DateTime requestTime = DateTime.UtcNow - TimeSpan.FromHours(hours);
 
-        IEnumerable<GlobalMetrics> result = GlobalMetrics.Where(x => x.Time > requestTime);
+        IEnumerable<GlobalMetrics> result = metrics.Where(x => x.Time > requestTime);
 
         // By default, GlobalMetrics has data recorded every 30 minutes. If "trimming" is skipped, return it all.
         // Likewise, if the number of entries is below 750, return everything as well.
@@ -46,7 +51,7 @@ public static class StatsManager
         // Otherwise, we "fuse" entries together by grouping them by time and doing averages.
         // We want as close to 500 entries as possible at a max.
 
-        int avgSet = count / 500;
+        int avgSet = (int)Math.Ceiling(count / 500.0);
 
         // We take whatever amount decided above, and group those entries down to smaller averages.
         return [

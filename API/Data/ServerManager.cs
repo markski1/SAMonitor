@@ -145,14 +145,14 @@ public static class ServerManager
         return servers.Where(x => !isBlacklisted(x.IpAddr)).ToList();
     }
 
-    public static async Task<string> AddServer(string ipAddr)
+    public static async Task<ServerSubmissionResult> AddServer(string ipAddr)
     {
-        if (IsBlacklisted(ipAddr)) return "IP Address is blacklisted.";
+        if (IsBlacklisted(ipAddr)) return new(ServerSubmissionOutcome.Blacklisted, "IP Address is blacklisted.");
 
         lock (_lock)
         {
-            if (_serverLookupIndex.Lookup(ipAddr) is not null) return "Server is already monitored.";
-            if (FailedAddresses.Contains(ipAddr)) return "This IP address failed last time it was queried. Please try again in an hour.";
+            if (_serverLookupIndex.Lookup(ipAddr) is not null) return new(ServerSubmissionOutcome.AlreadyMonitored, "Server is already monitored.");
+            if (FailedAddresses.Contains(ipAddr)) return new(ServerSubmissionOutcome.RecentlyFailed, "This IP address failed last time it was queried. Please try again in an hour.");
         }
 
         var newServer = new Server(ipAddr);
@@ -164,7 +164,7 @@ public static class ServerManager
             {
                 FailedAddresses.Add(ipAddr);
             }
-            return "Server did not respond to query.";
+            return new(ServerSubmissionOutcome.Unresponsive, "Server did not respond to query.");
         }
 
         if (newServer.Version.Contains("cr", StringComparison.CurrentCultureIgnoreCase))
@@ -174,7 +174,7 @@ public static class ServerManager
             {
                 FailedAddresses.Add(ipAddr);
             }
-            return "CR-MP servers are currently unsupported.";
+            return new(ServerSubmissionOutcome.Unsupported, "CR-MP servers are currently unsupported.");
         }
 
         // Extract to avoid 'disposed at outer scope' false(?) positive in JetBrains.
@@ -191,12 +191,12 @@ public static class ServerManager
                 if (IsBlacklisted(ipAddr))
                 {
                     newServer.Dispose();
-                    return "IP Address is blacklisted.";
+                    return new(ServerSubmissionOutcome.Blacklisted, "IP Address is blacklisted.");
                 }
                 if (_serverLookupIndex.Lookup(ipAddr) is not null)
                 {
                     newServer.Dispose();
-                    return "Server is already monitored.";
+                    return new(ServerSubmissionOutcome.AlreadyMonitored, "Server is already monitored.");
                 }
 
                 var copies = _currentServers.Where(x =>
@@ -208,7 +208,7 @@ public static class ServerManager
                 {
                     newServer.Dispose();
                     FailedAddresses.Add(ipAddr);
-                    return "Server is already monitored. Be advised: Sneaking in repeated IPs for the same server is a motive for blacklisting.";
+                    return new(ServerSubmissionOutcome.Duplicate, "Server is already monitored. Be advised: Sneaking in repeated IPs for the same server is a motive for blacklisting.");
                 }
 
                 deadCopies = _servers.Where(x =>
@@ -221,7 +221,7 @@ public static class ServerManager
             if (id is null)
             {
                 newServer.Dispose();
-                return "Sorry, there was an error adding your server to SAMonitor.";
+                return new(ServerSubmissionOutcome.Failed, "Sorry, there was an error adding your server to SAMonitor.");
             }
 
             newServer.Id = id.Value;
@@ -241,7 +241,7 @@ public static class ServerManager
             }
 
             newServer.CreateTimer();
-            return "Server added to SAMonitor.";
+            return new(ServerSubmissionOutcome.Added, "Server added to SAMonitor.");
         }
         finally
         {
@@ -290,7 +290,7 @@ public static class ServerManager
 
         GetServers().ForEach(x =>
         {
-            if (x.Version.Contains(version)) newList += $"{x.IpAddr}\n";
+            if (!x.RequiresPassword && x.Version.Contains(version)) newList += $"{x.IpAddr}\n";
         });
 
         return newList;

@@ -15,6 +15,19 @@ public static class WebServer
 
         builder.Services.AddRateLimiter(options =>
         {
+            options.OnRejected = async (context, _) =>
+            {
+                if (!HttpMethods.IsPost(context.HttpContext.Request.Method))
+                {
+                    context.HttpContext.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                    return;
+                }
+
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                    context.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                await Results.Problem(statusCode: StatusCodes.Status429TooManyRequests, title: "Too many requests.").ExecuteAsync(context.HttpContext);
+            };
             options.AddFixedWindowLimiter("fixed", limiterOptions =>
             {
                 limiterOptions.PermitLimit = 40;
@@ -34,14 +47,15 @@ public static class WebServer
             app.UseSwaggerUI();
         }
 
-        app.UseRateLimiter();
-
-        app.MapControllers();
-
         app.UseCors(x => x
                     .AllowAnyMethod()
                     .AllowAnyHeader()
+                    .WithExposedHeaders("Location", "Retry-After")
                     .SetIsOriginAllowed(_ => true));
+
+        app.UseRateLimiter();
+
+        app.MapControllers();
 
         try
         {

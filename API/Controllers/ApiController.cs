@@ -112,21 +112,64 @@ public class ApiController : ControllerBase
 
     [HttpGet("AddServer")]
     [EnableRateLimiting("fixed")]
-    public async Task<string> AddServer(string ip_addr)
+    public async Task<string> AddServer([FromQuery] string ip_addr)
     {
         ip_addr = ip_addr.Trim();
         string validIP = await Helpers.ValidateIPv4(ip_addr);
         
         if (validIP != "invalid")
-            return await ServerManager.AddServer(validIP);
+            return (await ServerManager.AddServer(validIP)).Message;
         
         return "Entered IP address or hostname is invalid or failing to resolve.";
+    }
+
+    [HttpPost("AddServer")]
+    [Consumes("application/json")]
+    [EnableRateLimiting("fixed")]
+    [ProducesResponseType<AddServerResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status415UnsupportedMediaType)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> AddServerPost([FromBody] AddServerRequest request)
+    {
+        try
+        {
+            string ipAddr = await Helpers.ValidateIPv4(request.IpAddr.Trim());
+            if (ipAddr == "invalid")
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid address.", detail: "Enter a valid IP address or hostname.");
+
+            return BuildAddServerResponse(ipAddr, await ServerManager.AddServer(ipAddr));
+        }
+        catch (Exception ex)
+        {
+            await Helpers.LogError("AddServer", ex);
+            return Problem(statusCode: StatusCodes.Status500InternalServerError, title: "Server submission failed.");
+        }
+    }
+
+    internal IActionResult BuildAddServerResponse(string ipAddr, ServerSubmissionResult result)
+    {
+        if (result.Outcome == ServerSubmissionOutcome.Added)
+            return CreatedAtAction(nameof(GetServerByIp), new { ip_addr = ipAddr }, new AddServerResponse(ipAddr, result.Message));
+
+        int status = result.Outcome switch
+        {
+            ServerSubmissionOutcome.Blacklisted => StatusCodes.Status403Forbidden,
+            ServerSubmissionOutcome.AlreadyMonitored or ServerSubmissionOutcome.Duplicate => StatusCodes.Status409Conflict,
+            ServerSubmissionOutcome.RecentlyFailed or ServerSubmissionOutcome.Unresponsive or ServerSubmissionOutcome.Unsupported => StatusCodes.Status422UnprocessableEntity,
+            _ => StatusCodes.Status500InternalServerError
+        };
+        return Problem(statusCode: status, title: "Server submission failed.", detail: result.Message);
     }
 
     [HttpGet("GetServerMetrics")]
     public async Task<List<ServerMetrics>> GetServerMetrics(string ip_addr = "none", int hours = 6, int include_misses = 0)
     {
-        DateTime RequestTime = DateTime.Now - TimeSpan.FromHours(hours);
+        DateTime RequestTime = DateTime.UtcNow - TimeSpan.FromHours(hours);
 
         int Id = ServerManager.GetServerIdFromIp(ip_addr);
 
